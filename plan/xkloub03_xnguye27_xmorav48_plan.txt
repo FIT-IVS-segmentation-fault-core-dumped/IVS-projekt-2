@@ -1,0 +1,74 @@
+Moduly:
+    - Matematická knihovna
+        - Přiďeleno: xnguye27
+        - Pžadavky:
+            - Matematické operace:
+                - součet, rozdíl, podíl, součin
+                - faktoriál (celočíselný i racionální), mocninny, obecná odmocnina
+                - logaritmus(log(a, x), ln(x)), sin, cos, tg, cotg
+                - modulo
+                - arcsin, arccos, arctg, arccotg
+                - Absolutní hodnota
+                - Výpočet kombinačnho čísla
+            - Práce s PI a e
+            - Zvolení číselné soustavy pro výpočet (výsledek je v dané soustavě)
+                - + konvertování mezi soustavami
+            - Generování pseudo-náhodných čísel
+            - Vrací:
+                - Výsledek ve formátu čísla (neobsahuje PI nebo e)
+                - Přesnost: na max 6 desetinných míst
+                - Číslo ve formátu znakového řetezce
+    - Grafické rozhraní
+        - Přiřazeno: xkloub03, xmorav48
+        - Požadavky:
+            - Displejová část
+                - Status bar
+                    - Zobrazení číselné soustavy
+                    - Zobrazení jednotek radián/stupně
+                - Speciální zobrazování:
+                    - Kombinační číslo
+                    - zlomků
+                    - kombinačních čísel
+                    - Zobrazování mocnin
+                    - Logaritmu (základní 10tkový, obecný, přirozený)
+                    - Faktoriál
+                    - Absolutní hodnota
+                - Chybové hlášení
+            - Tlačítková část
+                - Čísla 0-9, A-F, desetinná čárka a potvrzení výpočtu, závorky
+                - Aritmetické operace podporavané matematickou knihovnou
+                - Konstanty PI a e
+                - Alias pro poslední výpočet
+                - Uložení výsledku do proměnné + výběr proměnné
+                - Přispůsobenní rozhraní pro danou soustavu
+                - Tlačítko shift pro změnu zobrazovaných operací
+                - Mazání
+            - Menu bar
+                - Menění soustavy pro výpočet nebo zobrazení
+                - Otevírání oken pro nápovědu, nastavení atd.
+                - 
+            - Nastavení
+                - Motiv aplikace
+                - Jazyk aplikace (Česky, Anglicky, Slovensky, Vietnamsky, Japonsky)
+                    - Interface tlačítek
+                    - Obsah hlavních oken
+                - Výchozí mód kalkulačky (např. scientific)
+            - Uživatelská příručka
+            - Okno "O aplikaci"
+            - Okno historie výpočtů
+    - Uživatelská dokumentace
+    - (Od)Instalátor a instrukce
+
+Termíny:
+    - Hotové jednotlivé moduly: do 20. 4. 2023
+    - Integrace: do 25. 4. 2023
+    - Dokumentace: do 25. 4. 2023
+    - Odevzdání všeho: do 26. 4. 2023 7:00h
+
+Komunikace
+    - Kanály: Discord, nouze telefonní čísla
+
+Správa verzí
+    - GIT
+        - url: https://github.com/FIT-IVS-segmentation-fault-core-dumped/IVS-projekt-2
+
