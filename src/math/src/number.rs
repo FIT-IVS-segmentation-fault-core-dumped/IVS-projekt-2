@@ -17,6 +17,18 @@ impl Number {
         precision: 6,
     };
 
+    /// 3.14159...
+    pub const PI: Self = Self {
+        inner: std::f64::consts::PI,
+        precision: 6,
+    };
+
+    /// 2.71828...
+    pub const E: Self = Self {
+        inner: std::f64::consts::E,
+        precision: 6,
+    };
+
     ///
     pub fn to_string_radix(&self, _radix: u8) -> String {
         todo!()
