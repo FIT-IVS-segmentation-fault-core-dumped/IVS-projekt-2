@@ -1,3 +1,5 @@
+use std::cmp::Ordering;
+
 /// Represent a number
 pub struct Number {
     inner: f64,
@@ -103,3 +105,25 @@ impl Number {
         todo!()
     }
 }
+
+impl Ord for Number {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.inner
+            .partial_cmp(&other.inner)
+            .unwrap_or(Ordering::Equal)
+    }
+}
+
+impl PartialOrd for Number {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl PartialEq for Number {
+    fn eq(&self, other: &Self) -> bool {
+        self.inner == other.inner
+    }
+}
+
+impl Eq for Number {}
