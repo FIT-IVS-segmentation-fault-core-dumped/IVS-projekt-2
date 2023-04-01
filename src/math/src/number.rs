@@ -171,6 +171,15 @@ impl Number {
         todo!()
     }
 
+    /// Get the remainder of `self / other`
+    ///
+    /// ```
+    /// assert_eq!(Number::from(5).modulo(2), Ok(Number::ONE));
+    /// ```
+    pub fn modulo(&self, other: impl Into<Self>) -> Result<Self> {
+        todo!()
+    }
+
     /// Calculate factorial of a given number
     /// The number is not limited to integer, it can be a fraction
     ///
