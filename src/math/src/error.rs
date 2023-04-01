@@ -14,7 +14,15 @@ pub enum Error {
     /// Factorial of negative number
     FactorialNegative,
 
-    #[error("Log of a negative number")]
-    ///
+    #[error("Logarithm to a negative base")]
+    /// Logarithm to a negative base
     LogNegativeBase,
+
+    #[error("Zero nth root")]
+    /// Zero nth root
+    ZeroNthRoot,
+
+    #[error("Negative root")]
+    /// Negative root
+    NegativeRoot,
 }
