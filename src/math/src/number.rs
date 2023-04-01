@@ -1,7 +1,7 @@
 use crate::Result;
 use std::cmp::Ordering;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Default, Debug, Clone, Copy)]
 /// Represent a number
 pub struct Number {
     inner: f64,
