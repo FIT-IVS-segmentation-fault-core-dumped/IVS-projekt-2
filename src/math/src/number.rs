@@ -169,6 +169,7 @@ impl Number {
     /// ```
     /// assert_eq!(Number::Zero.factorial(), Number::One);
     /// assert_eq!(Number::from(5).factorial(), Ok(Number::from(120)));
+    /// assert_eq!(Number::from(3.2).factorial().unwrap().to_string(6), "7.756689");
     /// assert!(Number::from(-1).factorial().is_err());
     /// ```
     pub fn factorial(&self) -> Result<Self> {
