@@ -104,6 +104,8 @@ impl Number {
     /// Add two numbers together
     ///
     /// ```
+    /// # use math::Number;
+    ///
     /// let a = Number::from(0.1);
     /// let b = Number::from(0.2);
     ///
@@ -117,6 +119,8 @@ impl Number {
     /// Subtract two numbers
     ///
     /// ```
+    /// # use math::Number;
+    ///
     /// let a = Number::from(0.1);
     /// let b = Number::from(0.2);
     ///
@@ -130,6 +134,8 @@ impl Number {
     /// Multiply two numbers
     ///
     /// ```
+    /// # use math::Number;
+    ///
     /// let a = Number::from(0.1);
     /// let b = Number::from(0.2);
     ///
@@ -146,16 +152,21 @@ impl Number {
     /// Return Error::DivisionZero if `other` is 0
     ///
     /// ```
-    /// let random = Number::random();
-    /// assert!(random.div(Number::ZERO).is_err());
-    /// assert_eq!(Number::ZERO.div(random), Number::ZERO);
-    /// assert_eq!(rand.div(rand), Number::ONE);
+    /// # use math::Number;
     ///
-    /// let a = Number::from(3);
-    /// let b = Number::from(1.5);
-    /// let neg_b = Number::from(-1.5);
-    /// assert_eq!(a.div(b), Ok(Number::from(2)));
-    /// assert_eq!(a.div(neg_b), Ok(Number::from(-2)))
+    /// # fn main() -> math::Result<()> {
+    ///     let random = Number::random();
+    ///     assert!(random.div(Number::ZERO).is_err());
+    ///     assert_eq!(Number::ZERO.div(random)?, Number::ZERO);
+    ///     assert_eq!(rand.div(rand)?, Number::ONE);
+    ///
+    ///     let a = Number::from(3);
+    ///     let b = Number::from(1.5);
+    ///     let neg_b = Number::from(-1.5);
+    ///     assert_eq!(a.div(b)?, Number::from(2));
+    ///     assert_eq!(a.div(neg_b)?, Number::from(-2));
+    /// #   Ok(())
+    /// # }
     /// ```
     pub fn div(&self, other: impl Into<Self>) -> Result<Self> {
         todo!()
@@ -164,6 +175,7 @@ impl Number {
     /// Raises self to the power of `exp`, using exponentiation by squaring.
     ///
     /// ```
+    /// # use math::Number;
     /// assert_eq!(Number::random().pow(Number::ZERO), Ok(Number::ONE));
     /// assert_eq!(Number::from(5).pow(2), Ok(Number::from(25)));
     /// ```
@@ -174,6 +186,7 @@ impl Number {
     /// Get the remainder of `self / other`
     ///
     /// ```
+    /// # use math::Number;
     /// assert_eq!(Number::from(5).modulo(2), Ok(Number::ONE));
     /// ```
     pub fn modulo(&self, other: impl Into<Self>) -> Result<Self> {
@@ -185,7 +198,9 @@ impl Number {
     ///
     /// # Error
     /// return Error::FactorialNegative if the number is less than 0
+    ///
     /// ```
+    /// # use math::Number;
     /// assert_eq!(Number::Zero.factorial(), Number::One);
     /// assert_eq!(Number::from(5).factorial(), Ok(Number::from(120)));
     /// assert_eq!(Number::from(3.2).factorial().unwrap().to_string(6), "7.756689");
@@ -202,27 +217,32 @@ impl Number {
     /// Error::LogUndefinedNumber if the number is less or equal than 0
     ///
     /// ```
-    /// assert!(Number::random().log(0).is_err());
-    /// assert!(Number::random().log(-1.2).is_err());
-    /// assert!(Number::ZERO.log(Number::random()).is_err());
-    /// assert!(Number::from(-0.3).log(Number::random()).is_err());
+    /// # use math::Number;
     ///
-    /// let a = Number::random();
-    /// let base = Number::random();
-    /// let b = Number::from(2);
+    /// # fn main() -> math::Result<()> {
+    ///     assert!(Number::random().log(0).is_err());
+    ///     assert!(Number::random().log(-1.2).is_err());
+    ///     assert!(Number::ZERO.log(Number::random()).is_err());
+    ///     assert!(Number::from(-0.3).log(Number::random()).is_err());
     ///
-    /// // Number same as base
-    /// assert_eq!(a.log(a), Ok(Number::ONE));
-    /// // Product rule log(xy) == log(x) + log(y)
-    /// assert_eq!(a.mul(b).unwrap().log(base), a.log(base).add(b.log(base).unwrap()));
-    /// // Quotient rule log(x/y) == log(x) - log(y)
-    /// assert_eq!(a.div(b).unwrap().log(base), a.log(base).sub(b.log(base).unwrap()));
-    /// // Log of power log(x^y) == y * log(x)
-    /// assert_eq!(a.pow(b).unwrap().log(base), b.mul(a.log(base).unwrap()));
-    /// // Log of one
-    /// assert_eq!(Number::ONE.log(base), Ok(Number::ZERO));
-    /// // Log reciprocal log(1/x) = -ln(x);
-    /// assert_eq!(Number::ONE.div(a).unwrap().log(base), a.log(base).and_then(|v| v.mul(-1)));
+    ///     let a = Number::random();
+    ///     let base = Number::random();
+    ///     let b = Number::from(2);
+    ///
+    ///     // Number same as base
+    ///     assert_eq!(a.log(a)?, Number::ONE);
+    ///     // Product rule log(xy) == log(x) + log(y)
+    ///     assert_eq!(a.mul(b)?.log(base), a.log(base).add(b.log(base)?));
+    ///     // Quotient rule log(x/y) == log(x) - log(y)
+    ///     assert_eq!(a.div(b)?.log(base), a.log(base).sub(b.log(base)?));
+    ///     // Log of power log(x^y) == y * log(x)
+    ///     assert_eq!(a.pow(b)?.log(base), b.mul(a.log(base)?));
+    ///     // Log of one
+    ///     assert_eq!(Number::ONE.log(base)?, Number::ZERO);
+    ///     // Log reciprocal log(1/x) = -ln(x);
+    ///     assert_eq!(Number::ONE.div(a)?.log(base), a.log(base)?.mul(-1));
+    ///     # Ok(())
+    /// # }
     /// ```
     pub fn log(&self, base: impl Into<Self>) -> Result<Self> {
         todo!()
