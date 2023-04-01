@@ -2,6 +2,7 @@ use crate::Result;
 use std::cmp::Ordering;
 
 /// Represent a number
+#[derive(Debug)]
 pub struct Number {
     inner: f64,
 }
