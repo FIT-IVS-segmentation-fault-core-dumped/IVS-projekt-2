@@ -165,7 +165,7 @@ impl Number {
     /// The number is not limited to integer, it can be a fraction
     ///
     /// # Error
-    /// return
+    /// return Error::FactorialNegative if the number is less than 0
     /// ```
     /// assert_eq!(Number::Zero.factorial(), Number::One);
     /// assert_eq!(Number::from(5).factorial(), Ok(Number::from(120)));

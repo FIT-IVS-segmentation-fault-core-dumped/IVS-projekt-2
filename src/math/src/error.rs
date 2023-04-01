@@ -8,5 +8,9 @@ use thiserror::Error;
 pub enum Error {
     #[error("Division zero")]
     /// Division zero
-    DivitionZero,
+    DivisionZero,
+
+    #[error("Factorial of negative number")]
+    /// Factorial of negative number
+    FactorialNegative,
 }
