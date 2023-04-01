@@ -25,4 +25,8 @@ pub enum Error {
     #[error("Negative root")]
     /// Negative root
     NegativeRoot,
+
+    #[error("Number is outside of range")]
+    /// Number is outside of range
+    OutOfRange,
 }
