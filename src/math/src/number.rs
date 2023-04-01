@@ -320,6 +320,86 @@ impl Number {
     pub fn sqrt(&self) -> Result<Self> {
         todo!()
     }
+
+    /// Computes the sine of a number (in radians).
+    ///
+    /// ```
+    /// # use math::Number;
+    ///
+    /// # fn main() -> math::Result<()> {
+    ///     let x = Number::random();
+    ///     let half_pi = Number::PI.div(2)?;
+    ///     let sin_x = x.sin();
+    ///
+    ///     // sin(x) == cos(PI/2 - x)
+    ///     assert_eq!(sin_x, half_pi.sub(x)?.cos());
+    ///
+    /// #     Ok(())
+    /// # }
+    /// ```
+    pub fn sin(&self) -> Result<Self> {
+        todo!()
+    }
+
+    /// Computes the cosine of a number (in radians).
+    ///
+    /// ```
+    /// # use math::Number;
+    ///
+    /// # fn main() -> math::Result<()> {
+    ///     let x = Number::random();
+    ///     let half_pi = Number::PI.div(2)?;
+    ///     let cos_x = x.cos();
+    ///
+    ///     // cos(x) == sin(PI/2 - x)
+    ///     assert_eq!(cos_x, half_pi.sub(x)?.sin());
+    ///
+    /// #     Ok(())
+    /// # }
+    /// ```
+    pub fn cos(&self) -> Result<Self> {
+        todo!()
+    }
+
+    /// Computes the tangent of a number (in radians).
+    ///
+    /// ```
+    /// # use math::Number;
+    ///
+    /// # fn main() -> math::Result<()> {
+    ///     let x = Number::random();
+    ///     let tan_x = x.tg();
+    ///
+    ///     // tg(x) == sin(x) / cos(x)
+    ///     assert_eq!(tan_x, x.sin()?.div(x.cos()?));
+    ///     // tg(x) == 1 / cotg(x)
+    ///     assert_eq!(tan_x, Number::ONE.div(x.cotg()?));
+    /// #     Ok(())
+    /// # }
+    /// ```
+    pub fn tg(&self) -> Result<Self> {
+        todo!()
+    }
+
+    /// Computes the cotangent of a number (in radians).
+    ///
+    /// ```
+    /// # use math::Number;
+    ///
+    /// # fn main() -> math::Result<()> {
+    ///     let x = Number::random();
+    ///     let cot_x = x.cotg();
+    ///
+    ///     // cotg(x) == cos(x) / sin(x)
+    ///     assert_eq!(cot_x, x.cos()?.div(x.sin()?));
+    ///     // cotg(x) == 1 / tg(x)
+    ///     assert_eq!(cot_x, Number::ONE.div(x.tg()?));
+    /// #     Ok(())
+    /// # }
+    /// ```
+    pub fn cotg(&self) -> Result<Self> {
+        todo!()
+    }
 }
 
 impl Ord for Number {
