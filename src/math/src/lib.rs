@@ -34,3 +34,7 @@ impl Calculator {
 pub fn evaluate(_s: &str) -> Result<Number> {
     todo!()
 }
+
+#[cfg(test)]
+mod math_tests;
+
