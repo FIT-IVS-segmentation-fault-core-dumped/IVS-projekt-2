@@ -83,9 +83,9 @@ impl Number {
     /// Get the hexadecimal string
     ///
     /// ```
-    /// let pi = Number::PI.to_string_hex();
-    /// let zero = Number::ZERO.to_string_hex();
-    /// let neg = Number::from(-0.1).to_string_hex();
+    /// let pi = Number::PI.to_string_hex(6);
+    /// let zero = Number::ZERO.to_string_hex(6);
+    /// let neg = Number::from(-0.1).to_string_hex(6);
     ///
     /// assert_eq!(zero, "0");
     /// assert_eq!(neg, "-0.199999");
@@ -398,6 +398,86 @@ impl Number {
     /// # }
     /// ```
     pub fn cotg(&self) -> Result<Self> {
+        todo!()
+    }
+
+    /// Computes the arcsine of a number. Return value is in radians in the range <-pi/2, pi/2>
+    ///
+    /// # Error
+    /// Error::OutOfRange if the number is not in the range <-1, 1>
+    ///
+    /// ```
+    /// # use math::Number;
+    ///
+    /// # fn main() -> math::Result<()> {
+    ///     assert!(Number::from(-2).arcsin().is_err());
+    ///     assert!(Number::from(2).arcsin().is_err());
+    ///     let x = Number::random();
+    ///     let sin_x = x.sin()?;
+    ///
+    ///     assert_eq!(x, sin_x.arcsin()?);
+    /// #     Ok(())
+    /// # }
+    /// ```
+    pub fn arcsin(&self) -> Result<Self> {
+        todo!()
+    }
+
+    /// Computes the arccosine of a number. Return value is in radians in the range <0, pi>
+    ///
+    /// # Error
+    /// Error::OutOfRange if the number is not in the range <-1, 1>
+    ///
+    /// ```
+    /// # use math::Number;
+    ///
+    /// # fn main() -> math::Result<()> {
+    ///     assert!(Number::from(-2).arccos().is_err());
+    ///     assert!(Number::from(2).arccos().is_err());
+    ///     let x = Number::random();
+    ///     let cos_x = x.cos()?;
+    ///
+    ///     assert_eq!(x, cos_x.arccos()?);
+    ///
+    /// #     Ok(())
+    /// # }
+    /// ```
+    pub fn arccos(&self) -> Result<Self> {
+        todo!()
+    }
+
+    /// Computes the arctangent of a number. Return value is in radians in the range <-pi/2, pi/2>
+    ///
+    /// ```
+    /// # use math::Number;
+    ///
+    /// # fn main() -> math::Result<()> {
+    ///     let x = Number::random();
+    ///     let tan_x = x.tg()?;
+    ///
+    ///     assert_eq!(x, tan_x.arctg()?);
+    /// #     Ok(())
+    /// # }
+    /// ```
+    pub fn arctg(&self) -> Result<Self> {
+        todo!()
+    }
+
+    /// Computes the arccotangent of a number. Return value is in radians in the range <0, pi>
+    ///
+    /// ```
+    /// # use math::Number;
+    ///
+    /// # fn main() -> math::Result<()> {
+    ///     let x = Number::random();
+    ///     let cot_x = x.cotg()?;
+    ///
+    ///     assert_eq!(x, cot_x.arccotg()?);
+    ///
+    /// #     Ok(())
+    /// # }
+    /// ```
+    pub fn arccotg(&self) -> Result<Self> {
         todo!()
     }
 }
