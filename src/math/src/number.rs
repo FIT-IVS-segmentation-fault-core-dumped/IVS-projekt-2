@@ -87,6 +87,17 @@ impl Number {
 }
 
 impl Number {
+    /// Generate a random number in range of <0, 1>
+    ///
+    /// ```
+    /// assert_ne!(Number::random(), Number::random());
+    /// assert_ge!(Number::random(), Number::Zero);
+    /// assert_le!(Number::random(), Number::One);
+    /// ```
+    pub fn random() -> Self {
+        todo!()
+    }
+
     /// Add two numbers together
     ///
     /// ```
