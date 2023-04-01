@@ -200,6 +200,20 @@ impl Number {
         todo!()
     }
 
+    /// Get the absolute value of the given number
+    ///
+    /// ```
+    /// # use math::Number;
+    /// let a = Number::random();
+    /// let neg_a = a.mul(-1);
+    ///
+    /// assert_eq!(a.abs(), Ok(a));
+    /// assert_eq!(neg_a.abs(), Ok(a));
+    /// ```
+    pub fn abs(&self) -> Result<Self> {
+        todo!()
+    }
+
     /// Calculate factorial of a given number
     /// The number is not limited to integer, it can be a fraction
     ///
