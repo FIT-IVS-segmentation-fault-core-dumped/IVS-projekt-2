@@ -7,6 +7,12 @@ pub struct Number {
     inner: f64,
 }
 
+impl<T: Into<f64>> From<T> for Number {
+    fn from(v: T) -> Self {
+        Self { inner: v.into() }
+    }
+}
+
 impl AsRef<f64> for Number {
     fn as_ref(&self) -> &f64 {
         &self.inner
