@@ -194,6 +194,54 @@ impl Number {
     pub fn factorial(&self) -> Result<Self> {
         todo!()
     }
+
+    /// Returns the logarithm of the number with respect to an arbitrary `base`.
+    ///
+    /// # Error
+    /// Error::LogUndefinedBase if the `base` is less or equal than 0
+    /// Error::LogUndefinedNumber if the number is less or equal than 0
+    ///
+    /// ```
+    /// assert!(Number::random().log(0).is_err());
+    /// assert!(Number::random().log(-1.2).is_err());
+    /// assert!(Number::ZERO.log(Number::random()).is_err());
+    /// assert!(Number::from(-0.3).log(Number::random()).is_err());
+    ///
+    /// let a = Number::random();
+    /// let base = Number::random();
+    /// let b = Number::from(2);
+    ///
+    /// // Number same as base
+    /// assert_eq!(a.log(a), Ok(Number::ONE));
+    /// // Product rule log(xy) == log(x) + log(y)
+    /// assert_eq!(a.mul(b).unwrap().log(base), a.log(base).add(b.log(base).unwrap()));
+    /// // Quotient rule log(x/y) == log(x) - log(y)
+    /// assert_eq!(a.div(b).unwrap().log(base), a.log(base).sub(b.log(base).unwrap()));
+    /// // Log of power log(x^y) == y * log(x)
+    /// assert_eq!(a.pow(b).unwrap().log(base), b.mul(a.log(base).unwrap()));
+    /// // Log of one
+    /// assert_eq!(Number::ONE.log(base), Ok(Number::ZERO));
+    /// // Log reciprocal log(1/x) = -ln(x);
+    /// assert_eq!(Number::ONE.div(a).unwrap().log(base), a.log(base).and_then(|v| v.mul(-1)));
+    /// ```
+    pub fn log(&self, base: impl Into<Self>) -> Result<Self> {
+        todo!()
+    }
+
+    /// Same as `Number::log` with `base` of 2
+    pub fn log2(&self) -> Result<Self> {
+        todo!()
+    }
+
+    /// Same as `Number::log` with `base` of `Number::E`
+    pub fn ln(&self) -> Result<Self> {
+        todo!()
+    }
+
+    /// Same as `Number::log` with `base` of 10
+    pub fn log10(&self) -> Result<Self> {
+        todo!()
+    }
 }
 
 impl Ord for Number {
