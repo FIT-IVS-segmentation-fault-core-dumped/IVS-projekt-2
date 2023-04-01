@@ -465,6 +465,39 @@ impl Number {
     pub fn arccotg(&self) -> Result<Self> {
         todo!()
     }
+
+    /// Calculate combination number of the given `n` and `k`
+    ///
+    /// Since combination number is defined as `C(n, k)` mathematically
+    /// Neither `n` nor `k` is considered the center of the function
+    /// that's why this function does not taking `self` as parameter like other functions
+    ///
+    /// # Error
+    /// Error::FactorialNegative if either `n` or `k` is negative, because they will need to be factorialized
+    ///
+    /// ```
+    /// # use math::Number;
+    ///
+    /// # fn main() -> math::Result<Self> {
+    ///     assert!(Number::combination(-1, Number::random()).is_err());
+    ///     assert!(Number::combination(Number::random(), -1).is_err());
+    ///
+    ///     let n = Number::random();
+    ///
+    ///     // if k > n => C(n, k) == 0
+    ///     assert_eq!(Number::combination(4, 3)?, Number::ZERO);
+    ///     // C(n, 0) == 1
+    ///     assert_eq!(Number::combination(n, 0)?, Number::ONE);
+    ///     // C(n, 1) == n
+    ///     assert_eq!(Number::combination(n, 1)?, n);
+    ///     // C(n, n) == 1
+    ///     assert_eq!(Number::combination(n, n)?, Number::ONE);
+    /// #     Ok(())
+    /// # }
+    /// ```
+    pub fn combination(n: impl Into<Self>, k: impl Into<Self>) -> Result<Self> {
+        todo!()
+    }
 }
 
 impl Ord for Number {
