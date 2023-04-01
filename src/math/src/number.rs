@@ -161,6 +161,16 @@ impl Number {
         todo!()
     }
 
+    /// Raises self to the power of `exp`, using exponentiation by squaring.
+    ///
+    /// ```
+    /// assert_eq!(Number::random().pow(Number::ZERO), Ok(Number::ONE));
+    /// assert_eq!(Number::from(5).pow(2), Ok(Number::from(25)));
+    /// ```
+    pub fn power(&self, exp: impl Into<Self>) -> Result<Self> {
+        todo!()
+    }
+
     /// Calculate factorial of a given number
     /// The number is not limited to integer, it can be a fraction
     ///
