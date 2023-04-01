@@ -269,6 +269,43 @@ impl Number {
     pub fn log10(&self) -> Result<Self> {
         todo!()
     }
+
+    /// Returns the nth root of a number
+    ///
+    /// # Error
+    /// Error::ZeroNthRoot if the `nth` is 0
+    /// Error::NegativeRoot if the number is negative
+    ///
+    /// ```
+    /// # use math::Number;
+    ///
+    /// # fn main() -> math::Result<()> {
+    ///     assert!(Number::random().root(0).is_err());
+    ///     assert!(Number::from(-1).root(Number::random()).is_err());
+    ///
+    ///     let a = Number::random();
+    ///     let b = Number::random();
+    ///     let nth = Number::random();
+    ///
+    ///     // root(a^nth) == a
+    ///     assert_er!(a.pow(nth)?.root(nth), a);
+    ///     // root(ab) == root(a) * root(b)
+    ///     assert_eq!(a.mul(b)?.root(nth), a.root(nth)?.mul(b.root(nth)?));
+    ///     // root(a/b) == root(a) / root(b)
+    ///     assert_eq!(a.div(b)?.root(nth), a.root(nth)?.div(b.root(nth)?));
+    ///
+    /// #     Ok(())
+    /// # }
+    /// ```
+    pub fn root(&self, nth: impl Into<Self>) -> Result<Self> {
+        todo!()
+    }
+
+    /// Returns the square root of a number.
+    /// This function is the same as `root` with the `nth` of 2
+    pub fn sqrt(&self) -> Result<Self> {
+        todo!()
+    }
 }
 
 impl Ord for Number {
