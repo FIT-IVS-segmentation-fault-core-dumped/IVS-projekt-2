@@ -15,6 +15,9 @@ impl Number {
     /// 0.0
     pub const ZERO: Self = Self { inner: 0.0 };
 
+    /// 1.0
+    pub const ONE: Self = Self { inner: 1.0 };
+
     /// 3.14159...
     pub const PI: Self = Self {
         inner: std::f64::consts::PI,
@@ -147,6 +150,7 @@ impl Number {
     /// assert!(random.div(Number::ZERO).is_err());
     /// assert_eq!(Number::ZERO.div(random), Number::ZERO);
     /// assert_eq!(rand.div(rand), Number::ONE);
+    ///
     /// let a = Number::from(3);
     /// let b = Number::from(1.5);
     /// let neg_b = Number::from(-1.5);
@@ -154,6 +158,20 @@ impl Number {
     /// assert_eq!(a.div(neg_b), Ok(Number::from(-2)))
     /// ```
     pub fn div(&self, other: impl Into<Self>) -> Result<Self> {
+        todo!()
+    }
+
+    /// Calculate factorial of a given number
+    /// The number is not limited to integer, it can be a fraction
+    ///
+    /// # Error
+    /// return
+    /// ```
+    /// assert_eq!(Number::Zero.factorial(), Number::One);
+    /// assert_eq!(Number::from(5).factorial(), Ok(Number::from(120)));
+    /// assert!(Number::from(-1).factorial().is_err());
+    /// ```
+    pub fn factorial(&self) -> Result<Self> {
         todo!()
     }
 }
