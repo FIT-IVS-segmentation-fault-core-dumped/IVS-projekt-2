@@ -233,9 +233,9 @@ impl Number {
     ///     // Number same as base
     ///     assert_eq!(a.log(a)?, Number::ONE);
     ///     // Product rule log(xy) == log(x) + log(y)
-    ///     assert_eq!(a.mul(b)?.log(base), a.log(base).add(b.log(base)?));
+    ///     assert_eq!(a.mul(b)?.log(base), a.log(base)?.add(b.log(base)?));
     ///     // Quotient rule log(x/y) == log(x) - log(y)
-    ///     assert_eq!(a.div(b)?.log(base), a.log(base).sub(b.log(base)?));
+    ///     assert_eq!(a.div(b)?.log(base), a.log(base)?.sub(b.log(base)?));
     ///     // Log of power log(x^y) == y * log(x)
     ///     assert_eq!(a.pow(b)?.log(base), b.mul(a.log(base)?));
     ///     // Log of one
