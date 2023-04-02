@@ -50,10 +50,10 @@ impl Number {
     /// Error::DivisionZero if `denom` is 0
     ///
     /// ```
-    /// # use math::Number;
+    /// # use math::{Number, number::Radix};
     /// assert!(Number::new(43, 0).is_err());
-    /// assert!(Number::new(30, 10), Number::new(3, 10));
-    /// assert!(Number::new(2, 10), Number::new(1, 5));
+    /// assert_eq!(Number::new(30, 10), Number::new(3, 10));
+    /// assert_eq!(Number::new(2, 10), Number::new(1, 5));
     /// assert_eq!(Number::new(1, 10).unwrap().to_string(Radix::Dec, 5), "0.1");
     /// ```
     pub const fn new(num: i64, denom: i64) -> Result<Self> {
@@ -87,7 +87,7 @@ impl Number {
     /// # use math::number::{Number, Radix};
     /// let pi = Numper::PI;
     /// let zero = Number::ZERO;
-    /// let neg = Number::new(-1, 10);
+    /// let neg = Number::new_unchecked(-1, 10);
     ///
     /// let precision = 6;
     ///
@@ -252,13 +252,15 @@ impl Number {
     /// ```
     /// # use math::Number;
     /// let a = Number::random();
-    /// let neg_a = a.mul(-1);
+    /// let neg_a = a.mul(-1).unwrap();
     ///
     /// assert_eq!(a.abs(), Ok(a));
     /// assert_eq!(neg_a.abs(), Ok(a));
     /// ```
     pub fn abs(&self) -> Result<Self> {
-        todo!()
+        Ok(Self {
+            inner: self.inner.abs(),
+        })
     }
 
     /// Calculate factorial of a given number
@@ -269,10 +271,14 @@ impl Number {
     ///
     /// ```
     /// # use math::Number;
-    /// assert_eq!(Number::Zero.factorial(), Number::One);
-    /// assert_eq!(Number::from(5).factorial(), Ok(Number::from(120)));
-    /// assert_eq!(Number::new(32, 10).factorial().unwrap().to_string(6), "7.75669");
-    /// assert!(Number::from(-1).factorial().is_err());
+    ///
+    /// # fn main() -> math::Result<()> {
+    ///     assert_eq!(Number::ZERO.factorial()?, Number::ONE);
+    ///     assert_eq!(Number::from(5).factorial()?, Number::from(120)?);
+    ///     assert_eq!(Number::new(32, 10)?.factorial()?.to_string(6), "7.75669");
+    ///     assert!(Number::from(-1).factorial().is_err());
+    /// #     Ok(())
+    /// # }
     /// ```
     pub fn factorial(&self) -> Result<Self> {
         todo!()
