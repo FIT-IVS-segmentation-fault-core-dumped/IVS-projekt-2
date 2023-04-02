@@ -180,6 +180,8 @@ impl Number {
     /// ```
     /// # use math::Number;
     /// assert_eq!(Number::from(5).modulo(2), Ok(Number::ONE));
+    /// assert_eq!(Number::from(-5).modulo(2), Ok(Number::ONE));
+    /// assert_eq!(Number::from(5).modulo(-2), Number::ONE.mul(-1));
     /// ```
     pub fn modulo(&self, other: impl Into<Self>) -> Result<Self> {
         todo!()
