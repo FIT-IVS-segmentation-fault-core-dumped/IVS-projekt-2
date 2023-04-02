@@ -1,10 +1,12 @@
+use crate::error::Error;
 use crate::Result;
+use fraction::GenericFraction;
 use std::cmp::Ordering;
 
 #[derive(Default, Debug, Clone, Copy)]
 /// Represent a number
 pub struct Number {
-    inner: f64,
+    inner: GenericFraction<u64>,
 }
 
 #[derive(Default, Debug, Clone, Copy)]
@@ -22,34 +24,24 @@ pub enum Radix {
     Hex,
 }
 
-impl<T: Into<f64>> From<T> for Number {
+impl<T: Into<GenericFraction<u64>>> From<T> for Number {
     fn from(v: T) -> Self {
         Self { inner: v.into() }
     }
 }
 
-impl AsRef<f64> for Number {
-    fn as_ref(&self) -> &f64 {
-        &self.inner
-    }
-}
-
 impl Number {
     /// 0.0
-    pub const ZERO: Self = Self { inner: 0.0 };
+    pub const ZERO: Self = Self::new_unchecked(0, 1);
 
     /// 1.0
-    pub const ONE: Self = Self { inner: 1.0 };
+    pub const ONE: Self = Self::new_unchecked(1, 1);
 
-    /// 3.14159...
-    pub const PI: Self = Self {
-        inner: std::f64::consts::PI,
-    };
+    /// 3.14159... ~= 104 348/33 215
+    pub const PI: Self = Self::new_unchecked(104348, 33215);
 
-    /// 2.71828...
-    pub const E: Self = Self {
-        inner: std::f64::consts::E,
-    };
+    /// 2.71828... ~= 2721 / 1001
+    pub const E: Self = Self::new_unchecked(2721, 1001);
 
     /// Create a new number in the form `num / denom`
     /// This way we can safely create number can cannot be expressed in binary form like 0.1
@@ -64,8 +56,29 @@ impl Number {
     /// assert!(Number::new(2, 10), Number::new(1, 5));
     /// assert_eq!(Number::new(1, 10).unwrap().to_string(Radix::Dec, 5), "0.1");
     /// ```
-    pub fn new(num: i64, denom: i64) -> Result<Self> {
-        todo!()
+    pub const fn new(num: i64, denom: i64) -> Result<Self> {
+        if denom == 0 {
+            return Err(Error::DivisionZero);
+        }
+
+        Ok(Self::new_unchecked(num, denom))
+    }
+
+    /// Same as `Number::new` but bypass the zero check for denom
+    /// This function should be use only in const context!!!
+    pub const fn new_unchecked(num: i64, denom: i64) -> Self {
+        let n = num.abs() as u64;
+        let d = denom.abs() as u64;
+
+        let sign = if (num * denom).is_positive() {
+            fraction::Sign::Plus
+        } else {
+            fraction::Sign::Minus
+        };
+
+        Self {
+            inner: GenericFraction::new_raw_signed(sign, n, d),
+        }
     }
 
     /// Get the formatted string of a number
@@ -122,7 +135,9 @@ impl Number {
     /// assert_eq!(b.add(a), a.add(b));
     /// ```
     pub fn add(&self, other: impl Into<Self>) -> Result<Self> {
-        todo!()
+        Ok(Self {
+            inner: self.inner + other.into().inner,
+        })
     }
 
     /// Subtract two numbers
@@ -137,7 +152,9 @@ impl Number {
     /// assert_eq!(b.sub(a), Ok(Number::from(1, 10)));
     /// ```
     pub fn sub(&self, other: impl Into<Self>) -> Result<Self> {
-        todo!()
+        Ok(Self {
+            inner: self.inner + other.into().inner,
+        })
     }
 
     /// Multiply two numbers
@@ -152,7 +169,9 @@ impl Number {
     /// assert_eq!(b.mul(a), a.mul(b));
     /// ```
     pub fn mul(&self, other: impl Into<Self>) -> Result<Self> {
-        todo!()
+        Ok(Self {
+            inner: self.inner * other.into().inner,
+        })
     }
 
     /// Divide two numbers
@@ -178,7 +197,15 @@ impl Number {
     /// # }
     /// ```
     pub fn div(&self, other: impl Into<Self>) -> Result<Self> {
-        todo!()
+        let other = other.into();
+
+        if other == Self::ZERO {
+            return Err(Error::DivisionZero);
+        }
+
+        Ok(Self {
+            inner: self.inner / other.inner,
+        })
     }
 
     /// Raises self to the power of `exp`, using exponentiation by squaring.
