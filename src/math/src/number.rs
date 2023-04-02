@@ -573,9 +573,7 @@ impl Number {
 
 impl Ord for Number {
     fn cmp(&self, other: &Self) -> Ordering {
-        self.inner
-            .partial_cmp(&other.inner)
-            .unwrap_or(Ordering::Equal)
+        self.inner.cmp(&other.inner)
     }
 }
 
