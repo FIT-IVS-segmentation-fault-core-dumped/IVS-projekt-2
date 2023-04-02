@@ -117,7 +117,7 @@ impl Number {
     /// let b = Number::from(0.2);
     ///
     /// assert_eq!(a.sub(b), Ok(Number::from(-0.1)));
-    /// assert_ne!(b.sub(a), Ok(Number::from(0.1)));
+    /// assert_eq!(b.sub(a), Ok(Number::from(0.1)));
     /// ```
     pub fn sub(&self, other: impl Into<Self>) -> Result<Self> {
         todo!()
