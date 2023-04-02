@@ -116,12 +116,18 @@ impl Number {
     ///
     /// ```
     /// # use math::Number;
-    /// assert_ne!(Number::random(), Number::random());
-    /// assert_ge!(Number::random(), Number::Zero);
-    /// assert_le!(Number::random(), Number::One);
+    /// assert!(Number::random() != Number::random());
+    /// assert!(Number::random() >= Number::ZERO);
+    /// assert!(Number::random() <= Number::ONE);
     /// ```
     pub fn random() -> Self {
-        todo!()
+        use rand::prelude::*;
+
+        let mut rng = rand::thread_rng();
+        let denom: u64 = rng.gen_range(1..(u64::MAX / 2));
+        let num: u64 = rng.gen_range(0..=denom);
+
+        Self::new_unchecked(num as _, denom as _)
     }
 
     /// Add two numbers together
