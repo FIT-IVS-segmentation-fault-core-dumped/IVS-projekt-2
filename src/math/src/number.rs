@@ -202,11 +202,11 @@ impl Number {
     ///     let random = Number::random();
     ///     assert!(random.div(Number::ZERO).is_err());
     ///     assert_eq!(Number::ZERO.div(random)?, Number::ZERO);
-    ///     assert_eq!(rand.div(rand)?, Number::ONE);
+    ///     assert_eq!(random.div(random)?, Number::ONE);
     ///
     ///     let a = Number::from(3);
-    ///     let b = Number::new(3, 2);
-    ///     let neg_b = Number::new(-3, 2);
+    ///     let b = Number::new(3, 2)?;
+    ///     let neg_b = Number::new(-3, 2)?;
     ///     assert_eq!(a.div(b)?, Number::from(2));
     ///     assert_eq!(a.div(neg_b)?, Number::from(-2));
     /// #   Ok(())
