@@ -149,15 +149,18 @@ impl Number {
     /// ```
     /// # use math::Number;
     ///
-    /// let a = Number::new(1, 10);
-    /// let b = Number::new(2, 10);
+    /// # fn main() -> math::Result<()> {
+    ///     let a = Number::new(1, 10)?;
+    ///     let b = Number::new(2, 10)?;
     ///
-    /// assert_eq!(a.sub(b), Ok(Number::from(-1, 10)));
-    /// assert_eq!(b.sub(a), Ok(Number::from(1, 10)));
+    ///     assert_eq!(a.sub(b)?, Number::new(-1, 10)?);
+    ///     assert_eq!(b.sub(a)?, Number::new(1, 10)?);
+    /// #     Ok(())
+    /// # }
     /// ```
     pub fn sub(&self, other: impl Into<Self>) -> Result<Self> {
         Ok(Self {
-            inner: self.inner + other.into().inner,
+            inner: self.inner - other.into().inner,
         })
     }
 
