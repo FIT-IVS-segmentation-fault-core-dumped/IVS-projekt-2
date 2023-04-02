@@ -8,4 +8,5 @@ edition = "2021"
 
 [dependencies]
 fraction = "0.13.1"
+rand = "0.8.5"
 thiserror = "1"
