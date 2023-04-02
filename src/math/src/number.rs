@@ -60,6 +60,8 @@ impl Number {
     /// ```
     /// # use math::Number;
     /// assert!(Number::new(43, 0).is_err());
+    /// assert!(Number::new(30, 10), Number::new(3, 10));
+    /// assert!(Number::new(2, 10), Number::new(1, 5));
     /// assert_eq!(Number::new(1, 10).unwrap().to_string(Radix::Dec, 5), "0.1");
     /// ```
     pub fn new(num: i64, denom: i64) -> Result<Self> {
