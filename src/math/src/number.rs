@@ -550,7 +550,7 @@ impl Number {
     ///     let n = Number::random();
     ///
     ///     // if k > n => C(n, k) == 0
-    ///     assert_eq!(Number::combination(4, 3)?, Number::ZERO);
+    ///     assert_eq!(Number::combination(3, 4)?, Number::ZERO);
     ///     // C(n, 0) == 1
     ///     assert_eq!(Number::combination(n, 0)?, Number::ONE);
     ///     // C(n, 1) == n
