@@ -72,7 +72,7 @@ impl Number {
     /// # use math::number::{Number, Radix};
     /// let pi = Numper::PI;
     /// let zero = Number::ZERO;
-    /// let neg = Number::from(-0.1);
+    /// let neg = Number::new(-1, 10);
     ///
     /// let precision = 6;
     ///
@@ -113,10 +113,10 @@ impl Number {
     /// ```
     /// # use math::Number;
     ///
-    /// let a = Number::from(0.1);
-    /// let b = Number::from(0.2);
+    /// let a = Number::new(1, 10);
+    /// let b = Number::new(2, 10);
     ///
-    /// assert_eq!(a.add(b), Ok(Number::from(0.3)));
+    /// assert_eq!(a.add(b), Ok(Number::new(3, 10)));
     /// assert_eq!(b.add(a), a.add(b));
     /// ```
     pub fn add(&self, other: impl Into<Self>) -> Result<Self> {
@@ -128,11 +128,11 @@ impl Number {
     /// ```
     /// # use math::Number;
     ///
-    /// let a = Number::from(0.1);
-    /// let b = Number::from(0.2);
+    /// let a = Number::new(1, 10);
+    /// let b = Number::new(2, 10);
     ///
-    /// assert_eq!(a.sub(b), Ok(Number::from(-0.1)));
-    /// assert_eq!(b.sub(a), Ok(Number::from(0.1)));
+    /// assert_eq!(a.sub(b), Ok(Number::from(-1, 10)));
+    /// assert_eq!(b.sub(a), Ok(Number::from(1, 10)));
     /// ```
     pub fn sub(&self, other: impl Into<Self>) -> Result<Self> {
         todo!()
@@ -143,11 +143,11 @@ impl Number {
     /// ```
     /// # use math::Number;
     ///
-    /// let a = Number::from(0.1);
-    /// let b = Number::from(0.2);
+    /// let a = Number::new(1, 10);
+    /// let b = Number::new(2, 10);
     ///
-    /// assert_eq!(a.mul(b), Ok(Number::from(-0.1)));
-    /// assert_ne!(b.mul(a), Ok(Number::from(0.1)));
+    /// assert_eq!(a.mul(b), Ok(Number::from(2, 100)));
+    /// assert_eq!(b.mul(a), a.mul(b));
     /// ```
     pub fn mul(&self, other: impl Into<Self>) -> Result<Self> {
         todo!()
@@ -168,8 +168,8 @@ impl Number {
     ///     assert_eq!(rand.div(rand)?, Number::ONE);
     ///
     ///     let a = Number::from(3);
-    ///     let b = Number::from(1.5);
-    ///     let neg_b = Number::from(-1.5);
+    ///     let b = Number::new(3, 2);
+    ///     let neg_b = Number::new(-3, 2);
     ///     assert_eq!(a.div(b)?, Number::from(2));
     ///     assert_eq!(a.div(neg_b)?, Number::from(-2));
     /// #   Ok(())
@@ -226,7 +226,7 @@ impl Number {
     /// # use math::Number;
     /// assert_eq!(Number::Zero.factorial(), Number::One);
     /// assert_eq!(Number::from(5).factorial(), Ok(Number::from(120)));
-    /// assert_eq!(Number::from(3.2).factorial().unwrap().to_string(6), "7.75669");
+    /// assert_eq!(Number::new(32, 10).factorial().unwrap().to_string(6), "7.75669");
     /// assert!(Number::from(-1).factorial().is_err());
     /// ```
     pub fn factorial(&self) -> Result<Self> {
@@ -246,7 +246,7 @@ impl Number {
     ///     assert!(Number::random().log(0).is_err());
     ///     assert!(Number::random().log(-1.2).is_err());
     ///     assert!(Number::ZERO.log(Number::random()).is_err());
-    ///     assert!(Number::from(-0.3).log(Number::random()).is_err());
+    ///     assert!(Number::new(-3, 10).log(Number::random()).is_err());
     ///
     ///     let a = Number::random();
     ///     let base = Number::random();
