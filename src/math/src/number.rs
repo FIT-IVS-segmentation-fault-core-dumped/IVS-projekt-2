@@ -70,7 +70,7 @@ impl Number {
         let n = num.abs() as u64;
         let d = denom.abs() as u64;
 
-        let sign = if (num * denom).is_positive() {
+        let sign = if num.is_positive() == denom.is_positive() {
             fraction::Sign::Plus
         } else {
             fraction::Sign::Minus
