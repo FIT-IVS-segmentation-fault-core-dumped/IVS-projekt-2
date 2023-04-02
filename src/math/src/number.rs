@@ -232,7 +232,26 @@ impl Number {
     /// assert_eq!(Number::from(5).pow(2), Ok(Number::from(25)));
     /// ```
     pub fn power(&self, exp: impl Into<Self>) -> Result<Self> {
-        todo!()
+        let exp = exp.into();
+
+        if exp == Self::ZERO {
+            return Ok(Self::ONE);
+        }
+
+        if exp == Self::ONE {
+            return Ok(*self);
+        }
+
+        if exp == Self::from(-1) {
+            return Self::ONE.div(*self);
+        }
+
+        let to_pow = exp.inner.numer();
+        let to_root = exp.inner.denom();
+
+        todo!();
+
+        Ok(*self)
     }
 
     /// Get the remainder of `self / other`
@@ -240,11 +259,13 @@ impl Number {
     /// ```
     /// # use math::Number;
     /// assert_eq!(Number::from(5).modulo(2), Ok(Number::ONE));
-    /// assert_eq!(Number::from(-5).modulo(2), Ok(Number::ONE));
-    /// assert_eq!(Number::from(5).modulo(-2), Number::ONE.mul(-1));
+    /// assert_eq!(Number::from(5).modulo(-2), Ok(Number::ONE));
+    /// assert_eq!(Number::from(-5).modulo(2), Number::ONE.mul(-1));
     /// ```
     pub fn modulo(&self, other: impl Into<Self>) -> Result<Self> {
-        todo!()
+        Ok(Self {
+            inner: self.inner % other.into().inner,
+        })
     }
 
     /// Get the absolute value of the given number
