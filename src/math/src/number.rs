@@ -51,6 +51,21 @@ impl Number {
         inner: std::f64::consts::E,
     };
 
+    /// Create a new number in the form `num / denom`
+    /// This way we can safely create number can cannot be expressed in binary form like 0.1
+    ///
+    /// # Error
+    /// Error::DivisionZero if `denom` is 0
+    ///
+    /// ```
+    /// # use math::Number;
+    /// assert!(Number::new(43, 0).is_err());
+    /// assert_eq!(Number::new(1, 10).unwrap().to_string(Radix::Dec, 5), "0.1");
+    /// ```
+    pub fn new(num: i64, denom: i64) -> Result<Self> {
+        todo!()
+    }
+
     /// Get the formatted string of a number
     ///
     /// ```
