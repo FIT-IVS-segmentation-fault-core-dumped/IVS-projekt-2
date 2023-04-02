@@ -85,7 +85,7 @@ impl Number {
     ///
     /// ```
     /// # use math::number::{Number, Radix};
-    /// let pi = Numper::PI;
+    /// let pi = Number::PI;
     /// let zero = Number::ZERO;
     /// let neg = Number::new_unchecked(-1, 10);
     ///
@@ -107,7 +107,10 @@ impl Number {
     /// assert_eq!(neg.to_string(Radix::Hex, precision), "-0.199999");
     /// ```
     pub fn to_string(&self, radix: Radix, precision: u8) -> String {
-        todo!()
+        match radix {
+            Radix::Dec => format!("{:.*}", precision as usize, self.inner),
+            _ => todo!(),
+        }
     }
 }
 
@@ -228,8 +231,8 @@ impl Number {
     ///
     /// ```
     /// # use math::Number;
-    /// assert_eq!(Number::random().pow(Number::ZERO), Ok(Number::ONE));
-    /// assert_eq!(Number::from(5).pow(2), Ok(Number::from(25)));
+    /// assert_eq!(Number::random().power(Number::ZERO), Ok(Number::ONE));
+    /// assert_eq!(Number::from(5).power(2), Ok(Number::from(25)));
     /// ```
     pub fn power(&self, exp: impl Into<Self>) -> Result<Self> {
         let exp = exp.into();
@@ -292,11 +295,12 @@ impl Number {
     ///
     /// ```
     /// # use math::Number;
+    /// # use math::number::Radix;
     ///
     /// # fn main() -> math::Result<()> {
     ///     assert_eq!(Number::ZERO.factorial()?, Number::ONE);
-    ///     assert_eq!(Number::from(5).factorial()?, Number::from(120)?);
-    ///     assert_eq!(Number::new(32, 10)?.factorial()?.to_string(6), "7.75669");
+    ///     assert_eq!(Number::from(5).factorial()?, Number::from(120));
+    ///     assert_eq!(Number::new(32, 10)?.factorial()?.to_string(Radix::Dec, 6), "7.75669");
     ///     assert!(Number::from(-1).factorial().is_err());
     /// #     Ok(())
     /// # }
@@ -318,7 +322,7 @@ impl Number {
     ///     assert!(Number::random().log(0).is_err());
     ///     assert!(Number::random().log(-1.2).is_err());
     ///     assert!(Number::ZERO.log(Number::random()).is_err());
-    ///     assert!(Number::new(-3, 10).log(Number::random()).is_err());
+    ///     assert!(Number::new(-3, 10)?.log(Number::random()).is_err());
     ///
     ///     let a = Number::random();
     ///     let base = Number::random();
@@ -331,7 +335,7 @@ impl Number {
     ///     // Quotient rule log(x/y) == log(x) - log(y)
     ///     assert_eq!(a.div(b)?.log(base), a.log(base)?.sub(b.log(base)?));
     ///     // Log of power log(x^y) == y * log(x)
-    ///     assert_eq!(a.pow(b)?.log(base), b.mul(a.log(base)?));
+    ///     assert_eq!(a.power(b)?.log(base), b.mul(a.log(base)?));
     ///     // Log of one
     ///     assert_eq!(Number::ONE.log(base)?, Number::ZERO);
     ///     // Log reciprocal log(1/x) = -ln(x);
@@ -379,7 +383,7 @@ impl Number {
     ///     let nth = Number::random();
     ///
     ///     // root(a^nth) == a
-    ///     assert_er!(a.pow(nth)?.root(nth), a);
+    ///     assert_eq!(a.power(nth)?.root(nth)?, a);
     ///     // root(ab) == root(a) * root(b)
     ///     assert_eq!(a.mul(b)?.root(nth), a.root(nth)?.mul(b.root(nth)?));
     ///     // root(a/b) == root(a) / root(b)
