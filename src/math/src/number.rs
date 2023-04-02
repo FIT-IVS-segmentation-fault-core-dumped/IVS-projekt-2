@@ -115,6 +115,7 @@ impl Number {
     /// Generate a random number in range of <0, 1>
     ///
     /// ```
+    /// # use math::Number;
     /// assert_ne!(Number::random(), Number::random());
     /// assert_ge!(Number::random(), Number::Zero);
     /// assert_le!(Number::random(), Number::One);
@@ -128,11 +129,14 @@ impl Number {
     /// ```
     /// # use math::Number;
     ///
-    /// let a = Number::new(1, 10);
-    /// let b = Number::new(2, 10);
+    /// # fn main() -> math::Result<()> {
+    /// let a = Number::new(1, 10)?;
+    /// let b = Number::new(2, 10)?;
     ///
-    /// assert_eq!(a.add(b), Ok(Number::new(3, 10)));
+    /// assert_eq!(a.add(b)?, Number::new(3, 10)?);
     /// assert_eq!(b.add(a), a.add(b));
+    /// #     Ok(())
+    /// # }
     /// ```
     pub fn add(&self, other: impl Into<Self>) -> Result<Self> {
         Ok(Self {
@@ -527,7 +531,7 @@ impl Number {
     /// ```
     /// # use math::Number;
     ///
-    /// # fn main() -> math::Result<Self> {
+    /// # fn main() -> math::Result<()> {
     ///     assert!(Number::combination(-1, Number::random()).is_err());
     ///     assert!(Number::combination(Number::random(), -1).is_err());
     ///
