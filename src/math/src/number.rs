@@ -169,11 +169,14 @@ impl Number {
     /// ```
     /// # use math::Number;
     ///
-    /// let a = Number::new(1, 10);
-    /// let b = Number::new(2, 10);
+    /// # fn main() -> math::Result<()> {
+    ///     let a = Number::new(1, 10)?;
+    ///     let b = Number::new(2, 10)?;
     ///
-    /// assert_eq!(a.mul(b), Ok(Number::from(2, 100)));
-    /// assert_eq!(b.mul(a), a.mul(b));
+    ///     assert_eq!(a.mul(b)?, Number::new(2, 100)?);
+    ///     assert_eq!(b.mul(a), a.mul(b));
+    /// #     Ok(())
+    /// # }
     /// ```
     pub fn mul(&self, other: impl Into<Self>) -> Result<Self> {
         Ok(Self {
