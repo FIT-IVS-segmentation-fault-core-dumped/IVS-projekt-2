@@ -282,7 +282,10 @@ impl Number {
     ///
     /// # fn main() -> math::Result<()> {
     ///     assert!(Number::random().root(0).is_err());
-    ///     assert!(Number::from(-1).root(Number::random()).is_err());
+    ///     assert!(Number::from(-1).root(2).is_err());
+    ///     assert!(Number::from(-1).root(88).is_err());
+    ///     assert!(Number::from(-1).root(3).is_ok());
+    ///     assert!(Number::from(-1).root(87).is_ok());
     ///
     ///     let a = Number::random();
     ///     let b = Number::random();
