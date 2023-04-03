@@ -53,7 +53,7 @@ impl Number {
     /// ```
     /// # use math::{Number, number::Radix};
     /// assert!(Number::new(43, 0).is_err());
-    /// assert_eq!(Number::new(30, 10), Number::new(3, 10));
+    /// assert_eq!(Number::new(30, 10), Number::new(3, 1));
     /// assert_eq!(Number::new(2, 10), Number::new(1, 5));
     /// assert_eq!(Number::new(1, 10).unwrap().to_string(Radix::Dec, 5), "0.1");
     /// ```
@@ -101,10 +101,48 @@ impl Number {
     /// assert_eq!(neg.to_string(Radix::Hex, precision), "-0.199999");
     /// ```
     pub fn to_string(&self, radix: Radix, precision: u8) -> String {
-        match radix {
-            Radix::Dec => format!("{:.*}", precision as usize, self.inner),
-            _ => todo!(),
+        let num = self.inner.abs();
+        let whole = num.to_integer();
+        let mut fract = num.fract();
+
+        let mut res = match radix {
+            Radix::Bin => format!("{:b}", whole),
+            Radix::Oct => format!("{:o}", whole),
+            Radix::Dec => format!("{}", whole),
+            Radix::Hex => format!("{:X}", whole),
+        };
+
+        if self.inner.is_negative() {
+            res.insert(0, '-');
         }
+
+        if fract != num::zero() {
+            let radix_len = match radix {
+                Radix::Bin => 2u32,
+                Radix::Oct => 8u32,
+                Radix::Dec => 10u32,
+                Radix::Hex => 16u32,
+            };
+
+            res.push('.');
+            let mut cnt = 0;
+
+            while fract != num::zero() && cnt < precision {
+                let n = fract * radix_len as i128;
+                let whole = n.to_integer() as u32;
+                fract = n.fract();
+
+                let mut ch = char::from_digit(whole, radix_len).unwrap();
+                ch.make_ascii_uppercase();
+
+                res.push(ch);
+                cnt += 1;
+            }
+
+            res = res.trim_end_matches('0').trim_end_matches('.').to_owned();
+        }
+
+        res
     }
 }
 
