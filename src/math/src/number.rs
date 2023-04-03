@@ -285,13 +285,30 @@ impl Number {
         let to_pow = exp.inner.numer();
         let to_root = exp.inner.denom();
 
-        let mut res: Self = self.inner.pow(*to_pow as _).into();
+        let mut res = self.clone();
 
         if to_root != &num::one() {
             res = res.root(*to_root)?;
         }
 
+        res = res.inner.pow(*to_pow as _).into();
+
         Ok(res)
+    }
+
+    /// Get the modulo of `self / other`
+    ///
+    /// ```
+    /// # use math::Number;
+    /// assert_eq!(Number::from(5).modulo(2), Ok(Number::ONE));
+    /// assert_eq!(Number::from(-5).modulo(2), Ok(Number::ONE));
+    /// assert_eq!(Number::from(5).modulo(-2), Ok(Number::from(-1)));
+    /// assert_eq!(Number::from(-5).modulo(-2), Ok(Number::from(-1)));
+    /// assert_eq!(Number::from(-7).modulo(3), Ok(Number::from(2)));
+    /// ```
+    pub fn modulo(&self, other: impl Into<Self>) -> Result<Self> {
+        let divisor = other.into();
+        self.remainder(divisor)?.add(divisor)?.remainder(divisor)
     }
 
     /// Get the remainder of `self / other`
@@ -299,10 +316,12 @@ impl Number {
     /// ```
     /// # use math::Number;
     /// assert_eq!(Number::from(5).modulo(2), Ok(Number::ONE));
-    /// assert_eq!(Number::from(5).modulo(-2), Ok(Number::ONE));
-    /// assert_eq!(Number::from(-5).modulo(2), Number::ONE.mul(-1));
+    /// assert_eq!(Number::from(5).modulo(-2), Ok(Number::from(-1)));
+    /// assert_eq!(Number::from(-5).modulo(2), Ok(Number::from(1)));
+    /// assert_eq!(Number::from(-7).modulo(3), Ok(Number::from(2)));
+    /// assert_eq!(Number::from(7).modulo(-3), Ok(Number::from(-2)));
     /// ```
-    pub fn modulo(&self, other: impl Into<Self>) -> Result<Self> {
+    pub fn remainder(&self, other: impl Into<Self>) -> Result<Self> {
         Ok(Self {
             inner: self.inner % other.into().inner,
         })
@@ -379,6 +398,7 @@ impl Number {
 
         let mut iter = p.into_iter().enumerate();
         let mut y = iter.next().unwrap().1;
+
         while let Some((i, val)) = iter.next() {
             y = y.add(val.div(self.add(i as i128)?.sub(1)?)?)?;
         }
