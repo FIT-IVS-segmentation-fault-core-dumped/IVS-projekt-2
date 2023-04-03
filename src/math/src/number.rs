@@ -267,14 +267,15 @@ impl Number {
     /// assert_eq!(Number::from(5).power(2), Ok(Number::from(25)));
     /// ```
     pub fn power(&self, exp: impl Into<Self>) -> Result<Self> {
-        let exp = exp.into();
+        let mut exp = exp.into();
+        exp.inner = exp.inner.reduced();
 
         if exp == Self::ZERO {
             return Ok(Self::ONE);
         }
 
         if exp == Self::ONE {
-            return Ok(*self);
+            return Ok(self.clone());
         }
 
         if exp == Self::from(-1) {
@@ -284,9 +285,13 @@ impl Number {
         let to_pow = exp.inner.numer();
         let to_root = exp.inner.denom();
 
-        todo!();
+        let mut res: Self = self.inner.pow(*to_pow as _).into();
 
-        Ok(*self)
+        if to_root != &num::one() {
+            res = res.root(*to_root)?;
+        }
+
+        Ok(res)
     }
 
     /// Get the remainder of `self / other`
@@ -346,10 +351,16 @@ impl Number {
             return Ok(Self::ONE);
         }
 
-        let denom = self.inner.denom();
+        if self == &Self::ONE || self == &Self::new_unchecked(2, 1) {
+            return Ok(self.clone());
+        }
 
-        if denom == &1 {}
+        if self.inner.is_integer() {
+            let val: i128 = (2..*self.inner.numer()).product();
+            return Ok(Self { inner: val.into() });
+        }
 
+        // Todo calculate factorial of fraction using gamma function
         todo!()
     }
 
