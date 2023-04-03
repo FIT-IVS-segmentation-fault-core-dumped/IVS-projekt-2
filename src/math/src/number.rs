@@ -44,6 +44,9 @@ impl Number {
     /// 2.71828... ~= 2721 / 1001
     pub const E: Self = Self::new_unchecked(2721, 1001);
 
+    /// Minimum precision
+    pub const EPSILON: Self = Self::new_unchecked(1, 100000000000000000000);
+
     /// Create a new number in the form `num / denom`
     /// This way we can safely create number can cannot be expressed in binary form like 0.1
     ///
