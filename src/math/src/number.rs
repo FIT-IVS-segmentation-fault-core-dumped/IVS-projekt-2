@@ -1,12 +1,13 @@
 use crate::error::Error;
 use crate::Result;
-use fraction::GenericFraction;
+use num::rational::Ratio;
+use num::Signed as _;
 use std::cmp::Ordering;
 
 #[derive(Default, Debug, Clone, Copy)]
 /// Represent a number
 pub struct Number {
-    inner: GenericFraction<u64>,
+    inner: Ratio<i128>,
 }
 
 #[derive(Default, Debug, Clone, Copy)]
@@ -24,7 +25,7 @@ pub enum Radix {
     Hex,
 }
 
-impl<T: Into<GenericFraction<u64>>> From<T> for Number {
+impl<T: Into<Ratio<i128>>> From<T> for Number {
     fn from(v: T) -> Self {
         Self { inner: v.into() }
     }
@@ -56,28 +57,21 @@ impl Number {
     /// assert_eq!(Number::new(2, 10), Number::new(1, 5));
     /// assert_eq!(Number::new(1, 10).unwrap().to_string(Radix::Dec, 5), "0.1");
     /// ```
-    pub const fn new(num: i64, denom: i64) -> Result<Self> {
+    pub fn new(num: i128, denom: i128) -> Result<Self> {
         if denom == 0 {
             return Err(Error::DivisionZero);
         }
 
-        Ok(Self::new_unchecked(num, denom))
+        Ok(Self {
+            inner: Ratio::new(num, denom),
+        })
     }
 
     /// Same as `Number::new` but bypass the zero check for denom
     /// This function should be use only in const context!!!
-    pub const fn new_unchecked(num: i64, denom: i64) -> Self {
-        let n = num.abs() as u64;
-        let d = denom.abs() as u64;
-
-        let sign = if num.is_positive() == denom.is_positive() {
-            fraction::Sign::Plus
-        } else {
-            fraction::Sign::Minus
-        };
-
+    pub const fn new_unchecked(num: i128, denom: i128) -> Self {
         Self {
-            inner: GenericFraction::new_raw_signed(sign, n, d),
+            inner: Ratio::new_raw(num, denom),
         }
     }
 
@@ -306,6 +300,18 @@ impl Number {
     /// # }
     /// ```
     pub fn factorial(&self) -> Result<Self> {
+        if self.inner.is_negative() {
+            return Err(Error::FactorialNegative);
+        }
+
+        if self == &Self::ZERO {
+            return Ok(Self::ONE);
+        }
+
+        let denom = self.inner.denom();
+
+        if denom == &1 {}
+
         todo!()
     }
 
