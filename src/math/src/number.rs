@@ -351,17 +351,48 @@ impl Number {
             return Ok(Self::ONE);
         }
 
-        if self == &Self::ONE || self == &Self::new_unchecked(2, 1) {
+        if self == &Self::ONE {
             return Ok(self.clone());
         }
 
         if self.inner.is_integer() {
-            let val: i128 = (2..*self.inner.numer()).product();
+            let val: i128 = (2..=*self.inner.numer()).product();
             return Ok(Self { inner: val.into() });
         }
 
-        // Todo calculate factorial of fraction using gamma function
-        todo!()
+        self.add(1)?.gamma()
+    }
+
+    /// Calculate gamma function
+    pub fn gamma(&self) -> Result<Self> {
+        let p = [
+            Self::new_unchecked(9999999999998099, 10000000000000000),
+            Self::new_unchecked(6765203681218851, 1000000000000000),
+            Self::new_unchecked(-1259139216722289, 1000000000000000),
+            Self::new_unchecked(7713234287776531, 10000000000000000),
+            Self::new_unchecked(-1766150291621406, 10000000000000000),
+            Self::new_unchecked(1250734327868691, 100000000000000000),
+            Self::new_unchecked(-13857109526572012, 100000000000000000),
+            Self::new_unchecked(9984369578019571, 1000000000000000000),
+            Self::new_unchecked(15056327351493116, 100000000000000000000),
+        ];
+
+        let mut iter = p.into_iter().enumerate();
+        let mut y = iter.next().unwrap().1;
+        while let Some((i, val)) = iter.next() {
+            y = y.add(val.div(self.add(i as i128)?.sub(1)?)?)?;
+        }
+
+        let t: Self = self.add(Self::new_unchecked(65, 10))?;
+        let sqrt_2pi = Self::PI.mul(2)?.sqrt()?;
+
+        let h = self.sub(Self::new_unchecked(1, 2))?;
+
+        sqrt_2pi
+            .mul(y)?
+            .div(self.sqrt()?)?
+            .mul(t.power(self.sub(h)?)?)?
+            .mul(Self::E.power((t.mul(-1))?)?)
     }
 
     /// Returns the logarithm of the number with respect to an arbitrary `base`.
