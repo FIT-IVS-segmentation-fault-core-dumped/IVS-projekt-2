@@ -31,9 +31,8 @@ pub enum Radix {
 
 impl<T: Into<BigInt>> From<T> for Number {
     fn from(v: T) -> Self {
-        Self {
-            inner: Arc::new(v.into().into()),
-        }
+        let big = v.into();
+        Self::new_unchecked(big, 1)
     }
 }
 
@@ -96,10 +95,13 @@ impl Number {
     /// assert_eq!(Number::new(2, 10), Number::new(1, 5));
     /// assert_eq!(Number::new(1, 10).unwrap().to_string(Radix::Dec, 5), "0.1");
     /// ```
-    pub fn new(num: i128, denom: i128) -> Result<Self> {
-        if denom == 0 {
+    pub fn new(num: impl Into<BigInt>, denom: impl Into<BigInt>) -> Result<Self> {
+        let denom = denom.into();
+        if denom == num::zero() {
             return Err(Error::DivisionZero);
         }
+
+        let num = num.into();
 
         if num == denom {
             return Ok(Self::one());
@@ -115,7 +117,7 @@ impl Number {
     }
 
     /// Same as `Number::new` but bypass the zero check for denom
-    pub fn new_unchecked(num: i128, denom: i128) -> Self {
+    pub fn new_unchecked(num: impl Into<BigInt>, denom: impl Into<BigInt>) -> Self {
         Self {
             inner: Arc::new(Ratio::new_raw(num.into(), denom.into())),
         }
