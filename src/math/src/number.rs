@@ -1,13 +1,17 @@
 use crate::error::Error;
 use crate::Result;
 use num::rational::Ratio;
+use num::BigInt;
 use num::Signed as _;
+use num::ToPrimitive;
+use once_cell::sync::OnceCell;
 use std::cmp::Ordering;
+use std::sync::Arc;
 
-#[derive(Default, Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 /// Represent a number
 pub struct Number {
-    inner: Ratio<i128>,
+    inner: Arc<Ratio<BigInt>>,
 }
 
 #[derive(Default, Debug, Clone, Copy)]
@@ -25,27 +29,59 @@ pub enum Radix {
     Hex,
 }
 
-impl<T: Into<Ratio<i128>>> From<T> for Number {
+impl<T: Into<BigInt>> From<T> for Number {
     fn from(v: T) -> Self {
-        Self { inner: v.into() }
+        Self {
+            inner: Arc::new(v.into().into()),
+        }
+    }
+}
+
+impl From<&Self> for Number {
+    fn from(s: &Self) -> Self {
+        s.clone()
+    }
+}
+
+impl Default for Number {
+    fn default() -> Self {
+        Self::zero()
     }
 }
 
 impl Number {
     /// 0.0
-    pub const ZERO: Self = Self::new_unchecked(0, 1);
+    pub fn zero() -> Self {
+        static ZERO: OnceCell<Number> = OnceCell::new();
+        ZERO.get_or_init(|| Self::new_unchecked(0, 1)).clone()
+    }
 
     /// 1.0
-    pub const ONE: Self = Self::new_unchecked(1, 1);
+    pub fn one() -> Self {
+        static ONE: OnceCell<Number> = OnceCell::new();
+        ONE.get_or_init(|| Self::new_unchecked(1, 1)).clone()
+    }
 
     /// 3.14159... ~= 104 348/33 215
-    pub const PI: Self = Self::new_unchecked(104348, 33215);
-
+    pub fn pi() -> Self {
+        static PI: OnceCell<Number> = OnceCell::new();
+        PI.get_or_init(|| Self::new_unchecked(104348, 33215))
+            .clone()
+    }
+    ///
     /// 2.71828... ~= 2721 / 1001
-    pub const E: Self = Self::new_unchecked(2721, 1001);
+    pub fn e() -> Self {
+        static E: OnceCell<Number> = OnceCell::new();
+        E.get_or_init(|| Self::new_unchecked(2721, 1001)).clone()
+    }
 
     /// Minimum precision
-    pub const EPSILON: Self = Self::new_unchecked(1, 100000000000000000000);
+    pub fn epsilon() -> Self {
+        static EPSILON: OnceCell<Number> = OnceCell::new();
+        EPSILON
+            .get_or_init(|| Self::new_unchecked(1, 10000000))
+            .clone()
+    }
 
     /// Create a new number in the form `num / denom`
     /// This way we can safely create number can cannot be expressed in binary form like 0.1
@@ -65,16 +101,23 @@ impl Number {
             return Err(Error::DivisionZero);
         }
 
+        if num == denom {
+            return Ok(Self::one());
+        }
+
+        if num == num::zero() {
+            return Ok(Self::zero());
+        }
+
         Ok(Self {
-            inner: Ratio::new(num, denom),
+            inner: Arc::new(Ratio::new(num.into(), denom.into())),
         })
     }
 
     /// Same as `Number::new` but bypass the zero check for denom
-    /// This function should be use only in const context!!!
-    pub const fn new_unchecked(num: i128, denom: i128) -> Self {
+    pub fn new_unchecked(num: i128, denom: i128) -> Self {
         Self {
-            inner: Ratio::new_raw(num, denom),
+            inner: Arc::new(Ratio::new_raw(num.into(), denom.into())),
         }
     }
 
@@ -82,8 +125,8 @@ impl Number {
     ///
     /// ```
     /// # use math::number::{Number, Radix};
-    /// let pi = Number::PI;
-    /// let zero = Number::ZERO;
+    /// let pi = Number::pi();
+    /// let zero = Number::zero();
     /// let neg = Number::new_unchecked(-1, 10);
     ///
     /// let precision = 6;
@@ -129,10 +172,11 @@ impl Number {
 
             res.push('.');
             let mut cnt = 0;
+            let big_radix = BigInt::from(radix_len);
 
             while fract != num::zero() && cnt < precision {
-                let n = fract * radix_len as i128;
-                let whole = n.to_integer() as u32;
+                let n = fract * &big_radix;
+                let whole = n.to_integer().to_u32().unwrap();
                 fract = n.fract();
 
                 let mut ch = char::from_digit(whole, radix_len).unwrap();
@@ -155,15 +199,15 @@ impl Number {
     /// ```
     /// # use math::Number;
     /// assert!(Number::random() != Number::random());
-    /// assert!(Number::random() >= Number::ZERO);
-    /// assert!(Number::random() <= Number::ONE);
+    /// assert!(Number::random() >= Number::zero());
+    /// assert!(Number::random() <= Number::one());
     /// ```
     pub fn random() -> Self {
         use rand::prelude::*;
 
         let mut rng = rand::thread_rng();
-        let denom: u64 = rng.gen_range(1..(u64::MAX / 2));
-        let num: u64 = rng.gen_range(0..=denom);
+        let denom = rng.gen_range(1..u32::MAX);
+        let num = rng.gen_range(0..=denom);
 
         Self::new_unchecked(num as _, denom as _)
     }
@@ -177,14 +221,26 @@ impl Number {
     /// let a = Number::new(1, 10)?;
     /// let b = Number::new(2, 10)?;
     ///
-    /// assert_eq!(a.add(b)?, Number::new(3, 10)?);
-    /// assert_eq!(b.add(a), a.add(b));
+    /// assert_eq!(a.add(&b)?, Number::new(3, 10)?);
+    /// assert_eq!(b.add(&a), a.add(&b));
     /// #     Ok(())
     /// # }
     /// ```
     pub fn add(&self, other: impl Into<Self>) -> Result<Self> {
+        let rhs = other.into();
+
+        if rhs == Self::zero() {
+            return Ok(rhs);
+        }
+
+        if self == &Self::zero() {
+            return Ok(self.clone());
+        }
+
+        let res = &*self.inner + &*rhs.inner;
+
         Ok(Self {
-            inner: self.inner + other.into().inner,
+            inner: Arc::new(res),
         })
     }
 
@@ -197,14 +253,22 @@ impl Number {
     ///     let a = Number::new(1, 10)?;
     ///     let b = Number::new(2, 10)?;
     ///
-    ///     assert_eq!(a.sub(b)?, Number::new(-1, 10)?);
-    ///     assert_eq!(b.sub(a)?, Number::new(1, 10)?);
+    ///     assert_eq!(a.sub(&b)?, Number::new(-1, 10)?);
+    ///     assert_eq!(b.sub(&a)?, Number::new(1, 10)?);
     /// #     Ok(())
     /// # }
     /// ```
     pub fn sub(&self, other: impl Into<Self>) -> Result<Self> {
+        let rhs = other.into();
+
+        if rhs == Self::zero() {
+            return Ok(self.clone());
+        }
+
+        let res = &*self.inner - &*rhs.inner;
+
         Ok(Self {
-            inner: self.inner - other.into().inner,
+            inner: Arc::new(res),
         })
     }
 
@@ -217,14 +281,34 @@ impl Number {
     ///     let a = Number::new(1, 10)?;
     ///     let b = Number::new(2, 10)?;
     ///
-    ///     assert_eq!(a.mul(b)?, Number::new(2, 100)?);
-    ///     assert_eq!(b.mul(a), a.mul(b));
+    ///     assert_eq!(a.mul(&b)?, Number::new(2, 100)?);
+    ///     assert_eq!(b.mul(&a), a.mul(&b));
     /// #     Ok(())
     /// # }
     /// ```
     pub fn mul(&self, other: impl Into<Self>) -> Result<Self> {
+        if self == &Self::zero() {
+            return Ok(Self::zero());
+        }
+
+        let rhs = other.into();
+
+        if rhs == Self::zero() {
+            return Ok(Self::zero());
+        }
+
+        if self == &Self::one() {
+            return Ok(rhs);
+        }
+
+        if rhs == Self::one() {
+            return Ok(self.clone());
+        }
+
+        let res = &*self.inner * &*rhs.inner;
+
         Ok(Self {
-            inner: self.inner * other.into().inner,
+            inner: Arc::new(res),
         })
     }
 
@@ -238,27 +322,33 @@ impl Number {
     ///
     /// # fn main() -> math::Result<()> {
     ///     let random = Number::random();
-    ///     assert!(random.div(Number::ZERO).is_err());
-    ///     assert_eq!(Number::ZERO.div(random)?, Number::ZERO);
-    ///     assert_eq!(random.div(random)?, Number::ONE);
+    ///     assert!(random.div(Number::zero()).is_err());
+    ///     assert_eq!(Number::zerO().div(&random)?, Number::zero());
+    ///     assert_eq!(random.div(&random)?, Number::one());
     ///
     ///     let a = Number::from(3);
     ///     let b = Number::new(3, 2)?;
     ///     let neg_b = Number::new(-3, 2)?;
-    ///     assert_eq!(a.div(b)?, Number::from(2));
-    ///     assert_eq!(a.div(neg_b)?, Number::from(-2));
+    ///     assert_eq!(a.div(&b)?, Number::from(2));
+    ///     assert_eq!(a.div(&neg_b)?, Number::from(-2));
     /// #   Ok(())
     /// # }
     /// ```
     pub fn div(&self, other: impl Into<Self>) -> Result<Self> {
-        let other = other.into();
+        let rhs = other.into();
 
-        if other == Self::ZERO {
+        if rhs == Self::zero() {
             return Err(Error::DivisionZero);
         }
 
+        if rhs == Self::one() {
+            return Ok(self.clone());
+        }
+
+        let res = &*self.inner / &*rhs.inner;
+
         Ok(Self {
-            inner: self.inner / other.inner,
+            inner: Arc::new(res),
         })
     }
 
@@ -266,35 +356,38 @@ impl Number {
     ///
     /// ```
     /// # use math::Number;
-    /// assert_eq!(Number::random().power(Number::ZERO), Ok(Number::ONE));
+    /// assert_eq!(Number::random().power(Number::zero()), Ok(Number::one()));
     /// assert_eq!(Number::from(5).power(2), Ok(Number::from(25)));
     /// ```
     pub fn power(&self, exp: impl Into<Self>) -> Result<Self> {
-        let mut exp = exp.into();
-        exp.inner = exp.inner.reduced();
+        let exp = exp.into();
 
-        if exp == Self::ZERO {
-            return Ok(Self::ONE);
+        if exp == Self::zero() {
+            return Ok(Self::one());
         }
 
-        if exp == Self::ONE {
+        if exp == Self::one() {
             return Ok(self.clone());
         }
 
         if exp == Self::from(-1) {
-            return Self::ONE.div(*self);
+            return Self::one().div(self.clone());
         }
 
-        let to_pow = exp.inner.numer();
+        let to_pow = exp
+            .inner
+            .numer()
+            .to_i32()
+            .ok_or_else(|| Error::Message(String::from("Exponent is too large")))?;
         let to_root = exp.inner.denom();
 
         let mut res = self.clone();
 
         if to_root != &num::one() {
-            res = res.root(*to_root)?;
+            res = res.root(to_root.clone())?;
         }
 
-        res = res.inner.pow(*to_pow as _).into();
+        res.inner = Arc::new((*res.inner).pow(to_pow));
 
         Ok(res)
     }
@@ -303,22 +396,22 @@ impl Number {
     ///
     /// ```
     /// # use math::Number;
-    /// assert_eq!(Number::from(5).modulo(2), Ok(Number::ONE));
-    /// assert_eq!(Number::from(-5).modulo(2), Ok(Number::ONE));
+    /// assert_eq!(Number::from(5).modulo(2), Ok(Number::one()));
+    /// assert_eq!(Number::from(-5).modulo(2), Ok(Number::one()));
     /// assert_eq!(Number::from(5).modulo(-2), Ok(Number::from(-1)));
     /// assert_eq!(Number::from(-5).modulo(-2), Ok(Number::from(-1)));
     /// assert_eq!(Number::from(-7).modulo(3), Ok(Number::from(2)));
     /// ```
     pub fn modulo(&self, other: impl Into<Self>) -> Result<Self> {
         let divisor = other.into();
-        self.remainder(divisor)?.add(divisor)?.remainder(divisor)
+        self.remainder(&divisor)?.add(&divisor)?.remainder(&divisor)
     }
 
     /// Get the remainder of `self / other`
     ///
     /// ```
     /// # use math::Number;
-    /// assert_eq!(Number::from(5).modulo(2), Ok(Number::ONE));
+    /// assert_eq!(Number::from(5).modulo(2), Ok(Number::one()));
     /// assert_eq!(Number::from(5).modulo(-2), Ok(Number::from(-1)));
     /// assert_eq!(Number::from(-5).modulo(2), Ok(Number::from(1)));
     /// assert_eq!(Number::from(-7).modulo(3), Ok(Number::from(2)));
@@ -326,7 +419,7 @@ impl Number {
     /// ```
     pub fn remainder(&self, other: impl Into<Self>) -> Result<Self> {
         Ok(Self {
-            inner: self.inner % other.into().inner,
+            inner: Arc::new(&*self.inner % &*other.into().inner),
         })
     }
 
@@ -337,12 +430,12 @@ impl Number {
     /// let a = Number::random();
     /// let neg_a = a.mul(-1).unwrap();
     ///
-    /// assert_eq!(a.abs(), Ok(a));
+    /// assert_eq!(a.abs(), Ok(a.clone()));
     /// assert_eq!(neg_a.abs(), Ok(a));
     /// ```
     pub fn abs(&self) -> Result<Self> {
         Ok(Self {
-            inner: self.inner.abs(),
+            inner: self.inner.abs().into(),
         })
     }
 
@@ -357,7 +450,7 @@ impl Number {
     /// # use math::number::Radix;
     ///
     /// # fn main() -> math::Result<()> {
-    ///     assert_eq!(Number::ZERO.factorial()?, Number::ONE);
+    ///     assert_eq!(Number::zero().factorial()?, Number::one());
     ///     assert_eq!(Number::from(5).factorial()?, Number::from(120));
     ///     assert_eq!(Number::new(32, 10)?.factorial()?.to_string(Radix::Dec, 6), "7.75669");
     ///     assert!(Number::from(-1).factorial().is_err());
@@ -369,17 +462,24 @@ impl Number {
             return Err(Error::FactorialNegative);
         }
 
-        if self == &Self::ZERO {
-            return Ok(Self::ONE);
+        if self == &Self::zero() {
+            return Ok(Self::one());
         }
 
-        if self == &Self::ONE {
+        if self == &Self::one() {
             return Ok(self.clone());
         }
 
         if self.inner.is_integer() {
-            let val: i128 = (2..=*self.inner.numer()).product();
-            return Ok(Self { inner: val.into() });
+            let mut res = Self::from(2);
+            let to = Self::from(self.inner.numer().clone());
+            let mut cnt = Self::from(2u64);
+            while cnt <= to {
+                res = res.mul(&cnt)?;
+                cnt = cnt.add(1)?;
+            }
+
+            return Ok(res);
         }
 
         self.add(1)?.gamma()
@@ -407,7 +507,7 @@ impl Number {
         }
 
         let t: Self = self.add(Self::new_unchecked(65, 10))?;
-        let sqrt_2pi = Self::PI.mul(2)?.sqrt()?;
+        let sqrt_2pi = Self::pi().mul(2)?.sqrt()?;
 
         let h = self.sub(Self::new_unchecked(1, 2))?;
 
@@ -415,7 +515,7 @@ impl Number {
             .mul(y)?
             .div(self.sqrt()?)?
             .mul(t.power(self.sub(h)?)?)?
-            .mul(Self::E.power((t.mul(-1))?)?)
+            .mul(Self::e().power((t.mul(-1))?)?)
     }
 
     /// Returns the logarithm of the number with respect to an arbitrary `base`.
@@ -430,7 +530,7 @@ impl Number {
     /// # fn main() -> math::Result<()> {
     ///     assert!(Number::random().log(0).is_err());
     ///     assert!(Number::random().log(-1.2).is_err());
-    ///     assert!(Number::ZERO.log(Number::random()).is_err());
+    ///     assert!(Number::zero().log(Number::random()).is_err());
     ///     assert!(Number::new(-3, 10)?.log(Number::random()).is_err());
     ///
     ///     let a = Number::random();
@@ -438,7 +538,7 @@ impl Number {
     ///     let b = Number::from(2);
     ///
     ///     // Number same as base
-    ///     assert_eq!(a.log(a)?, Number::ONE);
+    ///     assert_eq!(a.log(a)?, Number::one());
     ///     // Product rule log(xy) == log(x) + log(y)
     ///     assert_eq!(a.mul(b)?.log(base), a.log(base)?.add(b.log(base)?));
     ///     // Quotient rule log(x/y) == log(x) - log(y)
@@ -446,9 +546,9 @@ impl Number {
     ///     // Log of power log(x^y) == y * log(x)
     ///     assert_eq!(a.power(b)?.log(base), b.mul(a.log(base)?));
     ///     // Log of one
-    ///     assert_eq!(Number::ONE.log(base)?, Number::ZERO);
+    ///     assert_eq!(Number::one().log(base)?, Number::zero());
     ///     // Log reciprocal log(1/x) = -ln(x);
-    ///     assert_eq!(Number::ONE.div(a)?.log(base), a.log(base)?.mul(-1));
+    ///     assert_eq!(Number::one().div(a)?.log(base), a.log(base)?.mul(-1));
     ///     # Ok(())
     /// # }
     /// ```
@@ -492,23 +592,59 @@ impl Number {
     ///     let nth = Number::random();
     ///
     ///     // root(a^nth) == a
-    ///     assert_eq!(a.power(nth)?.root(nth)?, a);
+    ///     assert_eq!(a.power(&nth)?.root(&nth)?, a.clone());
     ///     // root(ab) == root(a) * root(b)
-    ///     assert_eq!(a.mul(b)?.root(nth), a.root(nth)?.mul(b.root(nth)?));
+    ///     assert_eq!(a.mul(&b)?.root(&nth), a.root(&nth)?.mul(b.root(&nth)?));
     ///     // root(a/b) == root(a) / root(b)
-    ///     assert_eq!(a.div(b)?.root(nth), a.root(nth)?.div(b.root(nth)?));
+    ///     assert_eq!(a.div(&b)?.root(&nth), a.root(&nth)?.div(b.root(&nth)?));
     ///
     /// #     Ok(())
     /// # }
     /// ```
     pub fn root(&self, nth: impl Into<Self>) -> Result<Self> {
-        todo!()
+        let nth = nth.into();
+        if nth == Self::zero() {
+            return Err(Error::ZeroNthRoot);
+        }
+
+        if self == &Self::zero() {
+            return Ok(Self::zero());
+        }
+
+        let to_root = nth.inner.numer();
+        let to_pow = nth.inner.denom();
+
+        let mut res: Self = self.clone();
+
+        if to_root != &num::one() {
+            let mut x_pre = Self::random().mul(10)?;
+            let mut del_x = Self::one();
+            let mut x_k = Self::zero();
+
+            while del_x > Self::epsilon() {
+                x_k = Self::from(to_root - 1)
+                    .mul(&x_pre)?
+                    .add(self.div(&x_pre.power(to_root - 1)?)?)?
+                    .div(to_root.clone())?;
+
+                del_x = x_k.sub(x_pre)?.abs()?;
+                x_pre = x_k.clone();
+            }
+
+            res = x_k;
+        }
+
+        if to_pow != &num::one() {
+            res = res.power(to_pow.clone())?;
+        }
+
+        return Ok(res);
     }
 
     /// Returns the square root of a number.
     /// This function is the same as `root` with the `nth` of 2
     pub fn sqrt(&self) -> Result<Self> {
-        todo!()
+        self.root(2)
     }
 
     /// Computes the sine of a number (in radians).
@@ -518,7 +654,7 @@ impl Number {
     ///
     /// # fn main() -> math::Result<()> {
     ///     let x = Number::random();
-    ///     let half_pi = Number::PI.div(2)?;
+    ///     let half_pi = Number::pi().div(2)?;
     ///     let sin_x = x.sin();
     ///
     ///     // sin(x) == cos(PI/2 - x)
@@ -538,7 +674,7 @@ impl Number {
     ///
     /// # fn main() -> math::Result<()> {
     ///     let x = Number::random();
-    ///     let half_pi = Number::PI.div(2)?;
+    ///     let half_pi = Number::pi().div(2)?;
     ///     let cos_x = x.cos();
     ///
     ///     // cos(x) == sin(PI/2 - x)
@@ -563,7 +699,7 @@ impl Number {
     ///     // tg(x) == sin(x) / cos(x)
     ///     assert_eq!(tan_x, x.sin()?.div(x.cos()?));
     ///     // tg(x) == 1 / cotg(x)
-    ///     assert_eq!(tan_x, Number::ONE.div(x.cotg()?));
+    ///     assert_eq!(tan_x, Number::one().div(x.cotg()?));
     /// #     Ok(())
     /// # }
     /// ```
@@ -583,7 +719,7 @@ impl Number {
     ///     // cotg(x) == cos(x) / sin(x)
     ///     assert_eq!(cot_x, x.cos()?.div(x.sin()?));
     ///     // cotg(x) == 1 / tg(x)
-    ///     assert_eq!(cot_x, Number::ONE.div(x.tg()?));
+    ///     assert_eq!(cot_x, Number::one().div(x.tg()?));
     /// #     Ok(())
     /// # }
     /// ```
@@ -690,13 +826,13 @@ impl Number {
     ///     let n = Number::random();
     ///
     ///     // if k > n => C(n, k) == 0
-    ///     assert_eq!(Number::combination(3, 4)?, Number::ZERO);
+    ///     assert_eq!(Number::combination(3, 4)?, Number::zero());
     ///     // C(n, 0) == 1
-    ///     assert_eq!(Number::combination(n, 0)?, Number::ONE);
-    ///     // C(n, 1) == n
-    ///     assert_eq!(Number::combination(n, 1)?, n);
+    ///     assert_eq!(Number::combination(&n, 0)?, Number::one());
     ///     // C(n, n) == 1
-    ///     assert_eq!(Number::combination(n, n)?, Number::ONE);
+    ///     assert_eq!(Number::combination(&n, &n)?, Number::one());
+    ///     // C(n, 1) == n
+    ///     assert_eq!(Number::combination(&n, 1)?, n);
     /// #     Ok(())
     /// # }
     /// ```
