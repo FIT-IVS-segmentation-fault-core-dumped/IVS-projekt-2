@@ -1,2 +1,7 @@
 locale_name: Čeština
+title: Kalkulačka
+menu:
+    file: Soubor
+    edit: Upravit
+    help: Nápověda
 
