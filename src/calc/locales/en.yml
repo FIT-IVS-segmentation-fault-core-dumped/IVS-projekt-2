@@ -1,1 +1,6 @@
 locale_name: English
+title: Calculator
+menu:
+    file: File
+    edit: Edit
+    help: Help

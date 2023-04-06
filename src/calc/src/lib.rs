@@ -37,15 +37,17 @@ pub enum Theme {
     System,
 }
 
-#[derive(Serialize, Deserialize, Lens, Copy, Clone, Data)]
+#[derive(Serialize, Deserialize, Lens, Clone, Data)]
 pub struct CalcConfig {
     theme: Theme,
+    pub language: String,
 }
 
 impl Default for CalcConfig {
     fn default() -> Self {
         Self {
             theme: Theme::System,
+            language: "en".to_owned(),
         }
     }
 }
@@ -54,16 +56,18 @@ impl Default for CalcConfig {
 pub struct CalcState {
     displayed_text: String,
     radix: Rc<Radix>,
-    config: CalcConfig,
+    available_languages: Rc<Vec<String>>,
+    pub config: CalcConfig,
 }
 
 impl CalcState {
-    pub fn new() -> Self {
+    pub fn new(languages: &'static [&'static str]) -> Self {
         let config = confy::load(APP_NAME, None).unwrap_or_default();
 
         Self {
             displayed_text: String::new(),
             radix: Rc::new(Radix::Dec),
+            available_languages: Rc::new(languages.iter().map(|&s| String::from(s)).collect()),
             config,
         }
     }
@@ -73,7 +77,7 @@ impl CalcState {
     }
 
     pub fn store_config_data(&self) {
-        confy::store(APP_NAME, None, self.config).unwrap();
+        confy::store(APP_NAME, None, &self.config).unwrap();
     }
 
     pub fn get_theme(&self) -> Theme {
@@ -82,6 +86,12 @@ impl CalcState {
 
     pub fn set_theme(&mut self, theme: Theme) {
         self.config.theme = theme;
+    }
+
+    pub fn set_language(&mut self, language: &str) {
+        assert!(self.available_languages.contains(&language.to_string()));
+        rust_i18n::set_locale(language);
+        self.config.language = String::from(language);
     }
 
     pub fn set_radix(&mut self, radix: Radix) {
