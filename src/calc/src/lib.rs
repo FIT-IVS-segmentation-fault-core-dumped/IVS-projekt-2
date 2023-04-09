@@ -31,7 +31,7 @@ pub enum PressedButton {
     UnaryOpt(Opt),
     /// Constant with given name.
     /// Name is an entry to the table of constants, which will
-    /// contain its value. This gives use the ability, to define
+    /// contain its value. This gives us the ability, to define
     /// their own constants (variables).
     Const(String),
     /// Clear the entire display.
@@ -93,8 +93,8 @@ pub struct CalcState {
 
 impl CalcState {
     /// Creates new instance of CalcState. This will load config from disk.
-    /// Params:
-    /// - **languages**: Array of available languages loaded from rust-i18n.
+    ///
+    /// * `languages` - Array of available languages loaded from rust-i18n.
     pub fn new(languages: &[&str]) -> Self {
         let config = confy::load(APP_NAME, None).unwrap_or_default();
 
@@ -139,6 +139,8 @@ impl CalcState {
     }
 
     /// Change language of the app. This will be saved at exit.
+    ///
+    /// * `language` - Must be in the array of languages passed to `CalcState::new()`
     pub fn set_language(&mut self, language: &str) {
         assert!(self.available_languages.contains(&language.to_string()));
         rust_i18n::set_locale(language);
