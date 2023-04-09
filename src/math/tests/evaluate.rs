@@ -1,7 +1,7 @@
 use math::evaluate;
 use math::number::Radix;
 
-fn eval_dec(s: &str, precision: u8) -> Result<String, math::error::Error> {
+fn eval_dec(s: &str, precision: u8) -> math::Result<String> {
     Ok(evaluate(s)?.to_string(Radix::Dec, precision))
 }
 
