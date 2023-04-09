@@ -133,19 +133,39 @@ fn evaluate_cotg() -> math::Result<()> {
 
 #[test]
 fn evaluate_arcsin() -> math::Result<()> {
-    todo!();
+    assert_eq!(eval_dec("arcsin(0.3912)", 8)?, "0.40193515");
+    assert_eq!(eval_dec("arcsin(sin(0.123))", 3)?, "0.123");
+    assert_eq!(eval_dec("sin(arcsin(0.123))", 3)?, "0.123");
+    assert!(eval_dec("1.0001", 3).is_err());
+    assert!(eval_dec("-1.0001", 3).is_err());
+    Ok(())
 }
 #[test]
 fn evaluate_arccos() -> math::Result<()> {
-    todo!();
+    assert_eq!(eval_dec("arccos(0.3912)", 8)?, "1.16886118");
+    assert_eq!(eval_dec("arccos(sin(0.123))", 3)?, "0.123");
+    assert_eq!(eval_dec("cos(arccos(0.123))", 3)?, "0.123");
+    assert!(eval_dec("1.0001", 3).is_err());
+    assert!(eval_dec("-1.0001", 3).is_err());
+    Ok(())
 }
 #[test]
 fn evaluate_arctg() -> math::Result<()> {
-    todo!();
+    assert_eq!(eval_dec("arctg(0.123)", 5)?, "0.12239");
+    assert_eq!(eval_dec("arctg(tg(0.123))", 3)?, "0.123");
+    assert_eq!(eval_dec("tg(arctg(0.123))", 3)?, "0.123");
+    assert_eq!(eval_dec("arctg(99999999)", 5)?, eval_dec("pi() / 2", 5)?);
+    assert_eq!(eval_dec("arctg(-99999999)", 5)?, eval_dec("-pi() / 2", 5)?);
+    Ok(())
 }
 #[test]
 fn evaluate_arccotg() -> math::Result<()> {
-    todo!();
+    assert_eq!(eval_dec("arccotg(0.123)", 5)?, "1.44841");
+    assert_eq!(eval_dec("arccotg(cotg(0.123))", 3)?, "0.123");
+    assert_eq!(eval_dec("cotg(arccotg(0.123))", 3)?, "0.123");
+    assert_eq!(eval_dec("arccotg(99999999)", 5)?, eval_dec("0", 5)?);
+    assert_eq!(eval_dec("arccotg(-99999999)", 5)?, eval_dec("pi()", 5)?);
+    Ok(())
 }
 
 #[test]
