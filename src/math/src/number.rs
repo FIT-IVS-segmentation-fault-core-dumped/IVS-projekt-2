@@ -78,7 +78,7 @@ impl Number {
     pub fn epsilon() -> Self {
         static EPSILON: OnceCell<Number> = OnceCell::new();
         EPSILON
-            .get_or_init(|| Self::new_unchecked(1, 10000000))
+            .get_or_init(|| Self::new_unchecked(1, 10u128.pow(28)))
             .clone()
     }
 
@@ -138,15 +138,15 @@ impl Number {
     /// assert_eq!(zero.to_string(Radix::Dec, precision), "0");
     /// assert_eq!(zero.to_string(Radix::Hex, precision), "0");
     ///
-    /// assert_eq!(pi.to_string(Default::default(), precision), "3.141592");
+    /// assert_eq!(pi.to_string(Default::default(), precision), "3.141593");
     /// assert_eq!(pi.to_string(Radix::Bin, precision), "11.001001");
-    /// assert_eq!(pi.to_string(Radix::Oct, precision), "3.110375");
-    /// assert_eq!(pi.to_string(Radix::Hex, precision), "3.243F6A");
+    /// assert_eq!(pi.to_string(Radix::Oct, precision), "3.110376");
+    /// assert_eq!(pi.to_string(Radix::Hex, precision), "3.243F6B");
     ///
     /// assert_eq!(neg.to_string(Default::default(), precision), "-0.1");
     /// assert_eq!(neg.to_string(Radix::Bin, precision), "-0.00011");
     /// assert_eq!(neg.to_string(Radix::Oct, precision), "-0.063146");
-    /// assert_eq!(neg.to_string(Radix::Hex, precision), "-0.199999");
+    /// assert_eq!(neg.to_string(Radix::Hex, precision), "-0.19999A");
     /// ```
     pub fn to_string(&self, radix: Radix, precision: u8) -> String {
         let num = self.inner.abs();
@@ -172,6 +172,8 @@ impl Number {
                 Radix::Hex => 16u32,
             };
 
+            let mut digits = Vec::new();
+
             res.push('.');
             let mut cnt = 0;
             let big_radix = BigInt::from(radix_len);
@@ -181,13 +183,30 @@ impl Number {
                 let whole = n.to_integer().to_u32().unwrap();
                 fract = n.fract();
 
-                let mut ch = char::from_digit(whole, radix_len).unwrap();
-                ch.make_ascii_uppercase();
-
-                res.push(ch);
+                digits.push(whole);
                 cnt += 1;
             }
 
+            let n = fract * &big_radix;
+            let whole = n.to_integer().to_u32().unwrap();
+
+            if whole >= (radix_len / 2) {
+                while let Some(mut end) = digits.pop() {
+                    end += 1;
+                    if end < radix_len {
+                        digits.push(end);
+                        break;
+                    }
+                }
+            }
+
+            let digits = digits
+                .into_iter()
+                .map(|v| char::from_digit(v, radix_len).unwrap())
+                .collect::<String>()
+                .to_ascii_uppercase();
+
+            res.push_str(&digits);
             res = res.trim_end_matches('0').trim_end_matches('.').to_owned();
         }
 
@@ -484,35 +503,41 @@ impl Number {
 
     /// Calculate gamma function
     pub fn gamma(&self) -> Result<Self> {
-        let p = [
-            Self::new_unchecked(9999999999998099i128, 10000000000000000i128),
-            Self::new_unchecked(6765203681218851i128, 1000000000000000i128),
-            Self::new_unchecked(-1259139216722289i128, 1000000000000000i128),
-            Self::new_unchecked(7713234287776531i128, 10000000000000000i128),
-            Self::new_unchecked(-1766150291621406i128, 10000000000000000i128),
-            Self::new_unchecked(1250734327868691i128, 100000000000000000i128),
-            Self::new_unchecked(-13857109526572012i128, 100000000000000000i128),
-            Self::new_unchecked(9984369578019571i128, 1000000000000000000i128),
-            Self::new_unchecked(15056327351493116i128, 100000000000000000000i128),
-        ];
+        let f = self.inner.to_f64().unwrap_or_default();
+        let gamma = libm::tgamma(f);
+        Ok(Self {
+            inner: Arc::new(Ratio::from_float(gamma).unwrap_or_default()),
+        })
 
-        let mut iter = p.into_iter().enumerate();
-        let mut y = iter.next().unwrap().1;
+        // let p = [
+        //     Self::new_unchecked(9999999999998099i128, 10000000000000000i128),
+        //     Self::new_unchecked(6765203681218851i128, 1000000000000000i128),
+        //     Self::new_unchecked(-1259139216722289i128, 1000000000000000i128),
+        //     Self::new_unchecked(7713234287776531i128, 10000000000000000i128),
+        //     Self::new_unchecked(-1766150291621406i128, 10000000000000000i128),
+        //     Self::new_unchecked(1250734327868691i128, 100000000000000000i128),
+        //     Self::new_unchecked(-13857109526572012i128, 100000000000000000i128),
+        //     Self::new_unchecked(9984369578019571i128, 1000000000000000000i128),
+        //     Self::new_unchecked(15056327351493116i128, 100000000000000000000i128),
+        // ];
 
-        while let Some((i, val)) = iter.next() {
-            y = y.add(val.div(self.add(i as i128)?.sub(1)?)?)?;
-        }
+        // let mut iter = p.into_iter().enumerate();
+        // let mut y = iter.next().unwrap().1;
 
-        let t: Self = self.add(Self::new_unchecked(65, 10))?;
-        let sqrt_2pi = Self::pi().mul(2)?.sqrt()?;
+        // while let Some((i, val)) = iter.next() {
+        //     y = y.add(val.div(self.add(i as i128)?.sub(1)?)?)?;
+        // }
 
-        let h = self.sub(Self::new_unchecked(1, 2))?;
+        // let t: Self = self.add(Self::new_unchecked(65, 10))?;
+        // let sqrt_2pi = Self::pi().mul(2)?.sqrt()?;
 
-        sqrt_2pi
-            .mul(y)?
-            .div(self.sqrt()?)?
-            .mul(t.power(self.sub(h)?)?)?
-            .mul(Self::e().power((t.mul(-1))?)?)
+        // let h = self.sub(Self::new_unchecked(1, 2))?;
+
+        // sqrt_2pi
+        //     .mul(y)?
+        //     .div(self.sqrt()?)?
+        //     .mul(t.power(self.sub(h)?)?)?
+        //     .mul(Self::e().power((t.mul(-1))?)?)
     }
 
     /// Returns the logarithm of the number with respect to an arbitrary `base`.
@@ -714,7 +739,7 @@ impl Number {
     /// # }
     /// ```
     pub fn tg(&self) -> Result<Self> {
-        todo!()
+        self.sin()?.div(self.cos()?)
     }
 
     /// Computes the cotangent of a number (in radians).
@@ -733,7 +758,7 @@ impl Number {
     /// # }
     /// ```
     pub fn cotg(&self) -> Result<Self> {
-        todo!()
+        self.cos()?.div(self.sin()?)
     }
 
     /// Computes the arcsine of a number. Return value is in radians in the range <-pi/2, pi/2>
@@ -754,7 +779,38 @@ impl Number {
     /// # }
     /// ```
     pub fn arcsin(&self) -> Result<Self> {
-        todo!()
+        let one = Self::one();
+        if self > &one || self < &one.mul(-1)? {
+            return Err(Error::OutOfRange);
+        }
+
+        let f = self.inner.to_f64().unwrap_or_default();
+        let arcsin = f.asin();
+        let res = Self {
+            inner: Arc::new(Ratio::from_float(arcsin).unwrap_or_default()),
+        };
+
+        // TODO: Implement those without float
+
+        // let mut res = Self::zero();
+        // let mut tmp = self.clone();
+        // let mut step = Self::one();
+        // let epsilon = Self::epsilon();
+        // let self2 = self.power(2)?;
+
+        // loop {
+        //     res = res.add(&tmp)?;
+        //     let x = step.mul(2)?;
+        //     tmp = x.sub(1)?.mul(&self2)?.div(x)?.mul(tmp)?;
+        //     println!("{}", tmp.to_string(Radix::Dec, 28));
+        //     step = step.add(1)?;
+
+        //     if tmp.abs()? < epsilon || step > Self::from(20) {
+        //         break;
+        //     }
+        // }
+
+        Ok(res)
     }
 
     /// Computes the arccosine of a number. Return value is in radians in the range <0, pi>
@@ -775,7 +831,9 @@ impl Number {
     /// # }
     /// ```
     pub fn arccos(&self) -> Result<Self> {
-        todo!()
+        todo!();
+        let arcsin = self.arcsin()?;
+        Self::pi().div(2)?.sub(arcsin)
     }
 
     /// Computes the arctangent of a number. Return value is in radians in the range <-pi/2, pi/2>
@@ -791,7 +849,8 @@ impl Number {
     /// # }
     /// ```
     pub fn arctg(&self) -> Result<Self> {
-        todo!()
+        let arccot = self.arccotg()?;
+        Self::pi().div(2)?.sub(arccot)
     }
 
     /// Computes the arccotangent of a number. Return value is in radians in the range <0, pi>
@@ -807,7 +866,11 @@ impl Number {
     /// # }
     /// ```
     pub fn arccotg(&self) -> Result<Self> {
-        todo!()
+        if self > &Self::pi() || self < &Self::zero() {
+            return Err(Error::OutOfRange);
+        }
+
+        self.power(2)?.add(1)?.sqrt()?.power(-1)?.arcsin()
     }
 
     /// Calculate combination number of the given `n` and `k`
@@ -852,6 +915,10 @@ impl Number {
 
         if n == zero || n == k {
             return Ok(Self::one());
+        }
+
+        if k == Self::one() {
+            return Ok(n);
         }
 
         if k > n {
