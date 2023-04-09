@@ -170,10 +170,20 @@ fn evaluate_arccotg() -> math::Result<()> {
 
 #[test]
 fn evaluate_abs() -> math::Result<()> {
-    todo!();
+    assert_eq!(eval_dec("abs(12)", 0)?, "12");
+    assert_eq!(eval_dec("abs(-12)", 0)?, "12");
+    assert_eq!(eval_dec("abs(-3 * 5)", 0)?, eval_dec("abs(-3) * abs(5)", 0)?);
+    Ok(())
 }
 #[test]
 fn evaluate_comb() -> math::Result<()> {
-    todo!();
+    assert!(eval_dec("comb(-1, 123)", 0).is_err());
+    assert!(eval_dec("comb(123, -1)", 0).is_err());
+    assert_eq!(eval_dec("comb(3, 4)", 0)?, "0");
+    assert_eq!(eval_dec("comb(3, 3)", 0)?, "1");
+    assert_eq!(eval_dec("comb(4, 2)", 0)?, "6");
+    assert_eq!(eval_dec("comb(4, 1)", 0)?, "4");
+    assert_eq!(eval_dec("comb(12, 6)", 0)?, eval_dec("12! / ((12 - 6)! * 6!)", 0)?);
+    Ok(())
 }
 
