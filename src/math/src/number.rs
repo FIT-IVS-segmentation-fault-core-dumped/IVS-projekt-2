@@ -656,7 +656,28 @@ impl Number {
     /// # }
     /// ```
     pub fn sin(&self) -> Result<Self> {
-        todo!()
+        let mut res = self.clone();
+        let mut tmp = self.clone();
+
+        let numer = self.power(2)?;
+        let mut sign_plus = false;
+        let mut step = Self::from(3);
+
+        while tmp >= Self::epsilon() {
+            let denom = step.sub(1)?.mul(&step)?;
+            tmp = tmp.mul(numer.div(denom)?)?;
+
+            res = if sign_plus {
+                res.add(&tmp)?
+            } else {
+                res.sub(&tmp)?
+            };
+
+            sign_plus = !sign_plus;
+            step = step.add(2)?;
+        }
+
+        Ok(res)
     }
 
     /// Computes the cosine of a number (in radians).
@@ -674,7 +695,7 @@ impl Number {
     /// # }
     /// ```
     pub fn cos(&self) -> Result<Self> {
-        todo!()
+        Self::pi().div(2)?.sub(self)?.sin()
     }
 
     /// Computes the tangent of a number (in radians).
