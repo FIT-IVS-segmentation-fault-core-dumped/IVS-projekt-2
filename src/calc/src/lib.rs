@@ -76,6 +76,10 @@ impl CalcState {
         todo!();
     }
 
+    pub fn get_eval_str(&self) -> String {
+        todo!()
+    }
+
     pub fn store_config_data(&self) {
         confy::store(APP_NAME, None, &self.config).unwrap();
     }
