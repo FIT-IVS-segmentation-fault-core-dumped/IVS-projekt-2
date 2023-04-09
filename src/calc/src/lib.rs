@@ -102,3 +102,6 @@ impl CalcState {
         self.radix = Rc::new(radix);
     }
 }
+
+#[cfg(test)]
+mod calcstate_tests;
