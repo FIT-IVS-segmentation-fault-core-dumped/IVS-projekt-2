@@ -95,19 +95,40 @@ fn evaluate_log() -> math::Result<()> {
 
 #[test]
 fn evaluate_sin() -> math::Result<()> {
-    todo!();
+    assert_eq!(eval_dec("sin(123)", 7)?, "-0.4599035");
+    assert_eq!(eval_dec("sin(-97)", 7)?, eval_dec("-sin(97)", 7)?);
+    assert_eq!(eval_dec("sin(0)", 3)?, "0");
+    assert_eq!(eval_dec("sin(pi())", 0)?, "0");
+    assert_eq!(eval_dec("sin(pi() / 2)", 0)?, "1");
+    Ok(())
 }
 #[test]
 fn evaluate_cos() -> math::Result<()> {
-    todo!();
+    assert_eq!(eval_dec("cos(123)", 6)?, "-0.887969");
+    assert_eq!(eval_dec("cos(-97)", 7)?, eval_dec("cos(97)", 7)?);
+    assert_eq!(eval_dec("cos(0)", 0)?, "1");
+    assert_eq!(eval_dec("cos(pi())", 0)?, "-1");
+    assert_eq!(eval_dec("cos(pi() / 2)", 0)?, "0");
+    Ok(())
 }
 #[test]
 fn evaluate_tg() -> math::Result<()> {
-    todo!();
+    assert_eq!(eval_dec("tg(123)", 6)?, "0.5179");
+    assert_eq!(eval_dec("tg(-97)", 7)?, eval_dec("-tg(97)", 7)?);
+    assert_eq!(eval_dec("tg(0)", 0)?, "0");
+    assert!(eval_dec("tg(pi() / 2)", 0).is_err());
+    assert_eq!(eval_dec("tg(15)", 3)?, eval_dec("sin(15) / cos(15)", 3)?);
+    Ok(())
 }
 #[test]
 fn evaluate_cotg() -> math::Result<()> {
-    todo!();
+    assert_eq!(eval_dec("cotg(123)", 5)?, "1.93077");
+    assert_eq!(eval_dec("cotg(50)", 5)?, eval_dec("1 / tg(50)", 5)?);
+    assert_eq!(eval_dec("cotg(-97)", 7)?, eval_dec("-cotg(97)", 7)?);
+    assert_eq!(eval_dec("cotg(pi() / 2)", 0)?, "0");
+    assert!(eval_dec("cotg(0)", 0).is_err());
+    assert_eq!(eval_dec("cotg(15)", 3)?, eval_dec("cos(15) / sin(15)", 3)?);
+    Ok(())
 }
 
 #[test]
