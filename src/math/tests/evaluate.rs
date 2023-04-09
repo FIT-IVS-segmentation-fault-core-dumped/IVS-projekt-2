@@ -47,9 +47,9 @@ fn evaluate_div() -> math::Result<()> {
 
 #[test]
 fn evaluate_fact() -> math::Result<()> {
-    assert_eq!(eval_dec("0", 0)?, "1");
-    assert_eq!(eval_dec("5", 0)?, "120");
-    assert_eq!(eval_dec("3.2", 5)?, "7.75669");
+    assert_eq!(eval_dec("0!", 0)?, "1");
+    assert_eq!(eval_dec("5!", 0)?, "120");
+    assert_eq!(eval_dec("3.2!", 5)?, "7.75669");
     Ok(())
 }
 #[test]
