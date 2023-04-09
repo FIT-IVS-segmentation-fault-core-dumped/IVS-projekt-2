@@ -187,3 +187,20 @@ fn evaluate_comb() -> math::Result<()> {
     Ok(())
 }
 
+#[test]
+fn evaluate_expr() -> math::Result<()> {
+    let dec_eq = |s1, s2, p| -> math::Result<()> {
+        assert_eq!(eval_dec(s1, p)?, eval_dec(s2, p)?);
+        Ok(())
+    };
+
+    dec_eq("sin(123) * sin(123) + cos(123) * cos(123)", "1", 0)?;
+    dec_eq("sin(56)", "cos(56 - pi() / 2)", 4)?;
+    dec_eq("123", "123", 0)?;
+    dec_eq("0.1", "0.2 - 0.1", 2)?;
+    dec_eq("pow(ln(5), 13)", "13 * ln(5)", 4)?;
+    dec_eq("root(log(3, 13), 13)", "3", 0)?;
+
+    Ok(())
+}
+
