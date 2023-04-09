@@ -11,13 +11,14 @@ pub enum Opt {
     Sum, Sub, Mul, Div,
     Sin, Cos, Tg, Cotg,
     Arcsin, Arccos, Arctg, Arccotg,
-    Log, LogN, Sqrt, Root, Pow,
-    Abs, Comb, Perm, Ln
+    Log, LogN, Ln, Sqrt, Root, Pow,
+    Abs, Comb, Fact
 }
 
 pub enum PressedButton {
     Num(u8),
     BinOpt(Opt),
+    UnaryOpt(Opt),
     Const(String),
     Clear,
     Delete,
