@@ -818,7 +818,29 @@ impl Number {
     /// # }
     /// ```
     pub fn combination(n: impl Into<Self>, k: impl Into<Self>) -> Result<Self> {
-        todo!()
+        let n = n.into();
+        if n < Self::zero() {
+            return Err(Error::FactorialNegative);
+        }
+
+        let k = k.into();
+        if k < Self::zero() {
+            return Err(Error::FactorialNegative);
+        }
+
+        if n == Self::zero() || n == k {
+            return Ok(Self::one());
+        }
+
+        if k > n {
+            return Ok(Self::zero());
+        }
+
+        let k_factorial = k.factorial()?;
+        let nk_factorial = n.sub(&k)?.factorial()?;
+        let denom = k_factorial.mul(nk_factorial)?;
+
+        n.factorial()?.div(denom)
     }
 }
 
