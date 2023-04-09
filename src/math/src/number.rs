@@ -818,17 +818,18 @@ impl Number {
     /// # }
     /// ```
     pub fn combination(n: impl Into<Self>, k: impl Into<Self>) -> Result<Self> {
+        let zero = Self::zero();
         let n = n.into();
-        if n < Self::zero() {
+        if n < zero {
             return Err(Error::FactorialNegative);
         }
 
         let k = k.into();
-        if k < Self::zero() {
+        if k < zero {
             return Err(Error::FactorialNegative);
         }
 
-        if n == Self::zero() || n == k {
+        if n == zero || n == k {
             return Ok(Self::one());
         }
 
