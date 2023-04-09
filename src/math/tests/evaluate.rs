@@ -204,3 +204,10 @@ fn evaluate_expr() -> math::Result<()> {
     Ok(())
 }
 
+#[test]
+fn evaluate_constants() -> math::Result<()> {
+    assert_eq!(eval_dec("pi()", 6)?, "3.141593");
+    assert_eq!(eval_dec("e()", 6)?, "2.718282");
+    Ok(())
+}
+
