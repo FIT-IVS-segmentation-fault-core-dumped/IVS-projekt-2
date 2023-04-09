@@ -211,14 +211,13 @@ impl Number {
         let denom = rng.gen_range(1..u32::MAX);
         let num = rng.gen_range(0..=denom);
 
-        Self::new_unchecked(num as _, denom as _)
+        Self::new_unchecked(num, denom)
     }
 
     /// Add two numbers together
     ///
     /// ```
     /// # use math::Number;
-    ///
     /// # fn main() -> math::Result<()> {
     /// let a = Number::new(1, 10)?;
     /// let b = Number::new(2, 10)?;
@@ -250,13 +249,12 @@ impl Number {
     ///
     /// ```
     /// # use math::Number;
-    ///
     /// # fn main() -> math::Result<()> {
-    ///     let a = Number::new(1, 10)?;
-    ///     let b = Number::new(2, 10)?;
+    /// let a = Number::new(1, 10)?;
+    /// let b = Number::new(2, 10)?;
     ///
-    ///     assert_eq!(a.sub(&b)?, Number::new(-1, 10)?);
-    ///     assert_eq!(b.sub(&a)?, Number::new(1, 10)?);
+    /// assert_eq!(a.sub(&b)?, Number::new(-1, 10)?);
+    /// assert_eq!(b.sub(&a)?, Number::new(1, 10)?);
     /// #     Ok(())
     /// # }
     /// ```
@@ -278,13 +276,12 @@ impl Number {
     ///
     /// ```
     /// # use math::Number;
-    ///
     /// # fn main() -> math::Result<()> {
-    ///     let a = Number::new(1, 10)?;
-    ///     let b = Number::new(2, 10)?;
+    /// let a = Number::new(1, 10)?;
+    /// let b = Number::new(2, 10)?;
     ///
-    ///     assert_eq!(a.mul(&b)?, Number::new(2, 100)?);
-    ///     assert_eq!(b.mul(&a), a.mul(&b));
+    /// assert_eq!(a.mul(&b)?, Number::new(2, 100)?);
+    /// assert_eq!(b.mul(&a), a.mul(&b));
     /// #     Ok(())
     /// # }
     /// ```
@@ -321,18 +318,17 @@ impl Number {
     ///
     /// ```
     /// # use math::Number;
-    ///
     /// # fn main() -> math::Result<()> {
-    ///     let random = Number::random();
-    ///     assert!(random.div(Number::zero()).is_err());
-    ///     assert_eq!(Number::zerO().div(&random)?, Number::zero());
-    ///     assert_eq!(random.div(&random)?, Number::one());
+    /// let random = Number::random();
+    /// assert!(random.div(Number::zero()).is_err());
+    /// assert_eq!(Number::zero().div(&random)?, Number::zero());
+    /// assert_eq!(random.div(&random)?, Number::one());
     ///
-    ///     let a = Number::from(3);
-    ///     let b = Number::new(3, 2)?;
-    ///     let neg_b = Number::new(-3, 2)?;
-    ///     assert_eq!(a.div(&b)?, Number::from(2));
-    ///     assert_eq!(a.div(&neg_b)?, Number::from(-2));
+    /// let a = Number::from(3);
+    /// let b = Number::new(3, 2)?;
+    /// let neg_b = Number::new(-3, 2)?;
+    /// assert_eq!(a.div(&b)?, Number::from(2));
+    /// assert_eq!(a.div(&neg_b)?, Number::from(-2));
     /// #   Ok(())
     /// # }
     /// ```
@@ -450,12 +446,11 @@ impl Number {
     /// ```
     /// # use math::Number;
     /// # use math::number::Radix;
-    ///
     /// # fn main() -> math::Result<()> {
-    ///     assert_eq!(Number::zero().factorial()?, Number::one());
-    ///     assert_eq!(Number::from(5).factorial()?, Number::from(120));
-    ///     assert_eq!(Number::new(32, 10)?.factorial()?.to_string(Radix::Dec, 6), "7.75669");
-    ///     assert!(Number::from(-1).factorial().is_err());
+    /// assert_eq!(Number::zero().factorial()?, Number::one());
+    /// assert_eq!(Number::from(5).factorial()?, Number::from(120));
+    /// assert_eq!(Number::new(32, 10)?.factorial()?.to_string(Radix::Dec, 6), "7.75669");
+    /// assert!(Number::from(-1).factorial().is_err());
     /// #     Ok(())
     /// # }
     /// ```
@@ -475,7 +470,7 @@ impl Number {
         if self.inner.is_integer() {
             let mut res = Self::from(2);
             let to = Self::from(self.inner.numer().clone());
-            let mut cnt = Self::from(2u64);
+            let mut cnt = Self::from(3u64);
             while cnt <= to {
                 res = res.mul(&cnt)?;
                 cnt = cnt.add(1)?;
@@ -490,15 +485,15 @@ impl Number {
     /// Calculate gamma function
     pub fn gamma(&self) -> Result<Self> {
         let p = [
-            Self::new_unchecked(9999999999998099, 10000000000000000),
-            Self::new_unchecked(6765203681218851, 1000000000000000),
-            Self::new_unchecked(-1259139216722289, 1000000000000000),
-            Self::new_unchecked(7713234287776531, 10000000000000000),
-            Self::new_unchecked(-1766150291621406, 10000000000000000),
-            Self::new_unchecked(1250734327868691, 100000000000000000),
-            Self::new_unchecked(-13857109526572012, 100000000000000000),
-            Self::new_unchecked(9984369578019571, 1000000000000000000),
-            Self::new_unchecked(15056327351493116, 100000000000000000000),
+            Self::new_unchecked(9999999999998099i128, 10000000000000000i128),
+            Self::new_unchecked(6765203681218851i128, 1000000000000000i128),
+            Self::new_unchecked(-1259139216722289i128, 1000000000000000i128),
+            Self::new_unchecked(7713234287776531i128, 10000000000000000i128),
+            Self::new_unchecked(-1766150291621406i128, 10000000000000000i128),
+            Self::new_unchecked(1250734327868691i128, 100000000000000000i128),
+            Self::new_unchecked(-13857109526572012i128, 100000000000000000i128),
+            Self::new_unchecked(9984369578019571i128, 1000000000000000000i128),
+            Self::new_unchecked(15056327351493116i128, 100000000000000000000i128),
         ];
 
         let mut iter = p.into_iter().enumerate();
@@ -528,30 +523,29 @@ impl Number {
     ///
     /// ```
     /// # use math::Number;
-    ///
     /// # fn main() -> math::Result<()> {
-    ///     assert!(Number::random().log(0).is_err());
-    ///     assert!(Number::random().log(-1.2).is_err());
-    ///     assert!(Number::zero().log(Number::random()).is_err());
-    ///     assert!(Number::new(-3, 10)?.log(Number::random()).is_err());
+    /// assert!(Number::random().log(0).is_err());
+    /// assert!(Number::random().log(Number::new_unchecked(-3,2)).is_err());
+    /// assert!(Number::zero().log(Number::random()).is_err());
+    /// assert!(Number::new(-3, 10)?.log(Number::random()).is_err());
     ///
-    ///     let a = Number::random();
-    ///     let base = Number::random();
-    ///     let b = Number::from(2);
+    /// let a = Number::random();
+    /// let base = Number::random();
+    /// let b = Number::from(2);
     ///
-    ///     // Number same as base
-    ///     assert_eq!(a.log(a)?, Number::one());
-    ///     // Product rule log(xy) == log(x) + log(y)
-    ///     assert_eq!(a.mul(b)?.log(base), a.log(base)?.add(b.log(base)?));
-    ///     // Quotient rule log(x/y) == log(x) - log(y)
-    ///     assert_eq!(a.div(b)?.log(base), a.log(base)?.sub(b.log(base)?));
-    ///     // Log of power log(x^y) == y * log(x)
-    ///     assert_eq!(a.power(b)?.log(base), b.mul(a.log(base)?));
-    ///     // Log of one
-    ///     assert_eq!(Number::one().log(base)?, Number::zero());
-    ///     // Log reciprocal log(1/x) = -ln(x);
-    ///     assert_eq!(Number::one().div(a)?.log(base), a.log(base)?.mul(-1));
-    ///     # Ok(())
+    /// // Number same as base
+    /// assert_eq!(a.log(&a)?, Number::one());
+    /// // Product rule log(xy) == log(x) + log(y)
+    /// assert_eq!(a.mul(&b)?.log(&base), a.log(&base)?.add(b.log(&base)?));
+    /// // Quotient rule log(x/y) == log(x) - log(y)
+    /// assert_eq!(a.div(&b)?.log(&base), a.log(&base)?.sub(b.log(&base)?));
+    /// // Log of power log(x^y) == y * log(x)
+    /// assert_eq!(a.power(&b)?.log(&base), b.mul(a.log(&base)?));
+    /// // Log of one
+    /// assert_eq!(Number::one().log(&base)?, Number::zero());
+    /// // Log reciprocal log(1/x) = -ln(x);
+    /// assert_eq!(Number::one().div(&a)?.log(&base), a.log(&base)?.mul(-1));
+    /// # Ok(())
     /// # }
     /// ```
     pub fn log(&self, base: impl Into<Self>) -> Result<Self> {
@@ -581,25 +575,23 @@ impl Number {
     ///
     /// ```
     /// # use math::Number;
-    ///
     /// # fn main() -> math::Result<()> {
-    ///     assert!(Number::random().root(0).is_err());
-    ///     assert!(Number::from(-1).root(2).is_err());
-    ///     assert!(Number::from(-1).root(88).is_err());
-    ///     assert!(Number::from(-1).root(3).is_ok());
-    ///     assert!(Number::from(-1).root(87).is_ok());
+    /// assert!(Number::random().root(0).is_err());
+    /// assert!(Number::from(-1).root(2).is_err());
+    /// assert!(Number::from(-1).root(88).is_err());
+    /// assert!(Number::from(-1).root(3).is_ok());
+    /// assert!(Number::from(-1).root(87).is_ok());
     ///
-    ///     let a = Number::random();
-    ///     let b = Number::random();
-    ///     let nth = Number::random();
+    /// let a = Number::random();
+    /// let b = Number::random();
+    /// let nth = Number::random();
     ///
-    ///     // root(a^nth) == a
-    ///     assert_eq!(a.power(&nth)?.root(&nth)?, a.clone());
-    ///     // root(ab) == root(a) * root(b)
-    ///     assert_eq!(a.mul(&b)?.root(&nth), a.root(&nth)?.mul(b.root(&nth)?));
-    ///     // root(a/b) == root(a) / root(b)
-    ///     assert_eq!(a.div(&b)?.root(&nth), a.root(&nth)?.div(b.root(&nth)?));
-    ///
+    /// // root(a^nth) == a
+    /// assert_eq!(a.power(&nth)?.root(&nth)?, a.clone());
+    /// // root(ab) == root(a) * root(b)
+    /// assert_eq!(a.mul(&b)?.root(&nth), a.root(&nth)?.mul(b.root(&nth)?));
+    /// // root(a/b) == root(a) / root(b)
+    /// assert_eq!(a.div(&b)?.root(&nth), a.root(&nth)?.div(b.root(&nth)?));
     /// #     Ok(())
     /// # }
     /// ```
@@ -623,7 +615,7 @@ impl Number {
             let mut del_x = Self::one();
             let mut x_k = Self::zero();
 
-            while del_x > Self::epsilon() {
+            while del_x <= Self::epsilon() {
                 x_k = Self::from(to_root - 1)
                     .mul(&x_pre)?
                     .add(self.div(&x_pre.power(to_root - 1)?)?)?
@@ -653,15 +645,13 @@ impl Number {
     ///
     /// ```
     /// # use math::Number;
-    ///
     /// # fn main() -> math::Result<()> {
-    ///     let x = Number::random();
-    ///     let half_pi = Number::pi().div(2)?;
-    ///     let sin_x = x.sin();
+    /// let x = Number::random();
+    /// let half_pi = Number::pi().div(2)?;
+    /// let sin_x = x.sin();
     ///
-    ///     // sin(x) == cos(PI/2 - x)
-    ///     assert_eq!(sin_x, half_pi.sub(x)?.cos());
-    ///
+    /// // sin(x) == cos(PI/2 - x)
+    /// assert_eq!(sin_x, half_pi.sub(x)?.cos());
     /// #     Ok(())
     /// # }
     /// ```
@@ -673,15 +663,13 @@ impl Number {
     ///
     /// ```
     /// # use math::Number;
-    ///
     /// # fn main() -> math::Result<()> {
-    ///     let x = Number::random();
-    ///     let half_pi = Number::pi().div(2)?;
-    ///     let cos_x = x.cos();
+    /// let x = Number::random();
+    /// let half_pi = Number::pi().div(2)?;
+    /// let cos_x = x.cos();
     ///
-    ///     // cos(x) == sin(PI/2 - x)
-    ///     assert_eq!(cos_x, half_pi.sub(x)?.sin());
-    ///
+    /// // cos(x) == sin(PI/2 - x)
+    /// assert_eq!(cos_x, half_pi.sub(x)?.sin());
     /// #     Ok(())
     /// # }
     /// ```
@@ -693,15 +681,14 @@ impl Number {
     ///
     /// ```
     /// # use math::Number;
-    ///
     /// # fn main() -> math::Result<()> {
-    ///     let x = Number::random();
-    ///     let tan_x = x.tg();
+    /// let x = Number::random();
+    /// let tan_x = x.tg();
     ///
-    ///     // tg(x) == sin(x) / cos(x)
-    ///     assert_eq!(tan_x, x.sin()?.div(x.cos()?));
-    ///     // tg(x) == 1 / cotg(x)
-    ///     assert_eq!(tan_x, Number::one().div(x.cotg()?));
+    /// // tg(x) == sin(x) / cos(x)
+    /// assert_eq!(tan_x, x.sin()?.div(x.cos()?));
+    /// // tg(x) == 1 / cotg(x)
+    /// assert_eq!(tan_x, Number::one().div(x.cotg()?));
     /// #     Ok(())
     /// # }
     /// ```
@@ -713,15 +700,14 @@ impl Number {
     ///
     /// ```
     /// # use math::Number;
-    ///
     /// # fn main() -> math::Result<()> {
-    ///     let x = Number::random();
-    ///     let cot_x = x.cotg();
+    /// let x = Number::random();
+    /// let cot_x = x.cotg();
     ///
-    ///     // cotg(x) == cos(x) / sin(x)
-    ///     assert_eq!(cot_x, x.cos()?.div(x.sin()?));
-    ///     // cotg(x) == 1 / tg(x)
-    ///     assert_eq!(cot_x, Number::one().div(x.tg()?));
+    /// // cotg(x) == cos(x) / sin(x)
+    /// assert_eq!(cot_x, x.cos()?.div(x.sin()?));
+    /// // cotg(x) == 1 / tg(x)
+    /// assert_eq!(cot_x, Number::one().div(x.tg()?));
     /// #     Ok(())
     /// # }
     /// ```
@@ -736,14 +722,13 @@ impl Number {
     ///
     /// ```
     /// # use math::Number;
-    ///
     /// # fn main() -> math::Result<()> {
-    ///     assert!(Number::from(-2).arcsin().is_err());
-    ///     assert!(Number::from(2).arcsin().is_err());
-    ///     let x = Number::random();
-    ///     let sin_x = x.sin()?;
+    /// assert!(Number::from(-2).arcsin().is_err());
+    /// assert!(Number::from(2).arcsin().is_err());
+    /// let x = Number::random();
+    /// let sin_x = x.sin()?;
     ///
-    ///     assert_eq!(x, sin_x.arcsin()?);
+    /// assert_eq!(x, sin_x.arcsin()?);
     /// #     Ok(())
     /// # }
     /// ```
@@ -758,15 +743,13 @@ impl Number {
     ///
     /// ```
     /// # use math::Number;
-    ///
     /// # fn main() -> math::Result<()> {
-    ///     assert!(Number::from(-2).arccos().is_err());
-    ///     assert!(Number::from(2).arccos().is_err());
-    ///     let x = Number::random();
-    ///     let cos_x = x.cos()?;
+    /// assert!(Number::from(-2).arccos().is_err());
+    /// assert!(Number::from(2).arccos().is_err());
+    /// let x = Number::random();
+    /// let cos_x = x.cos()?;
     ///
-    ///     assert_eq!(x, cos_x.arccos()?);
-    ///
+    /// assert_eq!(x, cos_x.arccos()?);
     /// #     Ok(())
     /// # }
     /// ```
@@ -778,12 +761,11 @@ impl Number {
     ///
     /// ```
     /// # use math::Number;
-    ///
     /// # fn main() -> math::Result<()> {
-    ///     let x = Number::random();
-    ///     let tan_x = x.tg()?;
+    /// let x = Number::random();
+    /// let tan_x = x.tg()?;
     ///
-    ///     assert_eq!(x, tan_x.arctg()?);
+    /// assert_eq!(x, tan_x.arctg()?);
     /// #     Ok(())
     /// # }
     /// ```
@@ -795,13 +777,11 @@ impl Number {
     ///
     /// ```
     /// # use math::Number;
-    ///
     /// # fn main() -> math::Result<()> {
-    ///     let x = Number::random();
-    ///     let cot_x = x.cotg()?;
+    /// let x = Number::random();
+    /// let cot_x = x.cotg()?;
     ///
-    ///     assert_eq!(x, cot_x.arccotg()?);
-    ///
+    /// assert_eq!(x, cot_x.arccotg()?);
     /// #     Ok(())
     /// # }
     /// ```
@@ -820,21 +800,20 @@ impl Number {
     ///
     /// ```
     /// # use math::Number;
-    ///
     /// # fn main() -> math::Result<()> {
-    ///     assert!(Number::combination(-1, Number::random()).is_err());
-    ///     assert!(Number::combination(Number::random(), -1).is_err());
+    /// assert!(Number::combination(-1, Number::random()).is_err());
+    /// assert!(Number::combination(Number::random(), -1).is_err());
     ///
-    ///     let n = Number::random();
+    /// let n = Number::random();
     ///
-    ///     // if k > n => C(n, k) == 0
-    ///     assert_eq!(Number::combination(3, 4)?, Number::zero());
-    ///     // C(n, 0) == 1
-    ///     assert_eq!(Number::combination(&n, 0)?, Number::one());
-    ///     // C(n, n) == 1
-    ///     assert_eq!(Number::combination(&n, &n)?, Number::one());
-    ///     // C(n, 1) == n
-    ///     assert_eq!(Number::combination(&n, 1)?, n);
+    /// // if k > n => C(n, k) == 0
+    /// assert_eq!(Number::combination(3, 4)?, Number::zero());
+    /// // C(n, 0) == 1
+    /// assert_eq!(Number::combination(&n, 0)?, Number::one());
+    /// // C(n, n) == 1
+    /// assert_eq!(Number::combination(&n, &n)?, Number::one());
+    /// // C(n, 1) == n
+    /// assert_eq!(Number::combination(&n, 1)?, n);
     /// #     Ok(())
     /// # }
     /// ```
