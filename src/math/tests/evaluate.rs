@@ -47,19 +47,50 @@ fn evaluate_div() -> math::Result<()> {
 
 #[test]
 fn evaluate_fact() -> math::Result<()> {
-    todo!();
+    assert_eq!(eval_dec("0", 0)?, "1");
+    assert_eq!(eval_dec("5", 0)?, "120");
+    assert_eq!(eval_dec("3.2", 5)?, "7.75669");
+    Ok(())
 }
 #[test]
 fn evaluate_pow() -> math::Result<()> {
-    todo!();
+    assert_eq!(eval_dec("pow(-123, 0)", 0)?, "1");
+    assert_eq!(eval_dec("pow(123, 0)", 0)?, "1");
+    assert_eq!(eval_dec("pow(2, 3) * pow(2, 5)", 0)?, "256");
+    assert_eq!(eval_dec("pow(pow(2, 3), 3)", 0)?, "512");
+    assert_eq!(eval_dec("pow(2, -2)", 2)?, "0.25");
+    assert!(eval_dec("pow(pow(0, 0), 0)", 3).is_ok());
+    Ok(())
 }
 #[test]
 fn evaluate_root() -> math::Result<()> {
-    todo!();
+    assert_eq!(eval_dec("root(64, 2)", 0)?, "8");
+    assert_eq!(eval_dec("root(-64, 3)", 0)?, "-4");
+    assert!(eval_dec("root(-64, 2)", 3).is_err());
+    assert!(eval_dec("root(-64, 122)", 3).is_err());
+
+    assert_eq!(eval_dec("sqrt(2)", 6)?, "1.414214");
+    assert!(eval_dec("sqrt(-2)", 3).is_err());
+    assert_eq!(eval_dec("sqrt(9)", 3)?, "3");
+    Ok(())
 }
 #[test]
 fn evaluate_log() -> math::Result<()> {
-    todo!();
+    assert_eq!(eval_dec("log(13, 169)", 0)?, "2");
+    assert_eq!(eval_dec("log(3, 27)", 0)?, "3");
+    assert_eq!(eval_dec("log(50, 123 * 456)", 5)?, eval_dec("log(50, 123) + log(50, 456)", 5)?);
+    assert_eq!(eval_dec("log(50, 123 / 456)", 5)?, eval_dec("log(50, 123) - log(50, 456)", 5)?);
+
+    assert!(eval_dec("log(0, 123)", 3).is_err());
+    assert!(eval_dec("log(123, 0)", 3).is_err());
+    assert!(eval_dec("log(-1, 123)", 3).is_err());
+    assert!(eval_dec("log(1, -123)", 3).is_err());
+    assert!(eval_dec("log(-1, -123)", 3).is_err());
+
+    assert_eq!(eval_dec("log(3, 123)", 2)?, eval_dec("ln(3) / ln(123)", 2)?);
+    assert_eq!(eval_dec("log(e(), 10)", 5)?, eval_dec("ln(10)", 5)?);
+    assert_eq!(eval_dec("pow(123, log(123, 10))", 2)?, "10");
+    Ok(())
 }
 
 #[test]
