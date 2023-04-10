@@ -16,7 +16,11 @@ pub enum Error {
 
     #[error("Logarithm to a negative base")]
     /// Logarithm to a negative base
-    LogNegativeBase,
+    LogUndefinedBase,
+
+    #[error("Logarithm of a number that is less or equal zero")]
+    /// Logarithm of a number that is less or equal zero
+    LogUndefinedNumber,
 
     #[error("Zero nth root")]
     /// Zero nth root
@@ -29,4 +33,12 @@ pub enum Error {
     #[error("Number is outside of range")]
     /// Number is outside of range
     OutOfRange,
+
+    #[error("{0}")]
+    /// Error message
+    Message(String),
+
+    #[error("The token at index `{0}` isn't valid")]
+    /// Unsupported Token
+    UnsupportedToken(usize),
 }
