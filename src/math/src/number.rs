@@ -2,6 +2,7 @@ use crate::error::Error;
 use crate::Result;
 use num::rational::Ratio;
 use num::BigInt;
+use num::Float as _;
 use num::Signed as _;
 use num::ToPrimitive;
 use once_cell::sync::OnceCell;
@@ -565,39 +566,76 @@ impl Number {
     /// let a = Number::random();
     /// let base = Number::random();
     /// let b = Number::from(2);
+    /// let precision = Number::guarantee_precision();
     ///
     /// // Number same as base
     /// assert_eq!(a.log(&a)?, Number::one());
-    /// // Product rule log(xy) == log(x) + log(y)
-    /// assert_eq!(a.mul(&b)?.log(&base), a.log(&base)?.add(b.log(&base)?));
-    /// // Quotient rule log(x/y) == log(x) - log(y)
-    /// assert_eq!(a.div(&b)?.log(&base), a.log(&base)?.sub(b.log(&base)?));
-    /// // Log of power log(x^y) == y * log(x)
-    /// assert_eq!(a.power(&b)?.log(&base), b.mul(a.log(&base)?));
     /// // Log of one
     /// assert_eq!(Number::one().log(&base)?, Number::zero());
+    /// // Product rule log(xy) == log(x) + log(y)
+    /// let test_a = a.mul(&b)?.log(&base)?;
+    /// let test_b = a.log(&base)?.add(b.log(&base)?)?;
+    /// assert!(test_a.sub(test_b)?.abs()? < precision);
+    ///
+    /// // Quotient rule log(x/y) == log(x) - log(y)
+    /// let test_a = a.div(&b)?.log(&base)?;
+    /// let test_b = a.log(&base)?.sub(b.log(&base)?)?;
+    /// assert!(test_a.sub(test_b)?.abs()? < precision);
+    ///
+    /// // Log of power log(x^y) == y * log(x)
+    /// let test_a = a.power(&b)?.log(&base)?;
+    /// let test_b = b.mul(a.log(&base)?)?;
+    /// assert!(test_a.sub(test_b)?.abs()? < precision);
+    ///
     /// // Log reciprocal log(1/x) = -ln(x);
-    /// assert_eq!(Number::one().div(&a)?.log(&base), a.log(&base)?.mul(-1));
+    /// let test_a = Number::one().div(&a)?.log(&base)?;
+    /// let test_b = a.log(&base)?.mul(-1)?;
+    /// assert!(test_a.sub(test_b)?.abs()? < precision);
     /// # Ok(())
     /// # }
     /// ```
     pub fn log(&self, base: impl Into<Self>) -> Result<Self> {
-        todo!()
+        if self <= &Self::zero() {
+            return Err(Error::LogUndefinedNumber);
+        }
+
+        let base = base.into();
+
+        if base <= Self::zero() {
+            return Err(Error::LogUndefinedBase);
+        }
+
+        if self == &Self::one() {
+            return Ok(Self::zero());
+        }
+
+        if self == &base {
+            return Ok(Self::one());
+        }
+
+        let f = self.inner.to_f64().unwrap_or_default();
+        let base = base.inner.to_f64().unwrap_or_default();
+        let log = f.log(base);
+        let res = Self {
+            inner: Arc::new(Ratio::from_float(log).unwrap_or_default()),
+        };
+
+        Ok(res)
     }
 
     /// Same as `Number::log` with `base` of 2
     pub fn log2(&self) -> Result<Self> {
-        todo!()
+        self.log(2)
     }
 
     /// Same as `Number::log` with `base` of `Number::E`
     pub fn ln(&self) -> Result<Self> {
-        todo!()
+        self.log(Self::e())
     }
 
     /// Same as `Number::log` with `base` of 10
     pub fn log10(&self) -> Result<Self> {
-        todo!()
+        self.log(10)
     }
 
     /// Returns the nth root of a number
@@ -871,12 +909,6 @@ impl Number {
     /// # }
     /// ```
     pub fn arctg(&self) -> Result<Self> {
-        let half_pi = Self::pi().div(2)?;
-
-        if self > &half_pi || self < &half_pi.mul(-1)? {
-            return Err(Error::OutOfRange);
-        }
-
         let arccot = self.arccotg()?;
         Self::pi().div(2)?.sub(arccot)
     }
@@ -886,7 +918,7 @@ impl Number {
     /// ```
     /// # use math::Number;
     /// # fn main() -> math::Result<()> {
-    /// let x = Number::random().add(1)?;
+    /// let x = Number::random();
     /// let rev_cot_x = x.cotg()?.arccotg()?;
     ///
     /// assert!(x.sub(rev_cot_x)?.abs()? < Number::guarantee_precision());
@@ -894,10 +926,6 @@ impl Number {
     /// # }
     /// ```
     pub fn arccotg(&self) -> Result<Self> {
-        if self > &Self::pi() || self < &Self::zero() {
-            return Err(Error::OutOfRange);
-        }
-
         self.power(2)?.add(1)?.sqrt()?.power(-1)?.arcsin()
     }
 
