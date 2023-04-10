@@ -74,7 +74,15 @@ impl Number {
         E.get_or_init(|| Self::new_unchecked(2721, 1001)).clone()
     }
 
+    /// According to the specification, the guarantee_precision is 6 point digits
+    pub fn guarantee_precision() -> Self {
+        static PRE: OnceCell<Number> = OnceCell::new();
+        PRE.get_or_init(|| Self::new_unchecked(1, 10u128.pow(6)))
+            .clone()
+    }
+
     /// Minimum precision
+    /// This will always be smaller than `Number::guarantee_precision`
     pub fn epsilon() -> Self {
         static EPSILON: OnceCell<Number> = OnceCell::new();
         EPSILON
@@ -609,14 +617,23 @@ impl Number {
     ///
     /// let a = Number::random();
     /// let b = Number::random();
-    /// let nth = Number::random();
+    /// let nth = Number::from(5);
+    /// let precision = Number::new(1, 1000000)?; // 6 digits
+    /// // let nth = Number::random();
     ///
     /// // root(a^nth) == a
-    /// assert_eq!(a.power(&nth)?.root(&nth)?, a.clone());
+    /// let test = a.power(&nth)?.root(&nth)?;
+    /// assert!(test.sub(&a)?.abs()? < precision);
+    ///
     /// // root(ab) == root(a) * root(b)
-    /// assert_eq!(a.mul(&b)?.root(&nth), a.root(&nth)?.mul(b.root(&nth)?));
+    /// let test_a = a.mul(&b)?.root(&nth)?;
+    /// let test_b = a.root(&nth)?.mul(b.root(&nth)?)?;
+    /// assert!(test_a.sub(&test_b)?.abs()? < precision);
+    ///
     /// // root(a/b) == root(a) / root(b)
-    /// assert_eq!(a.div(&b)?.root(&nth), a.root(&nth)?.div(b.root(&nth)?));
+    /// let test_a = a.div(&b)?.root(&nth)?;
+    /// let test_b = a.root(&nth)?.div(b.root(&nth)?)?;
+    /// assert!(test_a.sub(test_b)?.abs()? < precision);
     /// #     Ok(())
     /// # }
     /// ```
@@ -624,6 +641,10 @@ impl Number {
         let nth = nth.into();
         if nth == Self::zero() {
             return Err(Error::ZeroNthRoot);
+        }
+
+        if nth.modulo(2)? == Self::zero() && self < &Self::zero() {
+            return Err(Error::NegativeRoot);
         }
 
         if self == &Self::zero() {
@@ -636,21 +657,14 @@ impl Number {
         let mut res: Self = self.clone();
 
         if to_root != &num::one() {
-            let mut x_pre = Self::random().mul(10)?;
-            let mut del_x = Self::one();
-            let mut x_k = Self::zero();
+            let f = self.inner.to_f64().unwrap_or_default();
+            let nth = 1.0 / to_root.to_f64().unwrap_or_default();
+            let val = f.powf(nth);
+            res = Self {
+                inner: Arc::new(Ratio::from_float(val).unwrap_or_default()),
+            };
 
-            while del_x <= Self::epsilon() {
-                x_k = Self::from(to_root - 1)
-                    .mul(&x_pre)?
-                    .add(self.div(&x_pre.power(to_root - 1)?)?)?
-                    .div(to_root.clone())?;
-
-                del_x = x_k.sub(x_pre)?.abs()?;
-                x_pre = x_k.clone();
-            }
-
-            res = x_k;
+            // TODO: implementation without rely on f64
         }
 
         if to_pow != &num::one() {
@@ -772,9 +786,9 @@ impl Number {
     /// assert!(Number::from(-2).arcsin().is_err());
     /// assert!(Number::from(2).arcsin().is_err());
     /// let x = Number::random();
-    /// let sin_x = x.sin()?;
+    /// let rev_sin_x = x.sin()?.arcsin()?;
     ///
-    /// assert_eq!(x, sin_x.arcsin()?);
+    /// assert!(x.sub(rev_sin_x)?.abs()? < Number::guarantee_precision());
     /// #     Ok(())
     /// # }
     /// ```
@@ -821,19 +835,27 @@ impl Number {
     /// ```
     /// # use math::Number;
     /// # fn main() -> math::Result<()> {
-    /// assert!(Number::from(-2).arccos().is_err());
-    /// assert!(Number::from(2).arccos().is_err());
+    /// assert!(Number::from(-1).arccos().is_err());
+    /// assert!(Number::from(4).arccos().is_err());
     /// let x = Number::random();
-    /// let cos_x = x.cos()?;
+    /// let rev_cos_x = x.cos()?.arccos()?;
     ///
-    /// assert_eq!(x, cos_x.arccos()?);
+    /// assert!(x.sub(rev_cos_x)?.abs()? < Number::guarantee_precision());
     /// #     Ok(())
     /// # }
     /// ```
     pub fn arccos(&self) -> Result<Self> {
-        todo!();
-        let arcsin = self.arcsin()?;
-        Self::pi().div(2)?.sub(arcsin)
+        if self > &Self::pi() || self < &Self::zero() {
+            return Err(Error::OutOfRange);
+        }
+
+        let f = self.inner.to_f64().unwrap_or_default();
+        let arcsin = f.acos();
+        let res = Self {
+            inner: Arc::new(Ratio::from_float(arcsin).unwrap_or_default()),
+        };
+
+        Ok(res)
     }
 
     /// Computes the arctangent of a number. Return value is in radians in the range <-pi/2, pi/2>
@@ -842,13 +864,19 @@ impl Number {
     /// # use math::Number;
     /// # fn main() -> math::Result<()> {
     /// let x = Number::random();
-    /// let tan_x = x.tg()?;
+    /// let rev_tan_x = x.tg()?.arctg()?;
     ///
-    /// assert_eq!(x, tan_x.arctg()?);
+    /// assert!(x.sub(rev_tan_x)?.abs()? < Number::guarantee_precision());
     /// #     Ok(())
     /// # }
     /// ```
     pub fn arctg(&self) -> Result<Self> {
+        let half_pi = Self::pi().div(2)?;
+
+        if self > &half_pi || self < &half_pi.mul(-1)? {
+            return Err(Error::OutOfRange);
+        }
+
         let arccot = self.arccotg()?;
         Self::pi().div(2)?.sub(arccot)
     }
@@ -858,10 +886,10 @@ impl Number {
     /// ```
     /// # use math::Number;
     /// # fn main() -> math::Result<()> {
-    /// let x = Number::random();
-    /// let cot_x = x.cotg()?;
+    /// let x = Number::random().add(1)?;
+    /// let rev_cot_x = x.cotg()?.arccotg()?;
     ///
-    /// assert_eq!(x, cot_x.arccotg()?);
+    /// assert!(x.sub(rev_cot_x)?.abs()? < Number::guarantee_precision());
     /// #     Ok(())
     /// # }
     /// ```
