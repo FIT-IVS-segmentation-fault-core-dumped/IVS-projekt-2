@@ -25,7 +25,7 @@ pub type Result<T> = std::result::Result<T, error::Error>;
 
 #[derive(Clone)]
 /// Defined variable
-pub(crate) enum Variable {
+pub enum Variable {
     /// A constant, same as a function without parameter
     Constant(Number),
 
@@ -39,7 +39,15 @@ pub(crate) enum Variable {
 }
 
 impl Variable {
-    pub(crate) fn calc(&self, nums: &[Number]) -> Result<Number> {
+    /// Get the number of argument for this variable to work
+    pub fn argc(&self) -> u8 {
+        match self {
+            Self::Constant(_) => 0,
+            Self::Function { argc, .. } => *argc,
+        }
+    }
+    /// Calculate the value of the variable
+    pub fn calc(&self, nums: &[Number]) -> Result<Number> {
         match self {
             Self::Constant(v) => Ok(v.clone()),
             Self::Function { ptr, .. } => (ptr)(nums),
@@ -115,6 +123,33 @@ impl Calculator {
 
         self.variables.insert(name, Variable::Constant(num));
         true
+    }
+
+    /// Remove a constant from the list
+    ///
+    /// ```
+    /// # use math::Calculator;
+    /// # use math::Number;
+    /// let mut calculator = Calculator::new();
+    /// let constant = Number::from(177183);
+    ///
+    /// calculator.add_constant("my_const", constant.clone());
+    /// assert_eq!(calculator.evaluate("my_const()"), Ok(constant));
+    ///
+    /// calculator.remove_constant("my_const");
+    /// assert!(calculator.evaluate("my_const()").is_err());
+    /// ```
+    pub fn remove_constant(&mut self, name: &str) -> Option<Number> {
+        let name = name.to_lowercase();
+        let val = self.variables.remove(&name)?;
+
+        match val {
+            Variable::Constant(num) => Some(num),
+            _ => {
+                self.variables.insert(name, val);
+                None
+            }
+        }
     }
 
     /// Set the engine of the `Calculator`
