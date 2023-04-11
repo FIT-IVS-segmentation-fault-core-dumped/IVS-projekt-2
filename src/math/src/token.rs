@@ -326,12 +326,9 @@ impl<'a> Scanner<'a> {
                 .map(StepState::Token)
         };
 
-        dbg!(ch);
         let Some(mut state) = self.state.next_state(ch).map_err(|_| Error::UnsupportedToken(self.cnt))? else {
             return Ok(StepState::Inprogress);
         };
-
-        dbg!(&state);
 
         mem::swap(&mut state, &mut self.state);
 
