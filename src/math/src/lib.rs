@@ -23,8 +23,9 @@ pub use number::Number;
 /// Result type for this library
 pub type Result<T> = std::result::Result<T, error::Error>;
 
+#[derive(Clone)]
 /// Defined variable
-pub enum Variable {
+pub(crate) enum Variable {
     /// A constant, same as a function without parameter
     Constant(Number),
 
@@ -35,6 +36,15 @@ pub enum Variable {
         /// Pointer to the function itself
         ptr: fn(&[Number]) -> Result<Number>,
     },
+}
+
+impl Variable {
+    pub(crate) fn calc(&self, nums: &[Number]) -> Result<Number> {
+        match self {
+            Self::Constant(v) => Ok(v.clone()),
+            Self::Function { ptr, .. } => (ptr)(nums),
+        }
+    }
 }
 
 /// Calculator struct
@@ -54,6 +64,8 @@ impl Calculator {
         };
 
         res.add_basic_function();
+        res.add_constant("e", Number::e());
+        res.add_constant("pi", Number::pi());
 
         res
     }
@@ -85,8 +97,8 @@ impl Calculator {
         add_function("random", 0, |_| Ok(Number::random()));
     }
 
-    /// Add new constant or update existing one to the calculator
-    /// Name is *case-insensitive*
+    /// Add new constant or update existing one to the calculator \
+    /// Name is *case-insensitive* \
     /// Naming of the constant shouldn't match with any built-in functions like `sqrt`, `log`, etc
     /// ```
     /// # use math::Calculator;
@@ -117,7 +129,7 @@ impl Calculator {
         self.engine = Box::new(engine) as Box<_>;
     }
 
-    /// Evaluate a math expression using the given `Engine` (default is the infix math `ShuntingYardEngine`)
+    /// Evaluate a math expression using the given `Engine` (default is the infix math `ShuntingYardEngine`) \
     /// If the evaluation success, the constant `ANS` will be stored/updated into the variables list of the calculator
     pub fn evaluate(&mut self, s: &str) -> Result<Number> {
         self.tokens.clear();
