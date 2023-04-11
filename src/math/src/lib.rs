@@ -59,7 +59,30 @@ impl Calculator {
     }
 
     fn add_basic_function(&mut self) {
-        // TODO
+        let mut add_function = |name: &str, argc, ptr| {
+            self.variables
+                .insert(name.to_lowercase(), Variable::Function { argc, ptr })
+        };
+
+        add_function("root", 2, |nums| nums[1].root(&nums[0]));
+        add_function("sqrt", 1, |nums| nums[0].sqrt());
+        add_function("ln", 1, |nums| nums[0].ln());
+        add_function("log2", 1, |nums| nums[0].log2());
+        add_function("log10", 1, |nums| nums[0].log10());
+        add_function("log", 2, |nums| nums[1].log(&nums[0]));
+        add_function("sin", 1, |nums| nums[0].sin());
+        add_function("cos", 1, |nums| nums[0].cos());
+        add_function("tg", 1, |nums| nums[0].tg());
+        add_function("cotg", 1, |nums| nums[0].cotg());
+        add_function("arcsin", 1, |nums| nums[0].arcsin());
+        add_function("arccos", 1, |nums| nums[0].arccos());
+        add_function("arctg", 1, |nums| nums[0].arctg());
+        add_function("arccotg", 1, |nums| nums[0].arccotg());
+        add_function("arccotg", 1, |nums| nums[0].arccotg());
+        add_function("pow", 2, |nums| nums[0].power(&nums[1]));
+        add_function("abs", 1, |nums| nums[0].abs());
+        add_function("comb", 2, |nums| Number::combination(&nums[0], &nums[1]));
+        add_function("random", 0, |_| Ok(Number::random()));
     }
 
     /// Add new constant or update existing one to the calculator

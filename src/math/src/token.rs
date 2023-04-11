@@ -1,10 +1,35 @@
+//! Lexical scanner
+//!
+//!
+//!
+//! ```
+//! # use math::token::{Token, Bracket, Operator, Scanner};
+//! # use math::Number;
+//! # fn main() -> math::Result<()> {
+//! let s = "1.1 + 3 - .5e()";
+//! let mut scanner = Scanner::new(s);
+//!
+//! assert_eq!(scanner.next_token()?, Some(Token::Number(Number::new(11, 10)?)));
+//! assert_eq!(scanner.next_token()?, Some(Token::Operator(Operator::Plus)));
+//! assert_eq!(scanner.next_token()?, Some(Token::Number(Number::from(3))));
+//! assert_eq!(scanner.next_token()?, Some(Token::Operator(Operator::Minus)));
+//! assert_eq!(scanner.next_token()?, Some(Token::Number(Number::new(1, 2)?)));
+//! assert_eq!(scanner.next_token()?, Some(Token::Id(String::from("e"))));
+//! assert_eq!(scanner.next_token()?, Some(Token::Bracket(Bracket::ParenLeft)));
+//! assert_eq!(scanner.next_token()?, Some(Token::Bracket(Bracket::ParenRight)));
+//! assert_eq!(scanner.next_token()?, None);
+//! # Ok(())
+//! # }
+//! ```
+//!
+
 use crate::error::Error;
 use crate::number::Number;
 use crate::Result;
-use num::BigInt;
+use num::BigUint;
 use std::mem;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 /// Representation of a bracket
 pub enum Bracket {
     /// (
@@ -15,7 +40,7 @@ pub enum Bracket {
     VerticalLine,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 /// Representation of a mathematical operator
 pub enum Operator {
     /// +
@@ -30,7 +55,8 @@ pub enum Operator {
     Power,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
 /// Representation of a token
 pub enum Token {
     /// Number
@@ -39,13 +65,15 @@ pub enum Token {
     Bracket(Bracket),
     /// !
     FactorialSign,
+    /// ,
+    Comma,
     /// Operator `+`, `-`, `*`, `/`, `^`
     Operator(Operator),
     /// Idenfifier
     Id(String),
 }
 
-#[derive(Default)]
+#[derive(Debug, Default, PartialEq)]
 enum State {
     #[default]
     Start,
@@ -58,17 +86,18 @@ enum State {
     LeftPar,
     RightPar,
     VerticalLine,
+    Comma,
     Identifier(String),
     NumberStart,
     Number {
         radix: u32,
-        num: BigInt,
+        num: BigUint,
     },
     FractionStart,
     Fraction {
         radix: u32,
-        num: BigInt,
-        fract: BigInt,
+        num: BigUint,
+        fract: BigUint,
     },
 }
 
@@ -80,6 +109,7 @@ impl State {
             Self::Mul => Token::Operator(Operator::Multiply),
             Self::Div => Token::Operator(Operator::Divide),
             Self::Pow => Token::Operator(Operator::Power),
+            Self::Comma => Token::Comma,
             Self::FactorialSign => Token::FactorialSign,
             Self::LeftPar => Token::Bracket(Bracket::ParenLeft),
             Self::RightPar => Token::Bracket(Bracket::ParenRight),
@@ -93,7 +123,7 @@ impl State {
                 let mut fract_cnt = 0;
 
                 while tmp != num::zero() {
-                    tmp >>= 0;
+                    tmp /= 10u8;
                     fract_cnt += 1;
                 }
 
@@ -113,6 +143,7 @@ impl State {
             | Self::LeftPar
             | Self::RightPar
             | Self::VerticalLine
+            | Self::Comma
             | Self::Add
             | Self::Sub
             | Self::Mul
@@ -129,10 +160,12 @@ impl State {
                     '/' => State::Div,
                     '^' => State::Pow,
                     '!' => State::FactorialSign,
+                    ',' => State::Comma,
                     '0' => State::NumberStart,
+                    ' ' => State::Start,
                     '1'..='9' => State::Number {
                         radix: 10,
-                        num: BigInt::from(ch.to_digit(10).unwrap()),
+                        num: BigUint::from(ch.to_digit(10).unwrap()),
                     },
                     '.' => State::FractionStart,
                     'a'..='z' | 'A'..='Z' => State::Identifier(ch.to_string()),
@@ -171,7 +204,7 @@ impl State {
                 }),
                 '0'..='9' => Some(Self::Number {
                     radix: 10,
-                    num: BigInt::from(ch.to_digit(10).unwrap()),
+                    num: BigUint::from(ch.to_digit(10).unwrap()),
                 }),
                 _ => Some(Self::Start),
             },
@@ -203,7 +236,7 @@ impl State {
                 Some(Self::Fraction {
                     radix: 10,
                     num: num::zero(),
-                    fract: BigInt::from(val),
+                    fract: BigUint::from(val),
                 })
             }
 
@@ -227,6 +260,12 @@ impl State {
     }
 }
 
+enum StepState {
+    Token(Token),
+    Inprogress,
+    End,
+}
+
 /// Scan tokens from string
 pub struct Scanner<'a> {
     iter: std::str::Chars<'a>,
@@ -244,41 +283,60 @@ impl<'a> Scanner<'a> {
         }
     }
 
-    /// Scan the given string into list of `Token`
-    pub fn scan(&mut self) -> Result<Vec<Token>> {
-        let mut res = Vec::new();
+    /// Scan for the next token
+    pub fn next_token(&mut self) -> Result<Option<Token>> {
+        let mut cnt = 0;
+        let token = loop {
+            cnt += 1;
 
-        while let Some(token) = self.step()? {
-            res.push(token);
-        }
+            if cnt == 10 {
+                return Err(Error::Message(String::from("Hey")));
+            }
 
-        Ok(res)
-    }
-
-    fn step(&mut self) -> Result<Option<Token>> {
-        let ch = match self.iter.next() {
-            Some(ch) => ch,
-            None if matches!(self.state, State::Start) => return Ok(None),
-            None => {
-                return mem::take(&mut self.state)
-                    .to_token()
-                    .ok_or(Error::UnsupportedToken(self.cnt))
-                    .map(Some)
+            match self.step()? {
+                StepState::Inprogress => continue,
+                StepState::Token(token) => break Some(token),
+                StepState::End => break None,
             }
         };
+
+        Ok(token)
+    }
+
+    fn step(&mut self) -> Result<StepState> {
         self.cnt += 1;
 
-        let Some(mut state) = self.state.next_state(ch).map_err(|_| Error::UnsupportedToken(self.cnt))? else {
-            return Ok(None);
+        let Some(ch) = self.iter.next() else {
+            let state = mem::take(&mut self.state);
+
+            if state == State::Start {
+                return Ok(StepState::End);
+            }
+
+            return state
+                .to_token()
+                .ok_or(Error::UnsupportedToken(self.cnt))
+                .map(StepState::Token)
         };
+
+        let Some(mut state) = self.state.next_state(ch).map_err(|_| Error::UnsupportedToken(self.cnt))? else {
+            return Ok(StepState::Inprogress);
+        };
+
+        dbg!(&state);
 
         mem::swap(&mut state, &mut self.state);
 
         if let State::Start = self.state {
-            self.iter.next_back();
-            Ok(state.to_token())
-        } else {
-            Ok(None)
+            if state == State::Start {
+                self.iter.next_back();
+                return Ok(StepState::Inprogress);
+            }
+
+            let token = state.to_token().ok_or(Error::UnsupportedToken(self.cnt))?;
+            return Ok(StepState::Token(token));
         }
+
+        Ok(StepState::Inprogress)
     }
 }
