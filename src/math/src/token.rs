@@ -4,9 +4,12 @@
 //! # use math::token::{Token, Bracket, Operator, Scanner};
 //! # use math::Number;
 //! # fn main() -> math::Result<()> {
-//! let s = "1.1 + 3 - .5e()root(7, 5!)";
+//! let s = "pi()1.1 + 3 - .5e()root(sqrt(8), 5!)";
 //! let mut scanner = Scanner::new(s);
 //!
+//! assert_eq!(scanner.next_token()?, Some(Token::Id(String::from("pi"))));
+//! assert_eq!(scanner.next_token()?, Some(Token::Bracket(Bracket::ParenLeft)));
+//! assert_eq!(scanner.next_token()?, Some(Token::Bracket(Bracket::ParenRight)));
 //! assert_eq!(scanner.next_token()?, Some(Token::Number(Number::new(11, 10)?)));
 //! assert_eq!(scanner.next_token()?, Some(Token::Operator(Operator::Plus)));
 //! assert_eq!(scanner.next_token()?, Some(Token::Number(Number::from(3))));
@@ -17,7 +20,10 @@
 //! assert_eq!(scanner.next_token()?, Some(Token::Bracket(Bracket::ParenRight)));
 //! assert_eq!(scanner.next_token()?, Some(Token::Id(String::from("root"))));
 //! assert_eq!(scanner.next_token()?, Some(Token::Bracket(Bracket::ParenLeft)));
-//! assert_eq!(scanner.next_token()?, Some(Token::Number(Number::from(7))));
+//! assert_eq!(scanner.next_token()?, Some(Token::Id(String::from("sqrt"))));
+//! assert_eq!(scanner.next_token()?, Some(Token::Bracket(Bracket::ParenLeft)));
+//! assert_eq!(scanner.next_token()?, Some(Token::Number(Number::from(8))));
+//! assert_eq!(scanner.next_token()?, Some(Token::Bracket(Bracket::ParenRight)));
 //! assert_eq!(scanner.next_token()?, Some(Token::Comma));
 //! assert_eq!(scanner.next_token()?, Some(Token::Number(Number::from(5))));
 //! assert_eq!(scanner.next_token()?, Some(Token::FactorialSign));

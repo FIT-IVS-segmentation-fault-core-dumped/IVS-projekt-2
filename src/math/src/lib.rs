@@ -115,13 +115,13 @@ impl Calculator {
     /// assert_eq!(calculator.add_constant("pi", Number::from(3)), true);
     /// assert_eq!(calculator.add_constant("sqrt", Number::random()), false);
     /// ```
-    pub fn add_constant(&mut self, name: &str, num: Number) -> bool {
+    pub fn add_constant(&mut self, name: &str, num: impl Into<Number>) -> bool {
         let name = name.to_lowercase();
         if matches!(self.variables.get(&name), Some(Variable::Function { .. })) {
             return false;
         }
 
-        self.variables.insert(name, Variable::Constant(num));
+        self.variables.insert(name, Variable::Constant(num.into()));
         true
     }
 
@@ -150,6 +150,35 @@ impl Calculator {
                 None
             }
         }
+    }
+
+    /// Get a specific constant value
+    ///
+    /// ```
+    /// # use math::{Number, Calculator};
+    /// let mut calculator = Calculator::new();
+    ///
+    /// assert_eq!(calculator.get_constant("pi"), Some(Number::pi()));
+    /// assert_eq!(calculator.get_constant("my_const"), None);
+    ///
+    /// calculator.add_constant("my_const", 1);
+    /// assert_eq!(calculator.get_constant("my_const"), Some(Number::from(1)));
+    /// ```
+    pub fn get_constant(&self, name: &str) -> Option<Number> {
+        let name = name.to_lowercase();
+        match self.variables.get(&name)? {
+            Variable::Constant(num) => Some(num.clone()),
+            _ => None,
+        }
+    }
+
+    /// Get an `Iterator` over all constants that the `Calculator` currently holding
+    /// ```
+    pub fn constants(&self) -> impl Iterator<Item = (&str, Number)> {
+        self.variables.iter().filter_map(|(name, var)| match var {
+            Variable::Constant(val) => Some((name.as_str(), val.clone())),
+            _ => None,
+        })
     }
 
     /// Set the engine of the `Calculator`
