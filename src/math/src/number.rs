@@ -259,11 +259,11 @@ impl Number {
         let rhs = other.into();
 
         if rhs == Self::zero() {
-            return Ok(rhs);
+            return Ok(self.clone());
         }
 
         if self == &Self::zero() {
-            return Ok(self.clone());
+            return Ok(rhs);
         }
 
         let res = &*self.inner + &*rhs.inner;
