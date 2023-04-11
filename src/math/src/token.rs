@@ -1,12 +1,10 @@
 //! Lexical scanner
 //!
-//!
-//!
 //! ```
 //! # use math::token::{Token, Bracket, Operator, Scanner};
 //! # use math::Number;
 //! # fn main() -> math::Result<()> {
-//! let s = "1.1 + 3 - .5e()";
+//! let s = "1.1 + 3 - .5e()root(7, 5!)";
 //! let mut scanner = Scanner::new(s);
 //!
 //! assert_eq!(scanner.next_token()?, Some(Token::Number(Number::new(11, 10)?)));
@@ -16,6 +14,13 @@
 //! assert_eq!(scanner.next_token()?, Some(Token::Number(Number::new(1, 2)?)));
 //! assert_eq!(scanner.next_token()?, Some(Token::Id(String::from("e"))));
 //! assert_eq!(scanner.next_token()?, Some(Token::Bracket(Bracket::ParenLeft)));
+//! assert_eq!(scanner.next_token()?, Some(Token::Bracket(Bracket::ParenRight)));
+//! assert_eq!(scanner.next_token()?, Some(Token::Id(String::from("root"))));
+//! assert_eq!(scanner.next_token()?, Some(Token::Bracket(Bracket::ParenLeft)));
+//! assert_eq!(scanner.next_token()?, Some(Token::Number(Number::from(7))));
+//! assert_eq!(scanner.next_token()?, Some(Token::Comma));
+//! assert_eq!(scanner.next_token()?, Some(Token::Number(Number::from(5))));
+//! assert_eq!(scanner.next_token()?, Some(Token::FactorialSign));
 //! assert_eq!(scanner.next_token()?, Some(Token::Bracket(Bracket::ParenRight)));
 //! assert_eq!(scanner.next_token()?, None);
 //! # Ok(())
@@ -162,7 +167,7 @@ impl State {
                     '!' => State::FactorialSign,
                     ',' => State::Comma,
                     '0' => State::NumberStart,
-                    ' ' => State::Start,
+                    ' ' => return Ok(None),
                     '1'..='9' => State::Number {
                         radix: 10,
                         num: BigUint::from(ch.to_digit(10).unwrap()),
@@ -214,7 +219,7 @@ impl State {
                     break 'number Some(Self::Fraction {
                         radix: *radix,
                         num: mem::take(num),
-                        fract: Default::default(),
+                        fract: num::zero(),
                     });
                 }
 
@@ -229,14 +234,14 @@ impl State {
             }
 
             Self::FractionStart => {
-                let Some(val) = ch.to_digit(10) else {
+                let Some(num) = ch.to_digit(10) else {
                     return Err(Error::UnsupportedToken(0));
                 };
 
                 Some(Self::Fraction {
                     radix: 10,
                     num: num::zero(),
-                    fract: BigUint::from(val),
+                    fract: BigUint::from(num),
                 })
             }
 
@@ -271,6 +276,7 @@ pub struct Scanner<'a> {
     iter: std::str::Chars<'a>,
     state: State,
     cnt: usize,
+    buf: Option<char>,
 }
 
 impl<'a> Scanner<'a> {
@@ -280,6 +286,7 @@ impl<'a> Scanner<'a> {
             iter: s.chars(),
             state: State::Start,
             cnt: 0,
+            buf: None,
         }
     }
 
@@ -306,7 +313,7 @@ impl<'a> Scanner<'a> {
     fn step(&mut self) -> Result<StepState> {
         self.cnt += 1;
 
-        let Some(ch) = self.iter.next() else {
+        let Some(ch) = self.buf.take().or_else(|| self.iter.next()) else {
             let state = mem::take(&mut self.state);
 
             if state == State::Start {
@@ -319,6 +326,7 @@ impl<'a> Scanner<'a> {
                 .map(StepState::Token)
         };
 
+        dbg!(ch);
         let Some(mut state) = self.state.next_state(ch).map_err(|_| Error::UnsupportedToken(self.cnt))? else {
             return Ok(StepState::Inprogress);
         };
@@ -329,10 +337,10 @@ impl<'a> Scanner<'a> {
 
         if let State::Start = self.state {
             if state == State::Start {
-                self.iter.next_back();
                 return Ok(StepState::Inprogress);
             }
 
+            self.buf.replace(ch);
             let token = state.to_token().ok_or(Error::UnsupportedToken(self.cnt))?;
             return Ok(StepState::Token(token));
         }
