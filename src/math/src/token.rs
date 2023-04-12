@@ -179,7 +179,7 @@ impl State {
                         num: BigUint::from(ch.to_digit(10).unwrap()),
                     },
                     '.' => State::FractionStart,
-                    'a'..='z' | 'A'..='Z' => State::Identifier(ch.to_string()),
+                    'a'..='z' | 'A'..='Z' | '_' => State::Identifier(ch.to_string()),
 
                     _ => return Err(Error::UnsupportedToken(0)),
                 };
@@ -188,7 +188,7 @@ impl State {
             }
 
             Self::Identifier(ref mut s) => 'id: {
-                if !matches!(ch, 'a'..='z' | 'A'..='Z' | '0'..='9') {
+                if !matches!(ch, 'a'..='z' | 'A'..='Z' | '0'..='9' | '_') {
                     break 'id Some(State::Start);
                 }
 
