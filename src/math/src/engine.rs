@@ -13,7 +13,7 @@ pub trait Engine {
     /// This *only* do the syntatical check shouldn't perform any heavy operation
     fn validate_tokens(
         &mut self,
-        token: &[Token],
+        tokens: &[Token],
         variables: &HashMap<String, Variable>,
     ) -> Result<()>;
 
@@ -29,11 +29,11 @@ pub trait Engine {
     /// Call`validate_tokens` then `evaluate` it immediately
     fn execute(
         &mut self,
-        token: &[Token],
+        tokens: &[Token],
         variables: &HashMap<String, Variable>,
     ) -> Result<Number> {
-        self.validate_tokens(token, variables)?;
-        self.evaluate(token, variables)
+        self.validate_tokens(tokens, variables)?;
+        self.evaluate(tokens, variables)
     }
 }
 
@@ -41,11 +41,6 @@ enum ShuntingYardOperator {
     Operator(Operator),
     OpenParen,
     Variable(Variable),
-}
-
-enum Sign {
-    Plus,
-    Minus,
 }
 
 #[derive(Default)]
@@ -59,7 +54,7 @@ pub struct ShuntingYardEngine {
 impl Engine for ShuntingYardEngine {
     fn validate_tokens(
         &mut self,
-        token: &[Token],
+        tokens: &[Token],
         variables: &HashMap<String, Variable>,
     ) -> Result<()> {
         Ok(())
@@ -73,10 +68,27 @@ impl Engine for ShuntingYardEngine {
         self.operators.clear();
         self.operands.clear();
 
-        for token in tokens {
+        let mut iter = tokens.iter().peekable();
+
+        while let Some(token) = iter.next() {
             match token {
                 Token::Number(num) => self.store_operand(num.clone()),
-                Token::Operator(op) => self.operator_handle(*op)?,
+                Token::Operator(op) => {
+                    let mut op = *op;
+                    while let Some(Token::Operator(next_op)) = iter.peek() {
+                        op = match (op, next_op) {
+                            (Operator::Plus, Operator::Minus) => Operator::Minus,
+                            (Operator::Minus, Operator::Plus) => Operator::Minus,
+                            (Operator::Minus, Operator::Minus) => Operator::Plus,
+                            (Operator::Plus, Operator::Plus) => Operator::Plus,
+                            _ => break,
+                        };
+
+                        iter.next();
+                    }
+
+                    self.operator_handle(op)?;
+                }
                 Token::FactorialSign => {
                     let num = self.operands.pop().unwrap().factorial()?;
                     self.store_operand(num);
@@ -91,11 +103,16 @@ impl Engine for ShuntingYardEngine {
                     let var = variables.get(id).cloned().unwrap();
                     self.operators.push(ShuntingYardOperator::Variable(var));
                 }
-                Token::Comma => (),
+                Token::Comma => {
+                    let val = self.finalize()?.ok_or(Error::MissingOperand)?;
+                    self.store_operand(val);
+                }
             }
         }
 
-        Ok(self.operands.pop().unwrap_or_default())
+        self.finalize()?
+            .or_else(|| self.operands.pop())
+            .ok_or(Error::MissingOperand)
     }
 }
 
@@ -108,6 +125,7 @@ fn operator_precedence(op: Operator) -> u8 {
 }
 
 fn evaluate_expr(lhs: Number, rhs: Number, op: Operator) -> Result<Number> {
+    dbg!(&lhs, &op, &rhs);
     match op {
         Operator::Plus => lhs.add(rhs),
         Operator::Minus => lhs.sub(rhs),
@@ -130,8 +148,15 @@ impl ShuntingYardEngine {
                 break;
             }
 
-            let lhs = self.operands.pop().unwrap();
             let rhs = self.operands.pop().unwrap();
+            let lhs = self.operands.pop().or_else(|| {
+                if matches!(last_op, Operator::Plus | Operator::Minus) {
+                    return Some(Number::zero());
+                }
+
+                None
+            });
+            let lhs = lhs.ok_or(Error::MissingOperand)?;
             self.store_operand(evaluate_expr(lhs, rhs, *last_op)?);
             self.operators.pop();
         }
@@ -144,9 +169,7 @@ impl ShuntingYardEngine {
         if let Some(num) = self.finalize()? {
             self.store_operand(num);
             return Ok(());
-        }
-
-        if let Some(ShuntingYardOperator::Variable(var)) = self.operators.last() {
+        } else if let Some(ShuntingYardOperator::Variable(var)) = self.operators.last() {
             let argc = var.argc();
             let mut argv = Vec::with_capacity(argc as usize);
 
@@ -171,7 +194,17 @@ impl ShuntingYardEngine {
             };
 
             let rhs = res.clone().or_else(|| self.operands.pop()).unwrap();
-            let lhs = self.operands.pop().unwrap();
+            let lhs = self
+                .operands
+                .pop()
+                .or_else(|| {
+                    if matches!(op, Operator::Plus | Operator::Minus) {
+                        Some(Number::from(0))
+                    } else {
+                        None
+                    }
+                })
+                .unwrap();
             res.replace(evaluate_expr(lhs, rhs, op)?);
         }
 
