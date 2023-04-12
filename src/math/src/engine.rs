@@ -40,6 +40,7 @@ pub trait Engine {
 enum ShuntingYardOperator {
     Operator(Operator),
     OpenParen,
+    Comma,
     Variable(Variable),
 }
 
@@ -138,6 +139,7 @@ impl Engine for ShuntingYardEngine {
         self.operands.clear();
 
         let mut iter = tokens.iter().peekable();
+        let mut last_token = None;
 
         while let Some(token) = iter.next() {
             match token {
@@ -173,10 +175,14 @@ impl Engine for ShuntingYardEngine {
                     self.operators.push(ShuntingYardOperator::Variable(var));
                 }
                 Token::Comma => {
-                    let val = self.finalize()?.ok_or(Error::MissingOperand)?;
-                    self.store_operand(val);
+                    if let Some(val) = self.finalize()? {
+                        self.store_operand(val);
+                    }
+                    self.operators.push(ShuntingYardOperator::Comma);
                 }
             }
+
+            last_token.replace(token);
         }
 
         self.finalize()?
@@ -194,7 +200,7 @@ fn operator_precedence(op: Operator) -> u8 {
 }
 
 fn evaluate_expr(lhs: Number, rhs: Number, op: Operator) -> Result<Number> {
-    dbg!(&lhs, &op, &rhs);
+    // dbg!(&lhs, &op, &rhs);
     match op {
         Operator::Plus => lhs.add(rhs),
         Operator::Minus => lhs.sub(rhs),
@@ -237,8 +243,9 @@ impl ShuntingYardEngine {
     fn closing_bracket_handle(&mut self) -> Result<()> {
         if let Some(num) = self.finalize()? {
             self.store_operand(num);
-            return Ok(());
-        } else if let Some(ShuntingYardOperator::Variable(var)) = self.operators.last() {
+        }
+
+        if let Some(ShuntingYardOperator::Variable(var)) = self.operators.last() {
             let argc = var.argc();
             let mut argv = Vec::with_capacity(argc as usize);
 
