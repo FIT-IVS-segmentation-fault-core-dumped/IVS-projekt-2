@@ -38,6 +38,22 @@ pub enum Error {
     /// Error message
     Message(String),
 
+    #[error("Missing operand to process")]
+    /// Missing operand
+    MissingOperand,
+
+    #[error("Missing operator to process")]
+    /// Missing operator
+    MissingOperator,
+
+    #[error("Invalid Arguments")]
+    /// Invalid Function Arguments
+    InvalidArguments,
+
+    #[error("Invalid Token")]
+    /// Invalid Token
+    InvalidToken,
+
     #[error("The token at index `{0}` isn't valid")]
     /// Unsupported Token
     UnsupportedToken(usize),

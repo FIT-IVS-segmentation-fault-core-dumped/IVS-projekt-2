@@ -225,7 +225,6 @@ fn operator_precedence(op: Operator) -> u8 {
 }
 
 fn evaluate_expr(lhs: Number, rhs: Number, op: Operator) -> Result<Number> {
-    // dbg!(&lhs, &op, &rhs);
     match op {
         Operator::Plus => lhs.add(rhs),
         Operator::Minus => lhs.sub(rhs),
