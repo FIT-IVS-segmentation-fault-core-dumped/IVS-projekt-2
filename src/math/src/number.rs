@@ -217,6 +217,10 @@ impl Number {
 
             res.push_str(&digits);
             res = res.trim_end_matches('0').trim_end_matches('.').to_owned();
+
+            if res == "-0" {
+                res = String::from("0");
+            }
         }
 
         res
@@ -842,6 +846,9 @@ impl Number {
             inner: Arc::new(Ratio::from_float(arcsin).unwrap_or_default()),
         };
 
+        // let denom = Self::one().sub(self.power(2)?)?.sqrt()?;
+        // self.div(denom)?.arctg()
+
         // TODO: Implement those without float
 
         // let mut res = Self::zero();
@@ -854,7 +861,6 @@ impl Number {
         //     res = res.add(&tmp)?;
         //     let x = step.mul(2)?;
         //     tmp = x.sub(1)?.mul(&self2)?.div(x)?.mul(tmp)?;
-        //     println!("{}", tmp.to_string(Radix::Dec, 28));
         //     step = step.add(1)?;
 
         //     if tmp.abs()? < epsilon || step > Self::from(20) {
