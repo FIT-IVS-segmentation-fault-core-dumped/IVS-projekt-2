@@ -10,7 +10,7 @@ use std::collections::HashMap;
 ///
 pub trait Engine {
     /// Validate the given token list to ensure that it's executable
-    /// This *only* do the syntatical check shouldn't perform any heavy operation
+    /// This *only* do the semantic check shouldn't perform any heavy operation
     fn validate_tokens(
         &mut self,
         tokens: &[Token],
@@ -57,6 +57,75 @@ impl Engine for ShuntingYardEngine {
         tokens: &[Token],
         variables: &HashMap<String, Variable>,
     ) -> Result<()> {
+        let mut iter = tokens.iter().peekable();
+        let mut arg_counts = Vec::new();
+
+        while let Some(token) = iter.next() {
+            match (token, iter.peek()) {
+                (Token::Operator(_), None) => return Err(Error::MissingOperand),
+
+                (
+                    Token::Operator(_),
+                    Some(Token::Operator(Operator::Divide | Operator::Multiply)),
+                ) => return Err(Error::MissingOperand),
+
+                (Token::Number(_), Some(Token::Number(_))) => return Err(Error::MissingOperator),
+
+                (Token::Id(id), next) => {
+                    if next != Some(&&Token::Bracket(Bracket::ParenLeft)) {
+                        return Err(Error::InvalidToken);
+                    }
+
+                    let Some(var) = variables.get(id) else {
+                        return Err(Error::InvalidToken);
+                    };
+
+                    iter.next();
+
+                    let argc = var.argc();
+                    let next = iter.peek();
+
+                    if argc == 0 {
+                        if next != Some(&&Token::Bracket(Bracket::ParenRight)) {
+                            return Err(Error::InvalidArguments);
+                        }
+
+                        iter.next();
+                        continue;
+                    }
+
+                    arg_counts.push(argc);
+                }
+
+                (Token::Bracket(Bracket::ParenLeft), _) => {
+                    arg_counts.push(1);
+                }
+
+                (Token::Bracket(Bracket::ParenRight), _) => {
+                    let Some(argc) = arg_counts.pop() else {
+                        return Err(Error::InvalidToken);
+                    };
+
+                    if argc != 1 {
+                        return Err(Error::InvalidArguments);
+                    }
+                }
+
+                (Token::Comma, _) => {
+                    let Some(argc) = arg_counts.last_mut() else {
+                        return Err(Error::InvalidArguments);
+                    };
+
+                    if *argc == 0 {
+                        return Err(Error::InvalidArguments);
+                    }
+
+                    *argc -= 1;
+                }
+                _ => (),
+            }
+        }
+
         Ok(())
     }
 
