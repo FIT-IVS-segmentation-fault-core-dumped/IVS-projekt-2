@@ -146,6 +146,7 @@ impl Engine for ShuntingYardEngine {
                 Token::Number(num) => self.store_operand(num.clone()),
                 Token::Operator(op) => {
                     let mut op = *op;
+                    // Combine all the `+` and `-` signs together
                     while let Some(Token::Operator(next_op)) = iter.peek() {
                         op = match (op, next_op) {
                             (Operator::Plus, Operator::Minus) => Operator::Minus,
@@ -156,6 +157,30 @@ impl Engine for ShuntingYardEngine {
                         };
 
                         iter.next();
+                    }
+
+                    /// Handle the `+` `-` sign of a number
+                    match (last_token, op, iter.peek()) {
+                        (
+                            None
+                            | Some(&Token::Comma)
+                            | Some(&Token::Operator(Operator::Multiply | Operator::Divide)),
+                            Operator::Plus,
+                            Some(Token::Number(_)),
+                        ) => continue,
+                        (
+                            None
+                            | Some(&Token::Comma)
+                            | Some(&Token::Operator(Operator::Multiply | Operator::Divide)),
+                            Operator::Minus,
+                            Some(Token::Number(_)),
+                        ) => {
+                            self.store_operand(Number::from(-1));
+                            self.operators
+                                .push(ShuntingYardOperator::Operator(Operator::Multiply));
+                            continue;
+                        }
+                        _ => (),
                     }
 
                     self.operator_handle(op)?;

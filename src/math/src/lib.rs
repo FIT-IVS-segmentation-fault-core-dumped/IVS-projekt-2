@@ -98,7 +98,6 @@ impl Calculator {
         add_function("arccos", 1, |nums| nums[0].arccos());
         add_function("arctg", 1, |nums| nums[0].arctg());
         add_function("arccotg", 1, |nums| nums[0].arccotg());
-        add_function("arccotg", 1, |nums| nums[0].arccotg());
         add_function("pow", 2, |nums| nums[0].power(&nums[1]));
         add_function("abs", 1, |nums| nums[0].abs());
         add_function("comb", 2, |nums| Number::combination(&nums[0], &nums[1]));
@@ -173,7 +172,6 @@ impl Calculator {
     }
 
     /// Get an `Iterator` over all constants that the `Calculator` currently holding
-    /// ```
     pub fn constants(&self) -> impl Iterator<Item = (&str, Number)> {
         self.variables.iter().filter_map(|(name, var)| match var {
             Variable::Constant(val) => Some((name.as_str(), val.clone())),
