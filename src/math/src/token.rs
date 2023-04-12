@@ -298,22 +298,13 @@ impl<'a> Scanner<'a> {
 
     /// Scan for the next token
     pub fn next_token(&mut self) -> Result<Option<Token>> {
-        let mut cnt = 0;
-        let token = loop {
-            cnt += 1;
-
-            if cnt == 10 {
-                return Err(Error::Message(String::from("Hey")));
-            }
-
+        loop {
             match self.step()? {
                 StepState::Inprogress => continue,
-                StepState::Token(token) => break Some(token),
-                StepState::End => break None,
+                StepState::Token(token) => break Ok(Some(token)),
+                StepState::End => break Ok(None),
             }
-        };
-
-        Ok(token)
+        }
     }
 
     fn step(&mut self) -> Result<StepState> {
