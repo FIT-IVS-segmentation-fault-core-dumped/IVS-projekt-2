@@ -1,12 +1,12 @@
 //! Calculator application
-//! 
+//!
 //! This file contains definition of calculator state,
 //! which defines functionality of our app.
 
-use std::rc::Rc;
 use druid::{Data, Lens};
 use math::number::Radix;
 use serde::{Deserialize, Serialize};
+use std::rc::Rc;
 
 const APP_NAME: &str = "Calculator";
 
@@ -22,7 +22,7 @@ pub enum Opt {
 
 /// Used to map button presses to functionality.
 /// Now if we want to implement alternative ways
-/// of using our calculator, we just need to 
+/// of using our calculator, we just need to
 /// pass this enum as action to the pressed button.
 pub enum PressedButton {
     /// Numpad 0-9 or A-F (10 - 15)
@@ -78,17 +78,25 @@ impl Default for CalcConfig {
 
 /// Holds shared data for all the widgets in our application.
 /// Each widget has access to instance of this struct.
-#[derive(Clone, Data, Lens)]
+#[derive(Clone, Lens)]
 pub struct CalcState {
     /// Holds text, which is used to display the final string on the display widget.
     displayed_text: String,
     /// Displayed base of the computed result.
-    radix: Rc<Radix>,
+    radix: Radix,
     /// Contains all available languages at runtime.
     /// This is loaded from rust-i18n and as such has to be constructed in new() method.
     available_languages: Rc<Vec<String>>,
     /// Confing deserialized from disk using *confy* crate.
     config: CalcConfig,
+}
+
+impl Data for CalcState {
+    fn same(&self, other: &Self) -> bool {
+        self.displayed_text == other.displayed_text
+            && self.radix == other.radix
+            && self.config.same(&other.config)
+    }
 }
 
 impl CalcState {
@@ -100,7 +108,7 @@ impl CalcState {
 
         Self {
             displayed_text: String::new(),
-            radix: Rc::new(Radix::Dec),
+            radix: Radix::Dec,
             // Convert array of string slices to vector of strings.
             available_languages: Rc::new(languages.iter().map(|&s| String::from(s)).collect()),
             config,
@@ -117,7 +125,7 @@ impl CalcState {
         todo!();
     }
 
-    /// Convert CalcState::display_string to *evaluate string*, which 
+    /// Convert CalcState::display_string to *evaluate string*, which
     /// can then be passed to the `math::evaluate` function.
     pub fn get_eval_str(&self) -> String {
         todo!()
@@ -149,7 +157,7 @@ impl CalcState {
 
     /// Change numeric base of the calculated results.
     pub fn set_radix(&mut self, radix: Radix) {
-        self.radix = Rc::new(radix);
+        self.radix = radix;
     }
 }
 

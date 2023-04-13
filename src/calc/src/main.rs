@@ -1,8 +1,5 @@
 use calc::CalcState;
-use druid::{
-    widget::Flex, AppLauncher, Env, Menu, MenuItem, Size, Widget, WindowDesc,
-    WindowId,
-};
+use druid::{widget::Flex, AppLauncher, Env, Menu, MenuItem, Size, Widget, WindowDesc, WindowId};
 use rust_i18n::t;
 
 /// Initial size of the window, when the app starts.
@@ -39,9 +36,8 @@ fn main() {
         .menu(|window, data, env| make_menu(window, data, env));
 
     // Launch the main app using calc_state to define behaviour.
-    if let Err(platform_err) = AppLauncher::with_window(main_window)
-        .launch(calc_state) {
-            eprintln!("error: Failed to launch main application. {}", platform_err);
-            std::process::exit(1);
+    if let Err(platform_err) = AppLauncher::with_window(main_window).launch(calc_state) {
+        eprintln!("error: Failed to launch main application. {}", platform_err);
+        std::process::exit(1);
     }
 }
