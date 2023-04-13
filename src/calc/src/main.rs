@@ -33,7 +33,7 @@ fn main() {
         .title(t!("title"))
         .window_size(WINDOW_SIZE)
         .with_min_size(MIN_WINDOW_SIZE)
-        .menu(|window, data, env| make_menu(window, data, env));
+        .menu(make_menu);
 
     // Launch the main app using calc_state to define behaviour.
     if let Err(platform_err) = AppLauncher::with_window(main_window).launch(calc_state) {
