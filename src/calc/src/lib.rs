@@ -3,6 +3,7 @@
 //! This file contains definition of calculator state,
 //! which defines functionality of our app.
 
+pub mod widgets;
 use druid::{Data, Lens};
 use math::number::Radix;
 use serde::{Deserialize, Serialize};
