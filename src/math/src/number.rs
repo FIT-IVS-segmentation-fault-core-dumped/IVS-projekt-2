@@ -756,6 +756,8 @@ impl Number {
             (Self::zero(), Self::zero()),
             (Self::pi().div(2)?, Self::one()),
             (Self::pi().div(6)?, Self::new_unchecked(1, 2)),
+            (Self::pi(), Self::zero()),
+            (Self::pi().mul(3)?.div(2)?, Self::minus_one()),
         ];
 
         for (from, to) in precomputed {
