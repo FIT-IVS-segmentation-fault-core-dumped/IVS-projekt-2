@@ -2,7 +2,6 @@ use crate::error::Error;
 use crate::Result;
 use num::rational::Ratio;
 use num::BigInt;
-use num::Float as _;
 use num::Signed as _;
 use num::ToPrimitive;
 use once_cell::sync::OnceCell;
@@ -135,7 +134,7 @@ impl Number {
         }
 
         Ok(Self {
-            inner: Arc::new(Ratio::new(num.into(), denom.into())),
+            inner: Arc::new(Ratio::new(num, denom)),
         })
     }
 
@@ -177,10 +176,10 @@ impl Number {
         let mut fract = num.fract();
 
         let mut res = match radix {
-            Radix::Bin => format!("{:b}", whole),
-            Radix::Oct => format!("{:o}", whole),
-            Radix::Dec => format!("{}", whole),
-            Radix::Hex => format!("{:X}", whole),
+            Radix::Bin => format!("{whole:b}"),
+            Radix::Oct => format!("{whole:o}"),
+            Radix::Dec => format!("{whole}"),
+            Radix::Hex => format!("{whole:X}"),
         };
 
         if self.inner.is_negative() {
@@ -727,7 +726,7 @@ impl Number {
             res = res.power(to_pow.clone())?;
         }
 
-        return Ok(res);
+        Ok(res)
     }
 
     /// Returns the square root of a number.

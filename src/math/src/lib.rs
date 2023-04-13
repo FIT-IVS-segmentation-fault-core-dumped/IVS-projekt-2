@@ -62,13 +62,19 @@ pub struct Calculator {
     variables: HashMap<String, Variable>,
 }
 
+impl Default for Calculator {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Calculator {
     /// Create a new instance
     pub fn new() -> Self {
         let mut res = Self {
             tokens: Vec::new(),
             variables: HashMap::new(),
-            engine: Box::new(engine::ShuntingYardEngine::default()) as Box<_>,
+            engine: Box::<engine::ShuntingYardEngine>::default() as Box<_>,
         };
 
         res.add_basic_function();

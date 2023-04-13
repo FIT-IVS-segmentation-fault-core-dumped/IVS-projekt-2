@@ -113,7 +113,7 @@ enum State {
 }
 
 impl State {
-    fn to_token(self) -> Option<Token> {
+    fn into_token(self) -> Option<Token> {
         let token = match self {
             Self::Add => Token::Operator(Operator::Plus),
             Self::Sub => Token::Operator(Operator::Minus),
@@ -318,7 +318,7 @@ impl<'a> Scanner<'a> {
             }
 
             return state
-                .to_token()
+                .into_token()
                 .ok_or(Error::UnsupportedToken(self.cnt))
                 .map(StepState::Token)
         };
@@ -335,7 +335,9 @@ impl<'a> Scanner<'a> {
             }
 
             self.buf.replace(ch);
-            let token = state.to_token().ok_or(Error::UnsupportedToken(self.cnt))?;
+            let token = state
+                .into_token()
+                .ok_or(Error::UnsupportedToken(self.cnt))?;
             return Ok(StepState::Token(token));
         }
 
