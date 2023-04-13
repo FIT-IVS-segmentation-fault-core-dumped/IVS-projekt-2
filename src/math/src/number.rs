@@ -929,7 +929,7 @@ impl Number {
     /// ```
     /// # use math::Number;
     /// # fn main() -> math::Result<()> {
-    /// assert!(Number::from(-1).arccos().is_err());
+    /// assert!(Number::from(-2).arccos().is_err());
     /// assert!(Number::from(4).arccos().is_err());
     /// let x = Number::random();
     /// let rev_cos_x = x.cos()?.arccos()?;
@@ -939,17 +939,8 @@ impl Number {
     /// # }
     /// ```
     pub fn arccos(&self) -> Result<Self> {
-        if self > &Self::pi() || self < &Self::zero() {
-            return Err(Error::OutOfRange);
-        }
-
-        let f = self.inner.to_f64().unwrap_or_default();
-        let arcsin = f.acos();
-        let res = Self {
-            inner: Arc::new(Ratio::from_float(arcsin).unwrap_or_default()),
-        };
-
-        Ok(res)
+        let arcsin = self.arcsin()?;
+        Self::pi().div(2)?.sub(arcsin)
     }
 
     /// Computes the arctangent of a number. Return value is in radians in the range <-pi/2, pi/2>
