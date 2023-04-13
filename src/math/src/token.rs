@@ -1,4 +1,4 @@
-//! Lexical scanner
+//! Lexical analyzer
 //!
 //! ```
 //! # use math::token::{Token, Bracket, Operator, Scanner};
@@ -323,7 +323,12 @@ impl<'a> Scanner<'a> {
                 .map(StepState::Token)
         };
 
-        let Some(mut state) = self.state.next_state(ch).map_err(|_| Error::UnsupportedToken(self.cnt))? else {
+        let next_state = self
+            .state
+            .next_state(ch)
+            .map_err(|_| Error::UnsupportedToken(self.cnt))?;
+
+        let Some(mut state) = next_state else {
             return Ok(StepState::Inprogress);
         };
 
@@ -335,10 +340,11 @@ impl<'a> Scanner<'a> {
             }
 
             self.buf.replace(ch);
-            let token = state
+
+            return state
                 .into_token()
-                .ok_or(Error::UnsupportedToken(self.cnt))?;
-            return Ok(StepState::Token(token));
+                .ok_or(Error::UnsupportedToken(self.cnt))
+                .map(StepState::Token);
         }
 
         Ok(StepState::Inprogress)
