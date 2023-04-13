@@ -29,7 +29,7 @@ fn evaluate_sub() -> math::Result<()> {
 fn evaluate_mul() -> math::Result<()> {
     assert_eq!(eval_dec("2 * 3", 3)?, "6");
     assert_eq!(eval_dec("3 * 2", 3)?, "6");
-    assert_eq!(eval_dec("-2 * -3", 3)?, "-6");
+    assert_eq!(eval_dec("-2 * -3", 3)?, "6");
     assert_eq!(eval_dec("2 * (3 * 4)", 3)?, "24");
     assert_eq!(eval_dec("(2 * 3) * 4", 3)?, "24");
     assert!(evaluate("2**3").is_err());
@@ -40,7 +40,7 @@ fn evaluate_div() -> math::Result<()> {
     assert_eq!(eval_dec("6 / 3", 3)?, "2");
     assert_eq!(eval_dec("6 / -3", 3)?, "-2");
     assert_eq!(eval_dec("3 / 6", 3)?, "0.5");
-    assert_eq!(eval_dec("1 / 3", 6)?, "0.333334");
+    assert_eq!(eval_dec("1 / 3", 6)?, "0.333333");
     assert_eq!(eval_dec("2 * 10 / 20", 3)?, "1");
     Ok(())
 }
@@ -113,7 +113,7 @@ fn evaluate_cos() -> math::Result<()> {
 }
 #[test]
 fn evaluate_tg() -> math::Result<()> {
-    assert_eq!(eval_dec("tg(123)", 6)?, "0.5179");
+    assert_eq!(eval_dec("tg(123)", 6)?, "0.517927");
     assert_eq!(eval_dec("tg(-97)", 7)?, eval_dec("-tg(97)", 7)?);
     assert_eq!(eval_dec("tg(0)", 0)?, "0");
     assert!(eval_dec("tg(pi() / 2)", 0).is_err());
