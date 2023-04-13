@@ -62,11 +62,25 @@ impl Number {
         ONE.get_or_init(|| Self::new_unchecked(1, 1)).clone()
     }
 
+    /// -1.0
+    pub fn minus_one() -> Self {
+        static M_ONE: OnceCell<Number> = OnceCell::new();
+        M_ONE.get_or_init(|| Self::new_unchecked(-1, 1)).clone()
+    }
+
+    /// The half circle constant (π)
     /// 3.14159... ~= 104 348/33 215
     pub fn pi() -> Self {
         static PI: OnceCell<Number> = OnceCell::new();
         PI.get_or_init(|| Self::new_unchecked(104348, 33215))
             .clone()
+    }
+
+    /// The full circle constant (τ)
+    /// Equal to 2π.
+    pub fn tau() -> Self {
+        static TAU: OnceCell<Number> = OnceCell::new();
+        TAU.get_or_init(|| Self::pi().mul(2).unwrap()).clone()
     }
     ///
     /// 2.71828... ~= 2721 / 1001
@@ -737,10 +751,12 @@ impl Number {
     /// # }
     /// ```
     pub fn sin(&self) -> Result<Self> {
-        let mut res = self.clone();
-        let mut tmp = self.clone();
+        let x = self.modulo(Self::tau())?;
 
-        let numer = self.power(2)?;
+        let mut res = x.clone();
+        let mut tmp = x.clone();
+
+        let numer = x.power(2)?;
         let mut sign_plus = false;
         let mut step = Self::from(3);
 
