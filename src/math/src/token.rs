@@ -108,7 +108,7 @@ enum State {
     Fraction {
         radix: u32,
         num: BigUint,
-        fract: BigUint,
+        fract_cnt: u32,
     },
 }
 
@@ -128,18 +128,9 @@ impl State {
             Self::Identifier(s) => Token::Id(s),
             Self::NumberStart => Token::Number(Number::zero()),
             Self::Number { num, .. } => Token::Number(Number::from(num)),
-            Self::Fraction { num, fract, .. } => {
-                let num = Number::from(num);
-                let mut tmp = fract.clone();
-                let mut fract_cnt = 0;
-
-                while tmp != num::zero() {
-                    tmp /= 10u8;
-                    fract_cnt += 1;
-                }
-
-                let fract = Number::new(fract, 10u128.pow(fract_cnt)).unwrap_or_default();
-                Token::Number(num.add(fract).unwrap_or_default())
+            Self::Fraction { num, fract_cnt, .. } => {
+                let val = Number::new(num, 10u128.pow(fract_cnt)).unwrap_or_default();
+                Token::Number(val)
             }
 
             _ => return None,
@@ -199,7 +190,7 @@ impl State {
                 '.' => Some(Self::Fraction {
                     radix: 10,
                     num: Default::default(),
-                    fract: Default::default(),
+                    fract_cnt: Default::default(),
                 }),
                 'b' => Some(Self::Number {
                     radix: 2,
@@ -225,7 +216,7 @@ impl State {
                     break 'number Some(Self::Fraction {
                         radix: *radix,
                         num: mem::take(num),
-                        fract: num::zero(),
+                        fract_cnt: num::zero(),
                     });
                 }
 
@@ -246,22 +237,25 @@ impl State {
 
                 Some(Self::Fraction {
                     radix: 10,
-                    num: num::zero(),
-                    fract: BigUint::from(num),
+                    num: BigUint::from(num),
+                    fract_cnt: 1,
                 })
             }
 
             Self::Fraction {
                 radix,
-                ref mut fract,
+                ref mut num,
+                ref mut fract_cnt,
                 ..
             } => 'fraction: {
                 let Some(val) = ch.to_digit(*radix) else {
                     break 'fraction Some(Self::Start);
                 };
 
-                *fract *= *radix;
-                *fract += val;
+                *fract_cnt += 1;
+
+                *num *= *radix;
+                *num += val;
 
                 None
             }
