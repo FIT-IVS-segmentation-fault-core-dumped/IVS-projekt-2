@@ -751,18 +751,25 @@ impl Number {
     /// # }
     /// ```
     pub fn sin(&self) -> Result<Self> {
+        static PRECOMPUTED: OnceCell<[(Number, Number); 5]> = OnceCell::new();
+
         let x = self.modulo(Self::tau())?;
-        let precomputed = [
-            (Self::zero(), Self::zero()),
-            (Self::pi().div(2)?, Self::one()),
-            (Self::pi().div(6)?, Self::new_unchecked(1, 2)),
-            (Self::pi(), Self::zero()),
-            (Self::pi().mul(3)?.div(2)?, Self::minus_one()),
-        ];
+        let precomputed = PRECOMPUTED.get_or_init(|| {
+            [
+                (Self::zero(), Self::zero()),
+                (Self::pi().div(2).unwrap(), Self::one()),
+                (Self::pi().div(6).unwrap(), Self::new_unchecked(1, 2)),
+                (Self::pi(), Self::zero()),
+                (
+                    Self::pi().mul(3).unwrap().div(2).unwrap(),
+                    Self::minus_one(),
+                ),
+            ]
+        });
 
         for (from, to) in precomputed {
-            if x == from {
-                return Ok(to);
+            if &x == from {
+                return Ok(to.clone());
             }
         }
 
