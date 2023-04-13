@@ -421,11 +421,15 @@ impl Number {
             return Ok(Self::zero());
         }
 
-        let to_pow = exp
-            .inner
-            .numer()
-            .to_i32()
-            .ok_or_else(|| Error::Message(String::from("Exponent is too large")))?;
+        let Some(to_pow) = exp.inner.numer().to_i32() else {
+            let e = exp.inner.to_f64().ok_or_else(|| Error::Message(String::from("Exponent is too large")))?;
+            let x = self.inner.to_f64().ok_or_else(|| Error::Message(String::from("Exponent is too large")))?;
+            let f = libm::pow(x, e);
+            return Ok(Self {
+                inner: Arc::new(Ratio::from_float(f).unwrap_or_default())
+            });
+        };
+
         let to_root = exp.inner.denom();
 
         let mut res = self.clone();
