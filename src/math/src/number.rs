@@ -100,7 +100,7 @@ impl Number {
     pub fn epsilon() -> Self {
         static EPSILON: OnceCell<Number> = OnceCell::new();
         EPSILON
-            .get_or_init(|| Self::new_unchecked(1, 10u128.pow(28)))
+            .get_or_init(|| Self::new_unchecked(1, 10u128.pow(12)))
             .clone()
     }
 
@@ -961,8 +961,13 @@ impl Number {
     /// # }
     /// ```
     pub fn arctg(&self) -> Result<Self> {
-        let arccot = self.arccotg()?;
-        Self::pi().div(2)?.sub(arccot)
+        let f = self.inner.to_f64().unwrap_or_default();
+        let arctan = f.atan();
+        let res = Self {
+            inner: Arc::new(Ratio::from_float(arctan).unwrap_or_default()),
+        };
+
+        Ok(res)
     }
 
     /// Computes the arccotangent of a number. Return value is in radians in the range <0, pi>
@@ -978,7 +983,7 @@ impl Number {
     /// # }
     /// ```
     pub fn arccotg(&self) -> Result<Self> {
-        self.power(2)?.add(1)?.sqrt()?.power(-1)?.arcsin()
+        Self::pi().div(2)?.sub(self.arctg()?)
     }
 
     /// Calculate combination number of the given `n` and `k`
