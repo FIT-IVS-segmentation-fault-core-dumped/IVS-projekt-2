@@ -752,6 +752,17 @@ impl Number {
     /// ```
     pub fn sin(&self) -> Result<Self> {
         let x = self.modulo(Self::tau())?;
+        let precomputed = [
+            (Self::zero(), Self::zero()),
+            (Self::pi().div(2)?, Self::one()),
+            (Self::pi().div(6)?, Self::new_unchecked(1, 2)),
+        ];
+
+        for (from, to) in precomputed {
+            if x == from {
+                return Ok(to);
+            }
+        }
 
         let mut res = x.clone();
         let mut tmp = x.clone();
