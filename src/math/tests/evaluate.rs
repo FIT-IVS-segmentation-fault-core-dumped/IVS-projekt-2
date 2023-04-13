@@ -29,7 +29,7 @@ fn evaluate_sub() -> math::Result<()> {
 fn evaluate_mul() -> math::Result<()> {
     assert_eq!(eval_dec("2 * 3", 3)?, "6");
     assert_eq!(eval_dec("3 * 2", 3)?, "6");
-    assert_eq!(eval_dec("-2 * -3", 3)?, "-6");
+    assert_eq!(eval_dec("-2 * -3", 3)?, "6");
     assert_eq!(eval_dec("2 * (3 * 4)", 3)?, "24");
     assert_eq!(eval_dec("(2 * 3) * 4", 3)?, "24");
     assert!(evaluate("2**3").is_err());
