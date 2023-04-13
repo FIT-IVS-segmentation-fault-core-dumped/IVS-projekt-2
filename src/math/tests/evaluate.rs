@@ -78,8 +78,14 @@ fn evaluate_root() -> math::Result<()> {
 fn evaluate_log() -> math::Result<()> {
     assert_eq!(eval_dec("log(13, 169)", 0)?, "2");
     assert_eq!(eval_dec("log(3, 27)", 0)?, "3");
-    assert_eq!(eval_dec("log(50, 123 * 456)", 5)?, eval_dec("log(50, 123) + log(50, 456)", 5)?);
-    assert_eq!(eval_dec("log(50, 123 / 456)", 5)?, eval_dec("log(50, 123) - log(50, 456)", 5)?);
+    assert_eq!(
+        eval_dec("log(50, 123 * 456)", 5)?,
+        eval_dec("log(50, 123) + log(50, 456)", 5)?
+    );
+    assert_eq!(
+        eval_dec("log(50, 123 / 456)", 5)?,
+        eval_dec("log(50, 123) - log(50, 456)", 5)?
+    );
 
     assert!(eval_dec("log(0, 123)", 3).is_err());
     assert!(eval_dec("log(123, 0)", 3).is_err());
@@ -87,7 +93,7 @@ fn evaluate_log() -> math::Result<()> {
     assert!(eval_dec("log(1, -123)", 3).is_err());
     assert!(eval_dec("log(-1, -123)", 3).is_err());
 
-    assert_eq!(eval_dec("log(3, 123)", 2)?, eval_dec("ln(3) / ln(123)", 2)?);
+    assert_eq!(eval_dec("log(3, 123)", 2)?, eval_dec("ln(123) / ln(3)", 2)?);
     assert_eq!(eval_dec("log(e(), 10)", 5)?, eval_dec("ln(10)", 5)?);
     assert_eq!(eval_dec("pow(123, log(123, 10))", 2)?, "10");
     Ok(())
@@ -136,17 +142,17 @@ fn evaluate_arcsin() -> math::Result<()> {
     assert_eq!(eval_dec("arcsin(0.3912)", 8)?, "0.40193515");
     assert_eq!(eval_dec("arcsin(sin(0.123))", 3)?, "0.123");
     assert_eq!(eval_dec("sin(arcsin(0.123))", 3)?, "0.123");
-    assert!(eval_dec("1.0001", 3).is_err());
-    assert!(eval_dec("-1.0001", 3).is_err());
+    assert!(eval_dec("arcsin(1.0001)", 3).is_err());
+    assert!(eval_dec("arcsin(-1.0001)", 3).is_err());
     Ok(())
 }
 #[test]
 fn evaluate_arccos() -> math::Result<()> {
     assert_eq!(eval_dec("arccos(0.3912)", 8)?, "1.16886118");
-    assert_eq!(eval_dec("arccos(sin(0.123))", 3)?, "0.123");
+    assert_eq!(eval_dec("arccos(cos(0.123))", 3)?, "0.123");
     assert_eq!(eval_dec("cos(arccos(0.123))", 3)?, "0.123");
-    assert!(eval_dec("1.0001", 3).is_err());
-    assert!(eval_dec("-1.0001", 3).is_err());
+    assert!(eval_dec("arccos(1.0001)", 3).is_err());
+    assert!(eval_dec("arccos(-1.0001)", 3).is_err());
     Ok(())
 }
 #[test]
@@ -172,7 +178,10 @@ fn evaluate_arccotg() -> math::Result<()> {
 fn evaluate_abs() -> math::Result<()> {
     assert_eq!(eval_dec("abs(12)", 0)?, "12");
     assert_eq!(eval_dec("abs(-12)", 0)?, "12");
-    assert_eq!(eval_dec("abs(-3 * 5)", 0)?, eval_dec("abs(-3) * abs(5)", 0)?);
+    assert_eq!(
+        eval_dec("abs(-3 * 5)", 0)?,
+        eval_dec("abs(-3) * abs(5)", 0)?
+    );
     Ok(())
 }
 #[test]
@@ -183,7 +192,10 @@ fn evaluate_comb() -> math::Result<()> {
     assert_eq!(eval_dec("comb(3, 3)", 0)?, "1");
     assert_eq!(eval_dec("comb(4, 2)", 0)?, "6");
     assert_eq!(eval_dec("comb(4, 1)", 0)?, "4");
-    assert_eq!(eval_dec("comb(12, 6)", 0)?, eval_dec("12! / ((12 - 6)! * 6!)", 0)?);
+    assert_eq!(
+        eval_dec("comb(12, 6)", 0)?,
+        eval_dec("12! / ((12 - 6)! * 6!)", 0)?
+    );
     Ok(())
 }
 
@@ -198,8 +210,8 @@ fn evaluate_expr() -> math::Result<()> {
     dec_eq("sin(56)", "cos(56 - pi() / 2)", 4)?;
     dec_eq("123", "123", 0)?;
     dec_eq("0.1", "0.2 - 0.1", 2)?;
-    dec_eq("pow(ln(5), 13)", "13 * ln(5)", 4)?;
-    dec_eq("root(log(3, 13), 13)", "3", 0)?;
+    dec_eq("ln(pow(5, 13))", "13 * ln(5)", 4)?;
+    dec_eq("root(pow(3, 13), 13)", "3", 0)?;
 
     Ok(())
 }
@@ -210,4 +222,3 @@ fn evaluate_constants() -> math::Result<()> {
     assert_eq!(eval_dec("e()", 6)?, "2.718282");
     Ok(())
 }
-

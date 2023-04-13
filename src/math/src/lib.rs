@@ -62,13 +62,19 @@ pub struct Calculator {
     variables: HashMap<String, Variable>,
 }
 
+impl Default for Calculator {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Calculator {
     /// Create a new instance
     pub fn new() -> Self {
         let mut res = Self {
             tokens: Vec::new(),
             variables: HashMap::new(),
-            engine: Box::new(engine::ShuntingYardEngine::default()) as Box<_>,
+            engine: Box::<engine::ShuntingYardEngine>::default() as Box<_>,
         };
 
         res.add_basic_function();
@@ -84,7 +90,7 @@ impl Calculator {
                 .insert(name.to_lowercase(), Variable::Function { argc, ptr })
         };
 
-        add_function("root", 2, |nums| nums[1].root(&nums[0]));
+        add_function("root", 2, |nums| nums[0].root(&nums[1]));
         add_function("sqrt", 1, |nums| nums[0].sqrt());
         add_function("ln", 1, |nums| nums[0].ln());
         add_function("log2", 1, |nums| nums[0].log2());

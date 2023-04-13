@@ -2,7 +2,6 @@ use crate::error::Error;
 use crate::Result;
 use num::rational::Ratio;
 use num::BigInt;
-use num::Float as _;
 use num::Signed as _;
 use num::ToPrimitive;
 use once_cell::sync::OnceCell;
@@ -62,11 +61,25 @@ impl Number {
         ONE.get_or_init(|| Self::new_unchecked(1, 1)).clone()
     }
 
+    /// -1.0
+    pub fn minus_one() -> Self {
+        static M_ONE: OnceCell<Number> = OnceCell::new();
+        M_ONE.get_or_init(|| Self::new_unchecked(-1, 1)).clone()
+    }
+
+    /// The half circle constant (π)
     /// 3.14159... ~= 104 348/33 215
     pub fn pi() -> Self {
         static PI: OnceCell<Number> = OnceCell::new();
         PI.get_or_init(|| Self::new_unchecked(104348, 33215))
             .clone()
+    }
+
+    /// The full circle constant (τ)
+    /// Equal to 2π.
+    pub fn tau() -> Self {
+        static TAU: OnceCell<Number> = OnceCell::new();
+        TAU.get_or_init(|| Self::pi().mul(2).unwrap()).clone()
     }
     ///
     /// 2.71828... ~= 2721 / 1001
@@ -87,7 +100,7 @@ impl Number {
     pub fn epsilon() -> Self {
         static EPSILON: OnceCell<Number> = OnceCell::new();
         EPSILON
-            .get_or_init(|| Self::new_unchecked(1, 10u128.pow(28)))
+            .get_or_init(|| Self::new_unchecked(1, 10u128.pow(12)))
             .clone()
     }
 
@@ -121,7 +134,7 @@ impl Number {
         }
 
         Ok(Self {
-            inner: Arc::new(Ratio::new(num.into(), denom.into())),
+            inner: Arc::new(Ratio::new(num, denom)),
         })
     }
 
@@ -163,10 +176,10 @@ impl Number {
         let mut fract = num.fract();
 
         let mut res = match radix {
-            Radix::Bin => format!("{:b}", whole),
-            Radix::Oct => format!("{:o}", whole),
-            Radix::Dec => format!("{}", whole),
-            Radix::Hex => format!("{:X}", whole),
+            Radix::Bin => format!("{whole:b}"),
+            Radix::Oct => format!("{whole:o}"),
+            Radix::Dec => format!("{whole}"),
+            Radix::Hex => format!("{whole:X}"),
         };
 
         if self.inner.is_negative() {
@@ -217,6 +230,10 @@ impl Number {
 
             res.push_str(&digits);
             res = res.trim_end_matches('0').trim_end_matches('.').to_owned();
+
+            if res == "-0" {
+                res = String::from("0");
+            }
         }
 
         res
@@ -400,11 +417,19 @@ impl Number {
             return Self::one().div(self.clone());
         }
 
-        let to_pow = exp
-            .inner
-            .numer()
-            .to_i32()
-            .ok_or_else(|| Error::Message(String::from("Exponent is too large")))?;
+        if self == &Self::zero() {
+            return Ok(Self::zero());
+        }
+
+        let Some(to_pow) = exp.inner.numer().to_i32() else {
+            let e = exp.inner.to_f64().ok_or_else(|| Error::Message(String::from("Exponent is too large")))?;
+            let x = self.inner.to_f64().ok_or_else(|| Error::Message(String::from("Exponent is too large")))?;
+            let f = libm::pow(x, e);
+            return Ok(Self {
+                inner: Arc::new(Ratio::from_float(f).unwrap_or_default())
+            });
+        };
+
         let to_root = exp.inner.denom();
 
         let mut res = self.clone();
@@ -681,10 +706,6 @@ impl Number {
             return Err(Error::ZeroNthRoot);
         }
 
-        if nth.modulo(2)? == Self::zero() && self < &Self::zero() {
-            return Err(Error::NegativeRoot);
-        }
-
         if self == &Self::zero() {
             return Ok(Self::zero());
         }
@@ -692,24 +713,35 @@ impl Number {
         let to_root = nth.inner.numer();
         let to_pow = nth.inner.denom();
 
-        let mut res: Self = self.clone();
+        if (to_root % 2) == num::zero() && self < &Self::zero() {
+            return Err(Error::NegativeRoot);
+        }
+
+        let mut res = self.clone();
 
         if to_root != &num::one() {
-            let f = self.inner.to_f64().unwrap_or_default();
-            let nth = 1.0 / to_root.to_f64().unwrap_or_default();
-            let val = f.powf(nth);
-            res = Self {
-                inner: Arc::new(Ratio::from_float(val).unwrap_or_default()),
-            };
+            let x = self.inner.to_f64().unwrap_or_default();
+            let n = to_root.to_i32().unwrap_or_default();
+            let epsilon = Self::epsilon().inner.to_f64().unwrap();
+            let mut result = x;
+            let mut prev = 0.0;
+            while (result - prev).abs() > epsilon {
+                prev = result;
+                result = (n - 1) as f64 * prev;
+                result += x / prev.powi(n - 1) as f64;
+                result /= n as f64;
+            }
 
-            // TODO: implementation without rely on f64
+            res = Self {
+                inner: Arc::new(Ratio::from_float(result).unwrap_or_default()),
+            };
         }
 
         if to_pow != &num::one() {
             res = res.power(to_pow.clone())?;
         }
 
-        return Ok(res);
+        Ok(res)
     }
 
     /// Returns the square root of a number.
@@ -733,10 +765,32 @@ impl Number {
     /// # }
     /// ```
     pub fn sin(&self) -> Result<Self> {
-        let mut res = self.clone();
-        let mut tmp = self.clone();
+        static PRECOMPUTED: OnceCell<[(Number, Number); 5]> = OnceCell::new();
 
-        let numer = self.power(2)?;
+        let x = self.modulo(Self::tau())?;
+        let precomputed = PRECOMPUTED.get_or_init(|| {
+            [
+                (Self::zero(), Self::zero()),
+                (Self::pi().div(2).unwrap(), Self::one()),
+                (Self::pi().div(6).unwrap(), Self::new_unchecked(1, 2)),
+                (Self::pi(), Self::zero()),
+                (
+                    Self::pi().mul(3).unwrap().div(2).unwrap(),
+                    Self::minus_one(),
+                ),
+            ]
+        });
+
+        for (from, to) in precomputed {
+            if &x == from {
+                return Ok(to.clone());
+            }
+        }
+
+        let mut res = x.clone();
+        let mut tmp = x.clone();
+
+        let numer = x.power(2)?;
         let mut sign_plus = false;
         let mut step = Self::from(3);
 
@@ -842,6 +896,9 @@ impl Number {
             inner: Arc::new(Ratio::from_float(arcsin).unwrap_or_default()),
         };
 
+        // let denom = Self::one().sub(self.power(2)?)?.sqrt()?;
+        // self.div(denom)?.arctg()
+
         // TODO: Implement those without float
 
         // let mut res = Self::zero();
@@ -854,7 +911,6 @@ impl Number {
         //     res = res.add(&tmp)?;
         //     let x = step.mul(2)?;
         //     tmp = x.sub(1)?.mul(&self2)?.div(x)?.mul(tmp)?;
-        //     println!("{}", tmp.to_string(Radix::Dec, 28));
         //     step = step.add(1)?;
 
         //     if tmp.abs()? < epsilon || step > Self::from(20) {
@@ -873,7 +929,7 @@ impl Number {
     /// ```
     /// # use math::Number;
     /// # fn main() -> math::Result<()> {
-    /// assert!(Number::from(-1).arccos().is_err());
+    /// assert!(Number::from(-2).arccos().is_err());
     /// assert!(Number::from(4).arccos().is_err());
     /// let x = Number::random();
     /// let rev_cos_x = x.cos()?.arccos()?;
@@ -883,17 +939,8 @@ impl Number {
     /// # }
     /// ```
     pub fn arccos(&self) -> Result<Self> {
-        if self > &Self::pi() || self < &Self::zero() {
-            return Err(Error::OutOfRange);
-        }
-
-        let f = self.inner.to_f64().unwrap_or_default();
-        let arcsin = f.acos();
-        let res = Self {
-            inner: Arc::new(Ratio::from_float(arcsin).unwrap_or_default()),
-        };
-
-        Ok(res)
+        let arcsin = self.arcsin()?;
+        Self::pi().div(2)?.sub(arcsin)
     }
 
     /// Computes the arctangent of a number. Return value is in radians in the range <-pi/2, pi/2>
@@ -909,8 +956,13 @@ impl Number {
     /// # }
     /// ```
     pub fn arctg(&self) -> Result<Self> {
-        let arccot = self.arccotg()?;
-        Self::pi().div(2)?.sub(arccot)
+        let f = self.inner.to_f64().unwrap_or_default();
+        let arctan = f.atan();
+        let res = Self {
+            inner: Arc::new(Ratio::from_float(arctan).unwrap_or_default()),
+        };
+
+        Ok(res)
     }
 
     /// Computes the arccotangent of a number. Return value is in radians in the range <0, pi>
@@ -926,7 +978,7 @@ impl Number {
     /// # }
     /// ```
     pub fn arccotg(&self) -> Result<Self> {
-        self.power(2)?.add(1)?.sqrt()?.power(-1)?.arcsin()
+        Self::pi().div(2)?.sub(self.arctg()?)
     }
 
     /// Calculate combination number of the given `n` and `k`

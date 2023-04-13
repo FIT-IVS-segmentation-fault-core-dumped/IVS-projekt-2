@@ -159,7 +159,7 @@ impl Engine for ShuntingYardEngine {
                         iter.next();
                     }
 
-                    /// Handle the `+` `-` sign of a number
+                    // Handle the `+` `-` sign of a number
                     match (last_token, op, iter.peek()) {
                         (
                             None
@@ -297,13 +297,7 @@ impl ShuntingYardEngine {
             let lhs = self
                 .operands
                 .pop()
-                .or_else(|| {
-                    if matches!(op, Operator::Plus | Operator::Minus) {
-                        Some(Number::from(0))
-                    } else {
-                        None
-                    }
-                })
+                .or_else(|| matches!(op, Operator::Plus | Operator::Minus).then(Number::zero))
                 .unwrap();
             res.replace(evaluate_expr(lhs, rhs, op)?);
         }
