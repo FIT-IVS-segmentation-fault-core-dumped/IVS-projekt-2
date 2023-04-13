@@ -417,6 +417,10 @@ impl Number {
             return Self::one().div(self.clone());
         }
 
+        if self == &Self::zero() {
+            return Ok(Self::zero());
+        }
+
         let to_pow = exp
             .inner
             .numer()
@@ -698,10 +702,6 @@ impl Number {
             return Err(Error::ZeroNthRoot);
         }
 
-        if nth.modulo(2)? == Self::zero() && self < &Self::zero() {
-            return Err(Error::NegativeRoot);
-        }
-
         if self == &Self::zero() {
             return Ok(Self::zero());
         }
@@ -709,17 +709,28 @@ impl Number {
         let to_root = nth.inner.numer();
         let to_pow = nth.inner.denom();
 
-        let mut res: Self = self.clone();
+        if (to_root % 2) == num::zero() && self < &Self::zero() {
+            return Err(Error::NegativeRoot);
+        }
+
+        let mut res = self.clone();
 
         if to_root != &num::one() {
-            let f = self.inner.to_f64().unwrap_or_default();
-            let nth = 1.0 / to_root.to_f64().unwrap_or_default();
-            let val = f.powf(nth);
-            res = Self {
-                inner: Arc::new(Ratio::from_float(val).unwrap_or_default()),
-            };
+            let x = self.inner.to_f64().unwrap_or_default();
+            let n = to_root.to_i32().unwrap_or_default();
+            let epsilon = Self::epsilon().inner.to_f64().unwrap();
+            let mut result = x;
+            let mut prev = 0.0;
+            while (result - prev).abs() > epsilon {
+                prev = result;
+                result = (n - 1) as f64 * prev;
+                result += x / prev.powi(n - 1) as f64;
+                result /= n as f64;
+            }
 
-            // TODO: implementation without rely on f64
+            res = Self {
+                inner: Arc::new(Ratio::from_float(result).unwrap_or_default()),
+            };
         }
 
         if to_pow != &num::one() {
