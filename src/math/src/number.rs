@@ -15,7 +15,7 @@ pub struct Number {
     inner: Arc<Ratio<BigInt>>,
 }
 
-#[derive(Default, Debug, Clone, Copy)]
+#[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
 #[non_exhaustive]
 /// Radix to use to represent a Number
 pub enum Radix {
