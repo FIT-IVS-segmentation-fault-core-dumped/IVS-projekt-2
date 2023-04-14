@@ -82,7 +82,8 @@ impl Default for CalcConfig {
 #[derive(Clone, Lens)]
 pub struct CalcState {
     /// Holds text, which is used to display the final string on the display widget.
-    displayed_text: String,
+    /// or converted to evaluate string for the math library.
+    inner_expr: String,
     /// Displayed base of the computed result.
     radix: Radix,
     /// Contains all available languages at runtime.
@@ -94,7 +95,7 @@ pub struct CalcState {
 
 impl Data for CalcState {
     fn same(&self, other: &Self) -> bool {
-        self.displayed_text == other.displayed_text
+        self.inner_expr == other.inner_expr
             && self.radix == other.radix
             && self.config.same(&other.config)
     }
@@ -108,7 +109,7 @@ impl CalcState {
         let config = confy::load(APP_NAME, None).unwrap_or_default();
 
         Self {
-            displayed_text: String::new(),
+            inner_expr: String::from("0"),
             radix: Radix::Dec,
             // Convert array of string slices to vector of strings.
             available_languages: Rc::new(languages.iter().map(|&s| String::from(s)).collect()),
@@ -126,7 +127,7 @@ impl CalcState {
         todo!();
     }
 
-    /// Convert CalcState::display_string to *evaluate string*, which
+    /// Convert CalcState::inner_expr to *evaluate string*, which
     /// can then be passed to the `math::evaluate` function.
     pub fn get_eval_str(&self) -> String {
         todo!()
