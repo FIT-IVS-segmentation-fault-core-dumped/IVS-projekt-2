@@ -83,6 +83,7 @@ impl Default for CalcConfig {
 pub struct CalcState {
     /// Holds text, which is used to display the final string on the display widget.
     /// or converted to evaluate string for the math library.
+    #[lens(ignore)]
     inner_expr: String,
     /// Displayed base of the computed result.
     radix: Radix,
@@ -91,6 +92,22 @@ pub struct CalcState {
     available_languages: Rc<Vec<String>>,
     /// Confing deserialized from disk using *confy* crate.
     config: CalcConfig,
+}
+
+/// Contains dummy structs for custom druid::Lens implementations.
+pub mod custom_lenses {
+    /// Lens will convert inner_expr to displayed_string.
+    #[allow(non_camel_case_types)]
+    pub struct inner_expr;
+}
+
+impl Lens<CalcState, String> for custom_lenses::inner_expr {
+    fn with<V, F: FnOnce(&String) -> V>(&self, data: &CalcState, f: F) -> V {
+        f(&data.get_display_str())
+    }
+    fn with_mut<V, F: FnOnce(&mut String) -> V>(&self, data: &mut CalcState, f: F) -> V {
+        f(&mut data.inner_expr)
+    }
 }
 
 impl Data for CalcState {
@@ -102,6 +119,9 @@ impl Data for CalcState {
 }
 
 impl CalcState {
+    #[allow(non_upper_case_globals)]
+    pub const displayed_text: custom_lenses::inner_expr = custom_lenses::inner_expr;
+
     /// Creates new instance of CalcState. This will load config from disk.
     ///
     /// * `languages` - Array of available languages loaded from rust-i18n.
@@ -131,6 +151,13 @@ impl CalcState {
     /// can then be passed to the `math::evaluate` function.
     pub fn get_eval_str(&self) -> String {
         todo!()
+    }
+
+    /// Convert CalcState::inner_expr to *display string*, which will 
+    /// be actually displayed on the calculator display.
+    pub fn get_display_str(&self) -> String {
+        // TODO: replace functions with their special characters.
+        self.inner_expr.clone()
     }
 
     /// Store CalcState::config on the disk using *confy* create.
