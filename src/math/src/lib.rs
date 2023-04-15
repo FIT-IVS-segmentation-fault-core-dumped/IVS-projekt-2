@@ -83,7 +83,7 @@ impl Calculator {
         res.add_constant("pi", Number::pi());
 
         let mut keywords = res.add_builtin_function();
-        keywords.extend_from_slice(&["rem", "mod"]);
+        keywords.push("mod");
         res.builtin_keywords = keywords.into_boxed_slice();
 
         res

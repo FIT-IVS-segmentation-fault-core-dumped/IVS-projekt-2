@@ -68,10 +68,7 @@ impl Engine for ShuntingYardEngine {
                 (
                     Token::Operator(_),
                     Some(Token::Operator(
-                        Operator::Divide
-                        | Operator::Multiply
-                        | Operator::Modulo
-                        | Operator::Remainder,
+                        Operator::Divide | Operator::Multiply | Operator::Power | Operator::Modulo,
                     )),
                 ) => return Err(Error::MissingOperand),
 
@@ -145,10 +142,19 @@ impl Engine for ShuntingYardEngine {
 
         let mut iter = tokens.iter().peekable();
         let mut last_token = None;
+        let mut negate_operand = false;
 
         while let Some(token) = iter.next() {
             match token {
-                Token::Number(num) => self.store_operand(num.clone()),
+                Token::Number(val) => {
+                    let mut num = val.clone();
+                    if negate_operand {
+                        num = num.mul(-1)?;
+                        negate_operand = false;
+                    }
+
+                    self.store_operand(num);
+                }
                 Token::Operator(op) => {
                     let mut op = *op;
                     // Combine all the `+` and `-` signs together
@@ -165,37 +171,22 @@ impl Engine for ShuntingYardEngine {
                     }
 
                     // Handle the `+` `-` sign of a number
-                    match (last_token, op, iter.peek()) {
+                    if matches!(
+                        (last_token, op, iter.peek()),
                         (
-                            None
-                            | Some(&Token::Comma)
-                            | Some(&Token::Operator(
-                                Operator::Multiply
-                                | Operator::Divide
-                                | Operator::Modulo
-                                | Operator::Remainder,
-                            )),
-                            Operator::Plus,
+                            None | Some(&Token::Comma)
+                                | Some(&Token::Operator(
+                                    Operator::Multiply
+                                        | Operator::Divide
+                                        | Operator::Power
+                                        | Operator::Modulo,
+                                )),
+                            Operator::Plus | Operator::Minus,
                             Some(Token::Number(_)),
-                        ) => continue,
-                        (
-                            None
-                            | Some(&Token::Comma)
-                            | Some(&Token::Operator(
-                                Operator::Multiply
-                                | Operator::Divide
-                                | Operator::Remainder
-                                | Operator::Modulo,
-                            )),
-                            Operator::Minus,
-                            Some(Token::Number(_)),
-                        ) => {
-                            self.store_operand(Number::from(-1));
-                            self.operators
-                                .push(ShuntingYardOperator::Operator(Operator::Multiply));
-                            continue;
-                        }
-                        _ => (),
+                        )
+                    ) {
+                        negate_operand = op == Operator::Minus;
+                        continue;
                     }
 
                     self.operator_handle(op)?;
@@ -235,7 +226,7 @@ fn operator_precedence(op: Operator) -> u8 {
     match op {
         Operator::Plus | Operator::Minus => 0,
         Operator::Multiply | Operator::Divide => 1,
-        Operator::Power | Operator::Modulo | Operator::Remainder => 2,
+        Operator::Power | Operator::Modulo => 2,
     }
 }
 
@@ -247,7 +238,6 @@ fn evaluate_expr(lhs: Number, rhs: Number, op: Operator) -> Result<Number> {
         Operator::Divide => lhs.div(rhs),
         Operator::Power => lhs.power(rhs),
         Operator::Modulo => lhs.modulo(rhs),
-        Operator::Remainder => lhs.remainder(rhs),
     }
 }
 
@@ -260,19 +250,17 @@ impl ShuntingYardEngine {
         let current_precedence = operator_precedence(op);
 
         while let Some(ShuntingYardOperator::Operator(last_op)) = self.operators.last() {
-            if current_precedence > operator_precedence(*last_op) {
+            let last_precedence = operator_precedence(*last_op);
+            if current_precedence > last_precedence {
                 break;
             }
 
             let rhs = self.operands.pop().unwrap();
-            let lhs = self.operands.pop().or_else(|| {
-                if matches!(last_op, Operator::Plus | Operator::Minus) {
-                    return Some(Number::zero());
-                }
-
-                None
-            });
-            let lhs = lhs.ok_or(Error::MissingOperand)?;
+            let lhs = self
+                .operands
+                .pop()
+                .or_else(|| matches!(last_op, Operator::Plus | Operator::Minus).then(Number::zero))
+                .ok_or(Error::MissingOperand)?;
             self.store_operand(evaluate_expr(lhs, rhs, *last_op)?);
             self.operators.pop();
         }
@@ -315,7 +303,7 @@ impl ShuntingYardEngine {
                 .operands
                 .pop()
                 .or_else(|| matches!(op, Operator::Plus | Operator::Minus).then(Number::zero))
-                .unwrap();
+                .ok_or(Error::MissingOperand)?;
             res.replace(evaluate_expr(lhs, rhs, op)?);
         }
 

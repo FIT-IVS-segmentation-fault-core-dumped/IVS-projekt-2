@@ -66,8 +66,6 @@ pub enum Operator {
     Power,
     /// Modulo,
     Modulo,
-    /// Remainder
-    Remainder,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -131,7 +129,6 @@ impl State {
             Self::VerticalLine => Token::Bracket(Bracket::VerticalLine),
             Self::Identifier(s) => match s.as_str() {
                 "mod" => Token::Operator(Operator::Modulo),
-                "rem" => Token::Operator(Operator::Remainder),
                 _ => Token::Id(s),
             },
             Self::NumberStart => Token::Number(Number::zero()),
