@@ -64,6 +64,10 @@ pub enum Operator {
     Divide,
     /// ^
     Power,
+    /// Modulo,
+    Modulo,
+    /// Remainder
+    Remainder,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -125,7 +129,11 @@ impl State {
             Self::LeftPar => Token::Bracket(Bracket::ParenLeft),
             Self::RightPar => Token::Bracket(Bracket::ParenRight),
             Self::VerticalLine => Token::Bracket(Bracket::VerticalLine),
-            Self::Identifier(s) => Token::Id(s),
+            Self::Identifier(s) => match s.as_str() {
+                "mod" => Token::Operator(Operator::Modulo),
+                "rem" => Token::Operator(Operator::Remainder),
+                _ => Token::Id(s),
+            },
             Self::NumberStart => Token::Number(Number::zero()),
             Self::Number { num, .. } => Token::Number(Number::from(num)),
             Self::Fraction {

@@ -67,7 +67,12 @@ impl Engine for ShuntingYardEngine {
 
                 (
                     Token::Operator(_),
-                    Some(Token::Operator(Operator::Divide | Operator::Multiply)),
+                    Some(Token::Operator(
+                        Operator::Divide
+                        | Operator::Multiply
+                        | Operator::Modulo
+                        | Operator::Remainder,
+                    )),
                 ) => return Err(Error::MissingOperand),
 
                 (Token::Number(_), Some(Token::Number(_))) => return Err(Error::MissingOperator),
@@ -164,14 +169,24 @@ impl Engine for ShuntingYardEngine {
                         (
                             None
                             | Some(&Token::Comma)
-                            | Some(&Token::Operator(Operator::Multiply | Operator::Divide)),
+                            | Some(&Token::Operator(
+                                Operator::Multiply
+                                | Operator::Divide
+                                | Operator::Modulo
+                                | Operator::Remainder,
+                            )),
                             Operator::Plus,
                             Some(Token::Number(_)),
                         ) => continue,
                         (
                             None
                             | Some(&Token::Comma)
-                            | Some(&Token::Operator(Operator::Multiply | Operator::Divide)),
+                            | Some(&Token::Operator(
+                                Operator::Multiply
+                                | Operator::Divide
+                                | Operator::Remainder
+                                | Operator::Modulo,
+                            )),
                             Operator::Minus,
                             Some(Token::Number(_)),
                         ) => {
@@ -220,7 +235,7 @@ fn operator_precedence(op: Operator) -> u8 {
     match op {
         Operator::Plus | Operator::Minus => 0,
         Operator::Multiply | Operator::Divide => 1,
-        Operator::Power => 2,
+        Operator::Power | Operator::Modulo | Operator::Remainder => 2,
     }
 }
 
@@ -231,6 +246,8 @@ fn evaluate_expr(lhs: Number, rhs: Number, op: Operator) -> Result<Number> {
         Operator::Multiply => lhs.mul(rhs),
         Operator::Divide => lhs.div(rhs),
         Operator::Power => lhs.power(rhs),
+        Operator::Modulo => lhs.modulo(rhs),
+        Operator::Remainder => lhs.remainder(rhs),
     }
 }
 
