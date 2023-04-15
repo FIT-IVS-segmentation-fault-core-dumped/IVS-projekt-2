@@ -60,6 +60,7 @@ pub struct Calculator {
     tokens: Vec<token::Token>,
     engine: Box<dyn Engine>,
     variables: HashMap<String, Variable>,
+    builtin_keywords: Box<[&'static str]>,
 }
 
 impl Default for Calculator {
@@ -75,17 +76,23 @@ impl Calculator {
             tokens: Vec::new(),
             variables: HashMap::new(),
             engine: Box::<engine::ShuntingYardEngine>::default() as Box<_>,
+            builtin_keywords: Box::default(),
         };
 
-        res.add_basic_function();
         res.add_constant("e", Number::e());
         res.add_constant("pi", Number::pi());
+
+        let mut keywords = res.add_builtin_function();
+        keywords.extend_from_slice(&["rem", "mod"]);
+        res.builtin_keywords = keywords.into_boxed_slice();
 
         res
     }
 
-    fn add_basic_function(&mut self) {
-        let mut add_function = |name: &str, argc, ptr| {
+    fn add_builtin_function(&mut self) -> Vec<&'static str> {
+        let mut keywords = Vec::new();
+        let mut add_function = |name: &'static str, argc, ptr| {
+            keywords.push(name);
             self.variables
                 .insert(name.to_lowercase(), Variable::Function { argc, ptr })
         };
@@ -108,6 +115,8 @@ impl Calculator {
         add_function("abs", 1, |nums| nums[0].abs());
         add_function("comb", 2, |nums| Number::combination(&nums[0], &nums[1]));
         add_function("random", 0, |_| Ok(Number::random()));
+
+        keywords
     }
 
     /// Add new constant or update existing one to the calculator \
@@ -122,7 +131,8 @@ impl Calculator {
     /// ```
     pub fn add_constant(&mut self, name: &str, num: impl Into<Number>) -> bool {
         let name = name.to_lowercase();
-        if matches!(self.variables.get(&name), Some(Variable::Function { .. })) {
+
+        if self.builtin_keywords.iter().any(|&v| v == name) {
             return false;
         }
 
