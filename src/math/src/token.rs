@@ -128,8 +128,12 @@ impl State {
             Self::Identifier(s) => Token::Id(s),
             Self::NumberStart => Token::Number(Number::zero()),
             Self::Number { num, .. } => Token::Number(Number::from(num)),
-            Self::Fraction { num, fract_cnt, .. } => {
-                let val = Number::new(num, 10u128.pow(fract_cnt)).unwrap_or_default();
+            Self::Fraction {
+                num,
+                fract_cnt,
+                radix,
+            } => {
+                let val = Number::new(num, BigUint::from(radix).pow(fract_cnt)).unwrap_or_default();
                 Token::Number(val)
             }
 
