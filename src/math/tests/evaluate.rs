@@ -63,6 +63,24 @@ fn evaluate_pow() -> math::Result<()> {
     Ok(())
 }
 #[test]
+fn evaluate_pow_infix_notation() -> math::Result<()> {
+    assert_eq!(eval_dec("-123^0", 0)?, "1");
+    assert_eq!(eval_dec("123 ^ 0", 0)?, "1");
+    assert_eq!(eval_dec("2^3 * 2^5", 0)?, "256");
+    assert_eq!(eval_dec("2^3^3", 0)?, "512");
+    assert_eq!(eval_dec("2^-2", 2)?, "0.25");
+    assert!(eval_dec("0^0^0", 3).is_ok());
+    Ok(())
+}
+#[test]
+fn evaluate_mod() -> math::Result<()> {
+    assert_eq!(eval_dec("7 mod 3", 0)?, "1");
+    assert_eq!(eval_dec("7 mod-3", 0)?, "-2");
+    assert_eq!(eval_dec("-7 mod 3", 0)?, "2");
+    assert_eq!(eval_dec("-7 mod -3", 0)?, "-1");
+    Ok(())
+}
+#[test]
 fn evaluate_root() -> math::Result<()> {
     assert_eq!(eval_dec("root(64, 2)", 0)?, "8");
     assert_eq!(eval_dec("root(-64, 3)", 0)?, "-4");

@@ -64,6 +64,8 @@ pub enum Operator {
     Divide,
     /// ^
     Power,
+    /// Modulo,
+    Modulo,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -125,11 +127,18 @@ impl State {
             Self::LeftPar => Token::Bracket(Bracket::ParenLeft),
             Self::RightPar => Token::Bracket(Bracket::ParenRight),
             Self::VerticalLine => Token::Bracket(Bracket::VerticalLine),
-            Self::Identifier(s) => Token::Id(s),
+            Self::Identifier(s) => match s.as_str() {
+                "mod" => Token::Operator(Operator::Modulo),
+                _ => Token::Id(s),
+            },
             Self::NumberStart => Token::Number(Number::zero()),
             Self::Number { num, .. } => Token::Number(Number::from(num)),
-            Self::Fraction { num, fract_cnt, .. } => {
-                let val = Number::new(num, 10u128.pow(fract_cnt)).unwrap_or_default();
+            Self::Fraction {
+                num,
+                fract_cnt,
+                radix,
+            } => {
+                let val = Number::new(num, BigUint::from(radix).pow(fract_cnt)).unwrap_or_default();
                 Token::Number(val)
             }
 
