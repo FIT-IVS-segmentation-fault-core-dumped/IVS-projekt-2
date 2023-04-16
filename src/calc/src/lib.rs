@@ -95,13 +95,13 @@ pub struct CalcState {
 }
 
 /// Contains dummy structs for custom druid::Lens implementations.
-pub mod custom_lenses {
+pub mod calcstate_lenses {
     /// Lens will convert inner_expr to displayed_string.
     #[allow(non_camel_case_types)]
     pub struct inner_expr;
 }
 
-impl Lens<CalcState, String> for custom_lenses::inner_expr {
+impl Lens<CalcState, String> for calcstate_lenses::inner_expr {
     fn with<V, F: FnOnce(&String) -> V>(&self, data: &CalcState, f: F) -> V {
         f(&data.get_display_str())
     }
@@ -120,7 +120,7 @@ impl Data for CalcState {
 
 impl CalcState {
     #[allow(non_upper_case_globals)]
-    pub const displayed_text: custom_lenses::inner_expr = custom_lenses::inner_expr;
+    pub const displayed_text: calcstate_lenses::inner_expr = calcstate_lenses::inner_expr;
 
     /// Creates new instance of CalcState. This will load config from disk.
     ///
