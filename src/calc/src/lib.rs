@@ -111,7 +111,8 @@ pub mod calcstate_lenses {
 /// Lens will convert inner_expr to displayed_string.
 impl Lens<CalcState, String> for calcstate_lenses::inner_expr {
     fn with<V, F: FnOnce(&String) -> V>(&self, data: &CalcState, f: F) -> V {
-        f(&data.get_display_str())
+        let dis = data.get_display_str();
+        if dis.is_empty() { f(&"0".to_string()) } else { f(&data.get_display_str()) }
     }
     fn with_mut<V, F: FnOnce(&mut String) -> V>(&self, data: &mut CalcState, f: F) -> V {
         f(&mut data.inner_expr)
