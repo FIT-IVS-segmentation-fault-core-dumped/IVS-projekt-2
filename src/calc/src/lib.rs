@@ -92,21 +92,40 @@ pub struct CalcState {
     available_languages: Rc<Vec<String>>,
     /// Confing deserialized from disk using *confy* crate.
     config: CalcConfig,
+    /// Parser of mathematical expressions.
+    #[lens(ignore)]
+    calc: Rc<math::Calculator>,
+    /// Last computed result, which is displayed on the display.
+    #[lens(ignore)]
+    result: String,
 }
 
 /// Contains dummy structs for custom druid::Lens implementations.
 pub mod calcstate_lenses {
-    /// Lens will convert inner_expr to displayed_string.
     #[allow(non_camel_case_types)]
     pub struct inner_expr;
+    #[allow(non_camel_case_types)]
+    pub struct result;
 }
 
+/// Lens will convert inner_expr to displayed_string.
 impl Lens<CalcState, String> for calcstate_lenses::inner_expr {
     fn with<V, F: FnOnce(&String) -> V>(&self, data: &CalcState, f: F) -> V {
         f(&data.get_display_str())
     }
     fn with_mut<V, F: FnOnce(&mut String) -> V>(&self, data: &mut CalcState, f: F) -> V {
         f(&mut data.inner_expr)
+    }
+}
+
+/// In the future, if we want to compute result realtime
+/// when typing, then we could do it here.
+impl Lens<CalcState, String> for calcstate_lenses::result {
+    fn with<V, F: FnOnce(&String) -> V>(&self, data: &CalcState, f: F) -> V {
+        f(&data.result)
+    }
+    fn with_mut<V, F: FnOnce(&mut String) -> V>(&self, data: &mut CalcState, f: F) -> V {
+        f(&mut data.result)
     }
 }
 
@@ -121,6 +140,8 @@ impl Data for CalcState {
 impl CalcState {
     #[allow(non_upper_case_globals)]
     pub const displayed_text: calcstate_lenses::inner_expr = calcstate_lenses::inner_expr;
+    #[allow(non_upper_case_globals)]
+    pub const result: calcstate_lenses::result = calcstate_lenses::result;
 
     /// Creates new instance of CalcState. This will load config from disk.
     ///
@@ -134,6 +155,8 @@ impl CalcState {
             // Convert array of string slices to vector of strings.
             available_languages: Rc::new(languages.iter().map(|&s| String::from(s)).collect()),
             config,
+            calc: Rc::new(math::Calculator::new()),
+            result: String::new()
         }
     }
 
