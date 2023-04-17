@@ -4,3 +4,15 @@ menu:
     file: File
     edit: Edit
     help: Help
+
+theme: Theme
+dark: Dark
+light: Light
+system: System
+
+language: Language
+czech: Czech
+english: English
+japanese: Japanese
+slovak: Slovak
+vietnamese: Vietnamese
