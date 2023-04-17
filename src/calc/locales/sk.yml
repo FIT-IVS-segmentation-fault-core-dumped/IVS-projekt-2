@@ -1,1 +1,18 @@
 locale_name: Slovenčina
+title: Kalkulačka
+menu:
+    file: Súbor
+    edit: Upraviť
+    help: Nápoveda
+
+theme: Motív
+dark: Tmavý
+light: Svetlý
+system: Systém
+
+language: Jazyk
+czech: Čeština
+english: Angličtina
+japanese: Japončina
+slovak: Slovenčina
+vietnamese: Vietnamčina

@@ -7,6 +7,7 @@ edition = "2021"
 
 [dependencies]
 confy = "0.5.1"
+dark-light = "1.0.0"  # Determine the system theme
 druid = { version = "0.8.3", features = ["im"] }
 im = "15.1.0"
 math = { version = "0.1.0", path = "../math" }
