@@ -235,6 +235,15 @@ fn evaluate_expr() -> math::Result<()> {
 }
 
 #[test]
+fn evaluate_expr_hidden_multiply_sign() -> math::Result<()> {
+    assert_eq!(eval_dec("3pi()", 5)?, "9.42478");
+    assert_eq!(eval_dec("e()pi()", 5)?, "8.53973");
+    assert_eq!(eval_dec("1 + 2(3 + 4!e())", 5)?, "137.47752");
+    assert_eq!(eval_dec("pi()2 / 2", 5)?, "3.14159");
+    Ok(())
+}
+
+#[test]
 fn evaluate_constants() -> math::Result<()> {
     assert_eq!(eval_dec("pi()", 6)?, "3.141593");
     assert_eq!(eval_dec("e()", 6)?, "2.718282");
