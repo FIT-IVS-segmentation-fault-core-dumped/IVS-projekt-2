@@ -5,7 +5,7 @@ use super::CalcState;
 // Wrapper for testing the get_eval_str() method.
 fn convert(display_text: String) -> String {
     let mut calc_state = CalcState::new(&["en"]);
-    calc_state.displayed_text = display_text;
+    calc_state.inner_expr = display_text;
     calc_state.get_eval_str()
 }
 
