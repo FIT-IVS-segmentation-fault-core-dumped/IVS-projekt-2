@@ -10,6 +10,9 @@ use std::{fmt, rc::Rc};
 
 const APP_NAME: &str = "Calculator";
 
+// Initialize locales in "locales" directory.
+rust_i18n::i18n!("locales");
+
 /// Operations on the calculator.
 #[rustfmt::skip]
 pub enum Opt {
