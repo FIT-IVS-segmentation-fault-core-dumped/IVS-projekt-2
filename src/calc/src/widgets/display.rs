@@ -5,8 +5,11 @@ use druid::{Color, WidgetExt, UnitPoint, };
 use druid::{widget::Label, Widget};
 use crate::CalcState;
 
+/// Widget displaying, **status of calculator**,
+/// **current expression** and the **computed result**.
 pub struct DisplayUI;
 impl DisplayUI {
+    /// Create the DisplayUI widget.
     pub fn build_ui() -> impl Widget<CalcState> {
         get_display()
     }
