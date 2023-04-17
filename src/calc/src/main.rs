@@ -2,7 +2,7 @@ mod environment;
 
 use calc::translate;
 use calc::widgets::menu::CalcMenu;
-use calc::{widgets::buttons_ui::ButtonsUI, CalcState, Theme};
+use calc::{widgets::{buttons_ui::ButtonsUI, display::DisplayUI}, CalcState, Theme};
 use druid::{
     theme,
     widget::{Container, EnvScope, Flex},
@@ -26,8 +26,7 @@ fn build_root_widget() -> impl Widget<CalcState> {
         Container::new(
             Flex::column()
                 .main_axis_alignment(druid::widget::MainAxisAlignment::End)
-                .with_flex_child(Flex::column(), 1.0)
-                // .with_spacer(10.0)
+                .with_flex_child(DisplayUI::build_ui(), 1.0)
                 .with_flex_child(ButtonsUI::build_ui(), 3.0),
         )
         .background(theme::WINDOW_BACKGROUND_COLOR),
