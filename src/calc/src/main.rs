@@ -2,7 +2,7 @@ mod environment;
 
 use calc::translate;
 use calc::widgets::menu::CalcMenu;
-use calc::{widgets::ButtonsUI, CalcState, Theme};
+use calc::{widgets::buttons_ui::ButtonsUI, CalcState, Theme};
 use druid::{
     theme,
     widget::{Container, EnvScope, Flex},
