@@ -12,7 +12,7 @@ impl DisplayUI {
     }
 }
 
-pub fn get_display() -> impl Widget<CalcState> {
+fn get_display() -> impl Widget<CalcState> {
     let status_row = Align::left(
             Flex::row()
                 .with_flex_child(Label::new("Bin").with_text_size(10.0), 1.0)
