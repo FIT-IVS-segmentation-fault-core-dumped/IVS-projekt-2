@@ -213,6 +213,27 @@ impl Engine for ShuntingYardEngine {
                 }
             }
 
+            // Handle the hidden multiply sign in algebraic notation
+            if let Some(next_token) = iter.peek() {
+                if token != *next_token {
+                    let left = matches!(
+                        token,
+                        Token::Number(_)
+                            | Token::FactorialSign
+                            | Token::Bracket(Bracket::ParenRight)
+                    );
+
+                    let right = matches!(
+                        next_token,
+                        Token::Number(_) | Token::Id(_) | Token::Bracket(Bracket::ParenLeft)
+                    );
+
+                    if left && right {
+                        self.operator_handle(Operator::Multiply)?;
+                    }
+                }
+            }
+
             last_token.replace(token);
         }
 
