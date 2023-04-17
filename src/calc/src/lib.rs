@@ -2,12 +2,11 @@
 //!
 //! This file contains definition of calculator state,
 //! which defines functionality of our app.
-
 pub mod widgets;
 use druid::{Data, Lens};
 use math::number::Radix;
 use serde::{Deserialize, Serialize};
-use std::rc::Rc;
+use std::{fmt, rc::Rc};
 
 const APP_NAME: &str = "Calculator";
 
@@ -185,18 +184,32 @@ impl CalcState {
     }
 
     /// Store CalcState::config on the disk using *confy* create.
-    pub fn store_config_data(&self) -> Result<(), confy::ConfyError> {
-        confy::store(APP_NAME, None, &self.config)
+    pub fn store_config_data(&self) {
+        let res = confy::store(APP_NAME, None, &self.config);
+        if let Err(why) = res {
+            eprintln!("Got Error:\n{:#?}", why);
+        }
     }
 
-    /// Get currently active theme.
-    pub fn get_theme(&self) -> Theme {
-        self.config.theme
+    /// Get currently active theme. If `detect_system` is set to true, function will detect set
+    /// system theme and return either Dark or Light.
+    pub fn get_theme(&self, detect_system: bool) -> Theme {
+        if detect_system && self.config.theme == Theme::System {
+            let mode = dark_light::detect();
+            match mode {
+                dark_light::Mode::Dark => Theme::Dark,
+                dark_light::Mode::Light => Theme::Light,
+                dark_light::Mode::Default => Theme::Dark,
+            }
+        } else {
+            self.config.theme
+        }
     }
 
     /// Change theme of application. This will be saved at exit.
     pub fn set_theme(&mut self, theme: Theme) {
         self.config.theme = theme;
+        self.store_config_data();
     }
 
     /// Change language of the app. This will be saved at exit.
