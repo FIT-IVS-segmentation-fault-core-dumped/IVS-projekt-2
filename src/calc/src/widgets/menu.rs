@@ -1,3 +1,5 @@
+//! The menu UI part of the calculator
+
 use druid::{Env, Menu, MenuItem, WindowId};
 use rust_i18n::*;
 

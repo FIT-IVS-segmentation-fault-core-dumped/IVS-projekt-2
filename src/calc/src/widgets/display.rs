@@ -1,3 +1,5 @@
+//! The display UI part of the calculator
+
 use druid::widget::{Align, Container, Flex}; 
 use druid::{Color, WidgetExt, UnitPoint, };
 use druid::{widget::Label, Widget};

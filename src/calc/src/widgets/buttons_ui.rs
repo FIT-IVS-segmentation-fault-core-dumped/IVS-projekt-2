@@ -1,4 +1,4 @@
-//! Button UI of the calculator
+//! The buttons UI part of the calculator
 
 pub struct ButtonsUI;
 
