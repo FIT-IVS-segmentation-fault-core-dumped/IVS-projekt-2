@@ -6,6 +6,7 @@ use num::Signed as _;
 use num::ToPrimitive;
 use once_cell::sync::OnceCell;
 use std::cmp::Ordering;
+use std::fmt::Write as _;
 use std::sync::Arc;
 
 #[derive(Debug, Clone)]
@@ -236,6 +237,48 @@ impl Number {
             }
         }
 
+        res
+    }
+
+    /// Display the number in degree (angle)
+    /// The precision of `seconds` is up to 2 decimal points
+    ///
+    /// ```
+    /// # use math::Number;
+    /// # fn main() -> math::Result<()> {
+    /// assert_eq!(Number::from(1).to_degree_string(), "1° 0' 0\"");
+    /// assert_eq!(Number::from(0).to_degree_string(), "0° 0' 0\"");
+    /// assert_eq!(Number::new(573, 201)?.to_degree_string(), "2° 51' 2.69\"");
+    /// assert_eq!(Number::new(-23, 5)?.to_degree_string(), "-4° 36' 0\"");
+    /// assert_eq!(Number::new(1, 17)?.to_degree_string(), "0° 3' 31.76\"");
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn to_degree_string(&self) -> String {
+        let mut res = String::new();
+
+        if self.inner.is_negative() {
+            res.push('-');
+        }
+
+        let inner = self.inner.abs().clone();
+        let degree = inner.to_integer().into_parts().1;
+        let fract = inner.fract();
+        let minutes = (&fract * BigInt::from(60)).to_integer();
+        let fract = Self {
+            inner: Arc::new(fract),
+        };
+        let minutes_fract = Self::from(minutes.clone()).div(60).unwrap();
+        let seconds = fract.sub(minutes_fract).unwrap().mul(3600).unwrap();
+
+        write!(
+            &mut res,
+            "{}° {}' {}\"",
+            degree,
+            minutes,
+            seconds.to_string(Default::default(), 2)
+        )
+        .unwrap();
         res
     }
 }
