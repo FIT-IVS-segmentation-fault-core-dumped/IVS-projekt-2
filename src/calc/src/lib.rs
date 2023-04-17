@@ -17,7 +17,7 @@ pub enum Opt {
     Sin, Cos, Tg, Cotg,
     Arcsin, Arccos, Arctg, Arccotg,
     Log, LogN, Ln, Sqrt, Root, Pow,
-    Abs, Comb, Fact
+    Abs, Comb, Fact, Mod
 }
 
 /// Used to map button presses to functionality.
@@ -58,6 +58,19 @@ pub enum Theme {
     System,
 }
 
+#[derive(Debug, PartialEq, Clone, Copy)]
+pub enum FuncPad {
+    Main,
+    Func,
+    // Const,
+}
+
+impl fmt::Display for FuncPad {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
+
 /// Holds application configuration, which is saved on the disk.
 /// This is loaded at each start of the application.
 #[derive(Serialize, Deserialize, Lens, Clone, Data)]
@@ -86,9 +99,12 @@ pub struct CalcState {
     inner_expr: String,
     /// Displayed base of the computed result.
     radix: Radix,
+
+    function_pad: FuncPad,
     /// Contains all available languages at runtime.
     /// This is loaded from rust-i18n and as such has to be constructed in new() method.
     available_languages: Rc<Vec<String>>,
+
     /// Confing deserialized from disk using *confy* crate.
     config: CalcConfig,
     /// Parser of mathematical expressions.
@@ -133,6 +149,7 @@ impl Data for CalcState {
     fn same(&self, other: &Self) -> bool {
         self.inner_expr == other.inner_expr
             && self.radix == other.radix
+            && self.function_pad == other.function_pad
             && self.config.same(&other.config)
     }
 }
@@ -152,6 +169,7 @@ impl CalcState {
         Self {
             inner_expr: String::from("0"),
             radix: Radix::Dec,
+            function_pad: FuncPad::Main,
             // Convert array of string slices to vector of strings.
             available_languages: Rc::new(languages.iter().map(|&s| String::from(s)).collect()),
             config,
@@ -166,8 +184,8 @@ impl CalcState {
     }
 
     /// Handle button event. We will construct the displayed string using this method.
-    pub fn process_button(&self, _button: PressedButton) {
-        todo!();
+    pub fn process_button(&self, _button: &PressedButton) {
+        todo!()
     }
 
     /// Convert CalcState::inner_expr to *evaluate string*, which
@@ -219,11 +237,32 @@ impl CalcState {
         assert!(self.available_languages.contains(&language.to_string()));
         rust_i18n::set_locale(language);
         self.config.language = String::from(language);
+        self.store_config_data();
+    }
+
+    /// Get current app language
+    pub fn get_language(&self) -> &str {
+        &self.config.language
+    }
+
+    /// Get numeric base
+    pub fn get_radix(&self) -> Radix {
+        self.radix
     }
 
     /// Change numeric base of the calculated results.
     pub fn set_radix(&mut self, radix: Radix) {
         self.radix = radix;
+    }
+
+    /// Get function keyboard
+    pub fn get_function_pad(&self) -> FuncPad {
+        self.function_pad
+    }
+
+    /// Change numeric base of the calculated results.
+    pub fn set_function_pad(&mut self, function_pad: FuncPad) {
+        self.function_pad = function_pad;
     }
 }
 
