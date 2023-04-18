@@ -3,7 +3,9 @@
 //! This file contains definition of calculator state,
 //! which defines functionality of our app.
 pub mod widgets;
+pub mod expr_manager;
 use druid::{Data, Lens};
+use expr_manager::ExprManager;
 use math::number::Radix;
 use serde::{Deserialize, Serialize};
 use std::{fmt, rc::Rc};
@@ -99,7 +101,7 @@ pub struct CalcState {
     /// Holds text, which is used to display the final string on the display widget.
     /// or converted to evaluate string for the math library.
     #[lens(ignore)]
-    inner_expr: String,
+    expr_man: ExprManager,
     /// Displayed base of the computed result.
     radix: Radix,
 
@@ -131,11 +133,11 @@ pub mod calcstate_lenses {
 /// Lens will convert inner_expr to displayed_string.
 impl Lens<CalcState, String> for calcstate_lenses::inner_expr {
     fn with<V, F: FnOnce(&String) -> V>(&self, data: &CalcState, f: F) -> V {
-        let dis = data.get_display_str();
-        if dis.is_empty() { f(&"0".to_string()) } else { f(&data.get_display_str()) }
+        f(&data.expr_man.get_display_str())
     }
     fn with_mut<V, F: FnOnce(&mut String) -> V>(&self, data: &mut CalcState, f: F) -> V {
-        f(&mut data.inner_expr)
+        let mut dis = data.expr_man.get_display_str();
+        f(&mut dis)
     }
 }
 
@@ -152,7 +154,7 @@ impl Lens<CalcState, String> for calcstate_lenses::result {
 
 impl Data for CalcState {
     fn same(&self, other: &Self) -> bool {
-        self.inner_expr == other.inner_expr
+        self.expr_man.same(&other.expr_man)
             && self.radix == other.radix
             && self.function_pad == other.function_pad
             && self.config.same(&other.config)
@@ -172,7 +174,7 @@ impl CalcState {
         let config = confy::load(APP_NAME, None).unwrap_or_default();
 
         Self {
-            inner_expr: String::from("0"),
+            expr_man: ExprManager::new(),
             radix: Radix::Dec,
             function_pad: FuncPad::Main,
             // Convert array of string slices to vector of strings.
@@ -190,21 +192,20 @@ impl CalcState {
     }
 
     /// Handle button event. We will construct the displayed string using this method.
-    pub fn process_button(&self, _button: &PressedButton) {
-        todo!()
+    pub fn process_button(&self, button: &PressedButton) {
+        self.expr_man.process_button(button);
     }
 
     /// Convert CalcState::inner_expr to *evaluate string*, which
     /// can then be passed to the `math::evaluate` function.
     pub fn get_eval_str(&self) -> String {
-        todo!()
+        self.expr_man.get_eval_str()
     }
 
     /// Convert CalcState::inner_expr to *display string*, which will 
     /// be actually displayed on the calculator display.
     pub fn get_display_str(&self) -> String {
-        // TODO: replace functions with their special characters.
-        self.inner_expr.clone()
+        self.expr_man.get_display_str()
     }
 
     /// Store CalcState::config on the disk using *confy* create.
