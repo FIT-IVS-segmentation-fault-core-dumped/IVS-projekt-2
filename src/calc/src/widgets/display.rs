@@ -8,6 +8,7 @@ use crate::CalcState;
 
 pub const ACTIVE_RADIX_COLOR: Color = Color::GREEN;
 pub const ACTIVE_TRIG_UNITS_COLOR: Color = Color::YELLOW;
+pub const ERROR_MSG_COLOR: Color = Color::RED;
 
 /// Widget displaying, **status of calculator**,
 /// **current expression** and the **computed result**.
@@ -24,9 +25,10 @@ fn get_display() -> impl Widget<CalcState> {
     // it is hard to change color of label dynamically. To solve this we change the
     // disabled color and use the `disabled_if` method, which atleast gives us two possible
     // states. See the status_row below.
-    let radix_env = |env: &mut Env, _data: &CalcState| env.set(theme::DISABLED_TEXT_COLOR, ACTIVE_RADIX_COLOR);
+    let gen_env = |color: Color| move |env: &mut Env, _data: &CalcState| env.set(theme::DISABLED_TEXT_COLOR, color);
+    let radix_env = gen_env(ACTIVE_RADIX_COLOR);
+    let tuni_env = gen_env(ACTIVE_TRIG_UNITS_COLOR);
     let radix_eq = |radix: Radix| move |data: &CalcState, _: &Env| data.radix == radix;
-    let tuni_env = |env: &mut Env, _data: &CalcState| env.set(theme::DISABLED_TEXT_COLOR, ACTIVE_TRIG_UNITS_COLOR);
     let tuni_eq = |units: bool| move |data: &CalcState, _: &Env| data.degrees == units;
 
     let status_row = Align::left(
@@ -45,9 +47,11 @@ fn get_display() -> impl Widget<CalcState> {
                 .lens(CalcState::displayed_text)
         );
     let result_row = Align::right(
-            Label::new(|data: &String, _env: &_| data.clone())
+            Label::new(|data: &CalcState, _env: &_| data.result.clone())
                 .with_text_size(28.0)
-                .lens(CalcState::result)
+                .disabled_if(|data: &CalcState, _: &Env| data.result_is_err == true)
+                .env_scope(gen_env(ERROR_MSG_COLOR))
+                .lens(CalcState::all)
         );
 
     Container::new(

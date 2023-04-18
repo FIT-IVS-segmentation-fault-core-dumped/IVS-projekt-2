@@ -4,7 +4,7 @@ use crate::*;
 /// Manages mathematical expression, used in our calculation.
 /// We use this, because we intend to have two different
 /// strings for displaying and evaluating.
-#[derive(Debug, Clone, Data)]
+#[derive(Debug, Data, Clone)]
 pub struct ExprManager {
     // Inner expressoin, which is used to convert to display
     // string or evaluate string.
@@ -25,8 +25,28 @@ impl ExprManager {
 
     /// Process pressed button in calculator. This will
     /// edit expression string accordingly.
-    pub fn process_button(&self, btn: &PressedButton) {
-        todo!();
+    pub fn process_button(&mut self, btn: &PressedButton) {
+        match btn {
+            PressedButton::Num(num) => {
+                if *num >= 10 {
+                    self.expr += &char::from_u32(('A' as u8 + *num - 10) as u32).unwrap().to_string();
+                } else {
+                    self.expr += &num.to_string();
+                }
+            }
+            PressedButton::BinOpt(opt) => {
+                match opt {
+                    Opt::Add => self.expr += "+",
+                    Opt::Sub => self.expr += "-",
+                    Opt::Mul => self.expr += "*",
+                    Opt::Div => self.expr += "/",
+                    _ => todo!()
+                }
+            },
+            PressedButton::Clear => self.expr.clear(),
+            PressedButton::Delete => if !self.expr.is_empty() { self.expr.remove(self.expr.len() - 1); },
+            _ => todo!()
+        };
     }
 
     /// Get string to be displayed to [`DisplayUI`](widgets::display::DisplayUI).
@@ -36,6 +56,6 @@ impl ExprManager {
 
     /// Get string to be passed to [`Calculator`](math::Calculator).
     pub fn get_eval_str(&self) -> String {
-        todo!();
+        self.expr.clone()
     }
 }
