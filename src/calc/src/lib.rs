@@ -116,6 +116,8 @@ pub struct CalcState {
     /// Last computed result, which is displayed on the display.
     #[lens(ignore)]
     result: String,
+    /// Use degrees in trigonometric computations, otherwise use radians.
+    degrees: bool,
 }
 
 /// Contains dummy structs for custom druid::Lens implementations.
@@ -177,7 +179,8 @@ impl CalcState {
             available_languages: Rc::new(languages.iter().map(|&s| String::from(s)).collect()),
             config,
             calc: Rc::new(math::Calculator::new()),
-            result: String::new()
+            result: String::new(),
+            degrees: true,
         }
     }
 
