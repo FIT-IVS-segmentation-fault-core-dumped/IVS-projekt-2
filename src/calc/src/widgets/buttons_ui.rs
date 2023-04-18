@@ -99,7 +99,7 @@ fn build_num_pad() -> impl Widget<CalcState> {
                             1.,
                         )
                         .with_flex_child(
-                            make_button("+", Btn::BinOpt(Opt::Sum), BtnType::Operation),
+                            make_button("+", Btn::BinOpt(Opt::Add), BtnType::Operation),
                             1.,
                         )
                         .with_flex_child(
