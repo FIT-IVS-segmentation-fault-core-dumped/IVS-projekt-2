@@ -18,7 +18,7 @@ rust_i18n::i18n!("locales");
 /// Operations on the calculator.
 #[rustfmt::skip]
 pub enum Opt {
-    Sum, Sub, Mul, Div,
+    Add, Sub, Mul, Div,
     Sin, Cos, Tg, Cotg,
     Arcsin, Arccos, Arctg, Arccotg,
     Log, LogN, Ln, Sqrt, Root, Pow,
