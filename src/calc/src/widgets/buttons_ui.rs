@@ -139,12 +139,12 @@ fn make_num_btns() -> impl Widget<CalcState> {
             1.,
         )
         .with_flex_child(
-            make_button("5", Btn::Num(8), BtnType::Digit)
+            make_button("5", Btn::Num(5), BtnType::Digit)
                 .disabled_if(|data, _env| data.get_radix() == Radix::Bin),
             1.,
         )
         .with_flex_child(
-            make_button("6", Btn::Num(8), BtnType::Digit)
+            make_button("6", Btn::Num(6), BtnType::Digit)
                 .disabled_if(|data, _env| data.get_radix() == Radix::Bin),
             1.,
         );
