@@ -8,7 +8,7 @@ use druid::{Data, Lens};
 use expr_manager::ExprManager;
 use math::number::Radix;
 use serde::{Deserialize, Serialize};
-use std::{fmt, rc::Rc};
+use std::{fmt, rc::Rc, cell::RefCell};
 
 const APP_NAME: &str = "Calculator";
 
@@ -114,10 +114,12 @@ pub struct CalcState {
     config: CalcConfig,
     /// Parser of mathematical expressions.
     #[lens(ignore)]
-    calc: Rc<math::Calculator>,
+    calc: Rc<RefCell<math::Calculator>>,
     /// Last computed result, which is displayed on the display.
     #[lens(ignore)]
     result: String,
+    /// Is `true` if `CalcState::result` is an error message.
+    result_is_err: bool,
     /// Use degrees in trigonometric computations, otherwise use radians.
     degrees: bool,
 }
@@ -125,13 +127,12 @@ pub struct CalcState {
 /// Contains dummy structs for custom druid::Lens implementations.
 pub mod calcstate_lenses {
     #[allow(non_camel_case_types)]
-    pub struct inner_expr;
+    pub struct displayed_text;
     #[allow(non_camel_case_types)]
-    pub struct result;
+    pub struct all;
 }
 
-/// Lens will convert inner_expr to displayed_string.
-impl Lens<CalcState, String> for calcstate_lenses::inner_expr {
+impl Lens<CalcState, String> for calcstate_lenses::displayed_text {
     fn with<V, F: FnOnce(&String) -> V>(&self, data: &CalcState, f: F) -> V {
         f(&data.expr_man.get_display_str())
     }
@@ -141,14 +142,12 @@ impl Lens<CalcState, String> for calcstate_lenses::inner_expr {
     }
 }
 
-/// In the future, if we want to compute result realtime
-/// when typing, then we could do it here.
-impl Lens<CalcState, String> for calcstate_lenses::result {
-    fn with<V, F: FnOnce(&String) -> V>(&self, data: &CalcState, f: F) -> V {
-        f(&data.result)
+impl Lens<CalcState, CalcState> for calcstate_lenses::all {
+    fn with<V, F: FnOnce(&CalcState) -> V>(&self, data: &CalcState, f: F) -> V {
+        f(data)
     }
-    fn with_mut<V, F: FnOnce(&mut String) -> V>(&self, data: &mut CalcState, f: F) -> V {
-        f(&mut data.result)
+    fn with_mut<V, F: FnOnce(&mut CalcState) -> V>(&self, data: &mut CalcState, f: F) -> V {
+        f(data)
     }
 }
 
@@ -158,14 +157,15 @@ impl Data for CalcState {
             && self.radix == other.radix
             && self.function_pad == other.function_pad
             && self.config.same(&other.config)
+            && self.result == other.result
     }
 }
 
 impl CalcState {
     #[allow(non_upper_case_globals)]
-    pub const displayed_text: calcstate_lenses::inner_expr = calcstate_lenses::inner_expr;
+    pub const displayed_text: calcstate_lenses::displayed_text = calcstate_lenses::displayed_text;
     #[allow(non_upper_case_globals)]
-    pub const result: calcstate_lenses::result = calcstate_lenses::result;
+    pub const all: calcstate_lenses::all = calcstate_lenses::all;
 
     /// Creates new instance of CalcState. This will load config from disk.
     ///
@@ -180,8 +180,9 @@ impl CalcState {
             // Convert array of string slices to vector of strings.
             available_languages: Rc::new(languages.iter().map(|&s| String::from(s)).collect()),
             config,
-            calc: Rc::new(math::Calculator::new()),
+            calc: Rc::new(RefCell::new(math::Calculator::new())),
             result: String::new(),
+            result_is_err: false,
             degrees: true,
         }
     }
@@ -191,9 +192,22 @@ impl CalcState {
         &self.config.language
     }
 
-    /// Handle button event. We will construct the displayed string using this method.
-    pub fn process_button(&self, button: &PressedButton) {
-        self.expr_man.process_button(button);
+    /// Handle button event from the UI.
+    pub fn process_button(&mut self, button: &PressedButton) {
+        match button {
+            PressedButton::Evaluate => {
+                // Compute result from evaluate string
+                let result = self.calc.borrow_mut().evaluate(&self.expr_man.get_eval_str());
+
+                // Set resulting variable according to the resulting value.
+                (self.result, self.result_is_err) = match result {
+                    Err(e) => (format!("{:?}", e), true),
+                    Ok(num) => (num.to_string(self.radix, 5), false)
+                };
+            },
+            // Relay other buttons to the expression manager.
+            other => self.expr_man.process_button(other)
+        };
     }
 
     /// Convert CalcState::inner_expr to *evaluate string*, which
