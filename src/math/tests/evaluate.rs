@@ -126,7 +126,7 @@ fn evaluate_sin() -> math::Result<()> {
     assert_eq!(eval_dec("sin(pi() / 2)", 0)?, "1");
 
     assert_eq!(eval_dec("sin(3.141592 / 2)", 0)?, "1");
-    assert_eq!(eval_dec("sin(3.141592", 0)?, "0");
+    assert_eq!(eval_dec("sin(3.141592)", 0)?, "0");
     assert_eq!(eval_dec("sin(3.141592 * 3 / 2)", 0)?, "-1");
     assert_eq!(eval_dec("sin(3.141592 * 2)", 0)?, "0");
     Ok(())
@@ -140,7 +140,7 @@ fn evaluate_cos() -> math::Result<()> {
     assert_eq!(eval_dec("cos(pi() / 2)", 0)?, "0");
 
     assert_eq!(eval_dec("cos(3.141592 / 2)", 0)?, "0");
-    assert_eq!(eval_dec("cos(3.141592", 0)?, "-1");
+    assert_eq!(eval_dec("cos(3.141592)", 0)?, "-1");
     assert_eq!(eval_dec("cos(3.141592 * 3 / 2)", 0)?, "0");
     assert_eq!(eval_dec("cos(3.141592 * 2)", 0)?, "1");
     Ok(())
