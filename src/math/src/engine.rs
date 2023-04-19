@@ -174,13 +174,16 @@ impl Engine for ShuntingYardEngine {
                     if matches!(
                         (last_token, op, iter.peek()),
                         (
-                            None | Some(&Token::Comma)
-                                | Some(&Token::Operator(
-                                    Operator::Multiply
-                                        | Operator::Divide
-                                        | Operator::Power
-                                        | Operator::Modulo,
-                                )),
+                            None | Some(
+                                &Token::Comma
+                                    | &Token::Bracket(Bracket::ParenLeft)
+                                    | &Token::Operator(
+                                        Operator::Multiply
+                                            | Operator::Divide
+                                            | Operator::Power
+                                            | Operator::Modulo
+                                    )
+                            ),
                             Operator::Plus | Operator::Minus,
                             Some(Token::Number(_)),
                         )
