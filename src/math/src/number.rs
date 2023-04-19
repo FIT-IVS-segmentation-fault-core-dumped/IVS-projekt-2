@@ -170,34 +170,24 @@ impl Number {
     /// assert_eq!(neg.to_string(Radix::Bin, precision), "-0.00011");
     /// assert_eq!(neg.to_string(Radix::Oct, precision), "-0.063146");
     /// assert_eq!(neg.to_string(Radix::Hex, precision), "-0.19999A");
+    ///
+    /// assert_eq!(Number::new_unchecked(9, 10).to_string(Radix::Dec, 0), "1");
     /// ```
     pub fn to_string(&self, radix: Radix, precision: u8) -> String {
         let num = self.inner.abs();
-        let whole = num.to_integer();
+        let mut integer = num.to_integer();
         let mut fract = num.fract();
 
-        let mut res = match radix {
-            Radix::Bin => format!("{whole:b}"),
-            Radix::Oct => format!("{whole:o}"),
-            Radix::Dec => format!("{whole}"),
-            Radix::Hex => format!("{whole:X}"),
+        let radix_len = match radix {
+            Radix::Bin => 2u32,
+            Radix::Oct => 8u32,
+            Radix::Dec => 10u32,
+            Radix::Hex => 16u32,
         };
 
-        if self.inner.is_negative() {
-            res.insert(0, '-');
-        }
+        let mut fract_digits = Vec::new();
 
         if fract != num::zero() {
-            let radix_len = match radix {
-                Radix::Bin => 2u32,
-                Radix::Oct => 8u32,
-                Radix::Dec => 10u32,
-                Radix::Hex => 16u32,
-            };
-
-            let mut digits = Vec::new();
-
-            res.push('.');
             let mut cnt = 0;
             let big_radix = BigInt::from(radix_len);
 
@@ -206,7 +196,7 @@ impl Number {
                 let whole = n.to_integer().to_u32().unwrap();
                 fract = n.fract();
 
-                digits.push(whole);
+                fract_digits.push(whole);
                 cnt += 1;
             }
 
@@ -214,16 +204,39 @@ impl Number {
             let whole = n.to_integer().to_u32().unwrap();
 
             if whole >= (radix_len / 2) {
-                while let Some(mut end) = digits.pop() {
-                    end += 1;
-                    if end < radix_len {
-                        digits.push(end);
-                        break;
+                loop {
+                    match fract_digits.pop() {
+                        Some(mut end) => {
+                            end += 1;
+                            if end < radix_len {
+                                fract_digits.push(end);
+                                break;
+                            }
+                        }
+                        None => {
+                            integer += 1;
+                            break;
+                        }
                     }
                 }
             }
+        }
 
-            let digits = digits
+        let mut res = match radix {
+            Radix::Bin => format!("{integer:b}"),
+            Radix::Oct => format!("{integer:o}"),
+            Radix::Dec => format!("{integer}"),
+            Radix::Hex => format!("{integer:X}"),
+        };
+
+        if self.inner.is_negative() {
+            res.insert(0, '-');
+        }
+
+        if !fract_digits.is_empty() {
+            res.push('.');
+
+            let digits = fract_digits
                 .into_iter()
                 .map(|v| char::from_digit(v, radix_len).unwrap())
                 .collect::<String>()
@@ -231,10 +244,10 @@ impl Number {
 
             res.push_str(&digits);
             res = res.trim_end_matches('0').trim_end_matches('.').to_owned();
+        }
 
-            if res == "-0" {
-                res = String::from("0");
-            }
+        if res == "-0" {
+            res = String::from("0");
         }
 
         res
