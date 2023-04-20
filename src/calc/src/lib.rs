@@ -8,7 +8,7 @@ use druid::{Data, Lens};
 use expr_manager::ExprManager;
 use math::{number::Radix, Number};
 use serde::{Deserialize, Serialize};
-use std::{cell::RefCell, rc::Rc};
+use std::{cell::RefCell, fmt, rc::Rc};
 
 const APP_NAME: &str = "Calculator";
 
@@ -74,6 +74,12 @@ pub enum Theme {
     Dark,
     Light,
     System,
+}
+
+impl fmt::Display for Theme {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{:?}", self)
+    }
 }
 
 /// Represents tabs that switch between different function keyboards
