@@ -1,5 +1,9 @@
 //! Expression manager logic
+#[cfg(test)]
+mod tests;
+
 use crate::*;
+
 type Btn = PressedButton;
 
 trait ToExpr {

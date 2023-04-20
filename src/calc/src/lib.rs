@@ -310,5 +310,3 @@ impl CalcState {
     }
 }
 
-#[cfg(test)]
-mod calcstate_tests;
