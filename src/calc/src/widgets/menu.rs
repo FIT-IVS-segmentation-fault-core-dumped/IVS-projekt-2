@@ -1,5 +1,7 @@
 //! The menu UI part of the calculator
 
+use std::rc::Rc;
+
 use druid::{Env, Menu, MenuItem, WindowId};
 use rust_i18n::*;
 
@@ -20,74 +22,33 @@ fn make_menu(_window: Option<WindowId>, _data: &CalcState, _env: &Env) -> Menu<C
             Menu::new(t!("menu.file"))
                 .entry(
                     Menu::new(t!("theme"))
-                        .entry(
-                            MenuItem::new(t!("system"))
-                                .selected_if(|data: &CalcState, _env| {
-                                    data.get_theme(false) == Theme::System
-                                })
-                                .on_activate(|_ctx, data: &mut CalcState, _env| {
-                                    data.set_theme(Theme::System)
-                                }),
-                        )
-                        .entry(
-                            MenuItem::new(t!("dark"))
-                                .selected_if(|data: &CalcState, _env| {
-                                    data.get_theme(false) == Theme::Dark
-                                })
-                                .on_activate(|_ctx, data: &mut CalcState, _env| {
-                                    data.set_theme(Theme::Dark)
-                                }),
-                        )
-                        .entry(
-                            MenuItem::new(t!("light"))
-                                .selected_if(|data: &CalcState, _env| {
-                                    data.get_theme(false) == Theme::Light
-                                })
-                                .on_activate(|_ctx, data: &mut CalcState, _env| {
-                                    data.set_theme(Theme::Light)
-                                }),
-                        ),
+                        .entry(make_theme_button(Theme::Dark))
+                        .entry(make_theme_button(Theme::Light))
+                        .entry(make_theme_button(Theme::System)),
                 )
                 .entry(
                     Menu::new(t!("language"))
-                        .entry(
-                            MenuItem::new(t!("czech"))
-                                .on_activate(|_ctx, data: &mut CalcState, _env| {
-                                    data.set_language("cz");
-                                })
-                                .selected_if(|data, _env| data.get_language() == "cz"),
-                        )
-                        .entry(
-                            MenuItem::new(t!("english"))
-                                .on_activate(|_ctx, data: &mut CalcState, _env| {
-                                    data.set_language("en")
-                                })
-                                .selected_if(|data, _env| data.get_language() == "en"),
-                        )
-                        .entry(
-                            MenuItem::new(t!("japanese"))
-                                .on_activate(|_ctx, data: &mut CalcState, _env| {
-                                    data.set_language("jp")
-                                })
-                                .selected_if(|data, _env| data.get_language() == "jp"),
-                        )
-                        .entry(
-                            MenuItem::new(t!("slovak"))
-                                .on_activate(|_ctx, data: &mut CalcState, _env| {
-                                    data.set_language("sk");
-                                })
-                                .selected_if(|data, _env| data.get_language() == "sk"),
-                        )
-                        .entry(
-                            MenuItem::new(t!("vietnamese"))
-                                .on_activate(|_ctx, data: &mut CalcState, _env| {
-                                    data.set_language("vi")
-                                })
-                                .selected_if(|data, _env| data.get_language() == "vi"),
-                        ),
-                )
-                .entry(MenuItem::new("constants")),
+                        .entry(make_language_button("cz".to_owned()))
+                        .entry(make_language_button("en".to_owned()))
+                        .entry(make_language_button("jp".to_owned()))
+                        .entry(make_language_button("sk".to_owned()))
+                        .entry(make_language_button("vi".to_owned())),
+                ),
         )
         .entry(MenuItem::new(t!("menu.edit")))
         .entry(MenuItem::new(t!("menu.help")))
+}
+
+fn make_theme_button(theme: Theme) -> MenuItem<CalcState> {
+    MenuItem::new(t!(&theme.to_string().to_lowercase()))
+        .selected_if(move |data: &CalcState, _env| data.get_theme(false) == theme)
+        .on_activate(move |_ctx, data: &mut CalcState, _env| data.set_theme(theme))
+}
+
+fn make_language_button(lang: String) -> MenuItem<CalcState> {
+    let lang_rc = Rc::new(lang);
+    let lang_clone = lang_rc.clone();
+    MenuItem::new(t!(lang_rc.as_str()))
+        .on_activate(move |_ctx, data: &mut CalcState, _env| data.set_language(&lang_clone))
+        .selected_if(move |data, _env| data.get_language() == lang_rc.as_ref())
 }
