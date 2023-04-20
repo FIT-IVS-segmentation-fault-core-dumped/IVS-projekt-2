@@ -2,13 +2,13 @@
 //!
 //! This file contains definition of calculator state,
 //! which defines functionality of our app.
-pub mod widgets;
 pub mod expr_manager;
+pub mod widgets;
 use druid::{Data, Lens};
 use expr_manager::ExprManager;
 use math::number::Radix;
 use serde::{Deserialize, Serialize};
-use std::{fmt, rc::Rc, cell::RefCell};
+use std::{cell::RefCell, fmt, rc::Rc};
 
 const APP_NAME: &str = "Calculator";
 
@@ -22,9 +22,9 @@ pub enum Opt {
     Add, Sub, Mul, Div,
     Sin, Cos, Tg, Cotg,
     Arcsin, Arccos, Arctg, Arccotg,
-    Log, LogN, Ln, Sqrt, Root, Pow, 
+    Log, LogN, Ln, Sqrt, Root, Pow,
     /// Reprezents `a^2` operation.
-    Pow2, 
+    Pow2,
     /// Reprezents `root(3, a)` operation.
     Root3,
     Abs, Comb, Fact, Mod,
@@ -32,7 +32,6 @@ pub enum Opt {
     /// on each evaluation.
     Random
 }
-
 
 /// Used to map button presses to functionality.
 /// Now if we want to implement alternative ways
@@ -77,13 +76,11 @@ pub enum Theme {
     System,
 }
 
-/// Used by druid widgets to switch between
-/// function tabs (to the left of numpad).
-#[derive(Debug, PartialEq, Clone, Copy)]
+#[derive(Debug, PartialEq, Clone, Copy, Data)]
 pub enum FuncPad {
     Main,
     Func,
-    // Const,
+    Const,
 }
 
 impl fmt::Display for FuncPad {
@@ -110,6 +107,32 @@ impl Default for CalcConfig {
     }
 }
 
+#[derive(Lens, Clone)]
+pub struct Constants {
+    keys: Vec<String>,
+    values: Vec<f64>,
+
+    pub key_str: String,
+    pub value_str: String,
+}
+
+impl Constants {
+    fn new() -> Self {
+        Self {
+            keys: Vec::new(),
+            values: Vec::new(),
+            key_str: String::new(),
+            value_str: String::new(),
+        }
+    }
+}
+
+impl Data for Constants {
+    fn same(&self, other: &Self) -> bool {
+        self.keys == other.keys && self.values == other.values
+    }
+}
+
 /// Holds shared data for all the widgets in our application.
 /// Each widget has access to instance of this struct.
 #[derive(Clone, Lens)]
@@ -120,6 +143,9 @@ pub struct CalcState {
     expr_man: ExprManager,
     /// Displayed base of the computed result.
     radix: Radix,
+
+    /// User defined constants
+    constants: Constants,
 
     function_pad: FuncPad,
     /// Contains all available languages at runtime.
@@ -174,6 +200,7 @@ impl Data for CalcState {
             && self.function_pad == other.function_pad
             && self.config.same(&other.config)
             && self.result == other.result
+            && self.constants.same(&other.constants)
     }
 }
 
@@ -193,6 +220,7 @@ impl CalcState {
             expr_man: ExprManager::new(),
             radix: Radix::Dec,
             function_pad: FuncPad::Main,
+            constants: Constants::new(),
             // Convert array of string slices to vector of strings.
             available_languages: Rc::new(languages.iter().map(|&s| String::from(s)).collect()),
             config,
@@ -213,14 +241,17 @@ impl CalcState {
         match button {
             PressedButton::Evaluate => {
                 // Compute result from evaluate string
-                let result = self.calc.borrow_mut().evaluate(&self.expr_man.get_eval_str());
+                let result = self
+                    .calc
+                    .borrow_mut()
+                    .evaluate(&self.expr_man.get_eval_str());
 
                 // Set resulting variable according to the resulting value.
                 (self.result, self.result_is_err) = match result {
                     Err(e) => (format!("{:?}", e), true),
-                    Ok(num) => (num.to_string(self.radix, 5), false)
+                    Ok(num) => (num.to_string(self.radix, 5), false),
                 };
-            },
+            }
             PressedButton::Clear => {
                 self.expr_man.process_button(button);
                 if self.result_is_err {
@@ -229,7 +260,7 @@ impl CalcState {
                 }
             }
             // Relay other buttons to the expression manager.
-            other => self.expr_man.process_button(other)
+            other => self.expr_man.process_button(other),
         };
     }
 
@@ -239,7 +270,7 @@ impl CalcState {
         self.expr_man.get_eval_str()
     }
 
-    /// Convert CalcState::inner_expr to *display string*, which will 
+    /// Convert CalcState::inner_expr to *display string*, which will
     /// be actually displayed on the calculator display.
     pub fn get_display_str(&self) -> String {
         self.expr_man.get_display_str()
@@ -308,5 +339,29 @@ impl CalcState {
     pub fn set_function_pad(&mut self, function_pad: FuncPad) {
         self.function_pad = function_pad;
     }
-}
 
+    pub fn get_constants(&self) -> &Constants {
+        &self.constants
+    }
+
+    pub fn add_constant(&mut self, key: String, value: f64) -> bool {
+        // let is_added = self.calc.add_constant(&key, self.calc.);
+        // if is_added {
+        self.constants.keys.push(key);
+        self.constants.values.push(value);
+        // }
+        // is_added
+        true
+    }
+
+    pub fn remove_constant(&mut self, index: usize) {
+        eprintln!("{}", index);
+        self.constants.keys.remove(index);
+        self.constants.values.remove(index);
+    }
+
+    pub fn clear_const_field(&mut self) {
+        self.constants.value_str.clear();
+        self.constants.key_str.clear();
+    }
+}
