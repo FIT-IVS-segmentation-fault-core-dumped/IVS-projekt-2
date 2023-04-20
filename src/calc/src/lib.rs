@@ -209,6 +209,13 @@ impl CalcState {
                     Ok(num) => (num.to_string(self.radix, 5), false)
                 };
             },
+            PressedButton::Clear => {
+                self.expr_man.process_button(button);
+                if self.result_is_err {
+                    self.result.clear();
+                    self.result_is_err = false;
+                }
+            }
             // Relay other buttons to the expression manager.
             other => self.expr_man.process_button(other)
         };
