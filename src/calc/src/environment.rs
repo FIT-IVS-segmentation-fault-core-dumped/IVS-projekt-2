@@ -4,20 +4,18 @@ pub fn set_dark_envs(env: &mut Env) {
     env.set(theme::WINDOW_BACKGROUND_COLOR, Color::grey8(20));
     env.set(theme::TEXT_COLOR, Color::grey8(230));
     env.set(theme::DISABLED_TEXT_COLOR, Color::grey8(80));
-    env.set(
-        Key::<Color>::new("calc.active_textcolor"),
-        Color::grey8(100),
-    );
+    env.set(theme::BACKGROUND_DARK, Color::TRANSPARENT);
+    env.set(theme::CURSOR_COLOR, Color::WHITE);
+    env.set(Key::<Color>::new("calc.tab_textcolor"), Color::grey8(100));
 }
 
 pub fn set_light_envs(env: &mut Env) {
     env.set(theme::WINDOW_BACKGROUND_COLOR, Color::grey8(230));
     env.set(theme::TEXT_COLOR, Color::grey8(40));
     env.set(theme::DISABLED_TEXT_COLOR, Color::grey8(170));
-    env.set(
-        Key::<Color>::new("calc.active_textcolor"),
-        Color::grey8(200),
-    );
+    env.set(theme::BACKGROUND_LIGHT, Color::TRANSPARENT);
+    env.set(theme::CURSOR_COLOR, Color::BLACK);
+    env.set(Key::<Color>::new("calc.tab_textcolor"), Color::grey8(200));
 }
 
 pub fn set_digit_btn_envs(env: &mut Env) {
