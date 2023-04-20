@@ -322,7 +322,7 @@ fn make_func_btns() -> impl Widget<CalcState> {
         );
 
     let fifth_row = Flex::row()
-        .with_flex_child(make_button("nCr", Btn::BracketLeft, BtnType::Function), 1.)
+        .with_flex_child(make_button("nCr", Btn::BinOpt(Opt::Comb), BtnType::Function), 1.)
         .with_flex_child(make_button("(", Btn::BracketLeft, BtnType::Function), 1.)
         .with_flex_child(make_button(")", Btn::BracketRight, BtnType::Function), 1.);
 
