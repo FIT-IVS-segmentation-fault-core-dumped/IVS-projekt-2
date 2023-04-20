@@ -219,7 +219,7 @@ fn make_main_btns() -> impl Widget<CalcState> {
         )
         .with_flex_child(make_button("a²", Btn::Num(9), BtnType::Function), 1.)
         .with_flex_child(
-            make_button("π", Btn::Const("π".to_owned()), BtnType::Function),
+            make_button("pi", Btn::Const("π".to_owned()), BtnType::Function),
             1.,
         );
 
