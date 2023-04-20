@@ -17,18 +17,22 @@ rust_i18n::i18n!("locales");
 
 /// Operations on the calculator.
 #[rustfmt::skip]
+#[derive(Hash, PartialEq, Eq, Debug, Clone, Copy)]
 pub enum Opt {
     Add, Sub, Mul, Div,
     Sin, Cos, Tg, Cotg,
     Arcsin, Arccos, Arctg, Arccotg,
-    Log, LogN, Ln, Sqrt, Root, Pow,
-    Abs, Comb, Fact, Mod
+    Log, LogN, Ln, Sqrt, Root, Pow, Pow2, Root3,
+    Abs, Comb, Fact, Mod,
+    Random
 }
+
 
 /// Used to map button presses to functionality.
 /// Now if we want to implement alternative ways
 /// of using our calculator, we just need to
 /// pass this enum as action to the pressed button.
+#[derive(Hash, Debug, PartialEq, Eq, Clone)]
 pub enum PressedButton {
     /// Numpad 0-9 or A-F (10 - 15)
     Num(u8),
