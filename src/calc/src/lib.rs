@@ -76,17 +76,12 @@ pub enum Theme {
     System,
 }
 
+/// Represents tabs that switch between different function keyboards
 #[derive(Debug, PartialEq, Clone, Copy, Data)]
-pub enum FuncPad {
+pub enum FunctionTabs {
     Main,
     Func,
     Const,
-}
-
-impl fmt::Display for FuncPad {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{:?}", self)
-    }
 }
 
 /// Holds application configuration, which is saved on the disk.
@@ -107,6 +102,7 @@ impl Default for CalcConfig {
     }
 }
 
+/// Holds all user defined constants
 #[derive(Lens, Clone)]
 pub struct Constants {
     keys: Vec<String>,
@@ -147,7 +143,7 @@ pub struct CalcState {
     /// User defined constants
     constants: Constants,
 
-    function_pad: FuncPad,
+    function_tab: FunctionTabs,
     /// Contains all available languages at runtime.
     /// This is loaded from rust-i18n and as such has to be constructed in new() method.
     available_languages: Rc<Vec<String>>,
@@ -197,7 +193,7 @@ impl Data for CalcState {
     fn same(&self, other: &Self) -> bool {
         self.expr_man.same(&other.expr_man)
             && self.radix == other.radix
-            && self.function_pad == other.function_pad
+            && self.function_tab == other.function_tab
             && self.config.same(&other.config)
             && self.result == other.result
             && self.constants.same(&other.constants)
@@ -219,7 +215,7 @@ impl CalcState {
         Self {
             expr_man: ExprManager::new(),
             radix: Radix::Dec,
-            function_pad: FuncPad::Main,
+            function_tab: FunctionTabs::Main,
             constants: Constants::new(),
             // Convert array of string slices to vector of strings.
             available_languages: Rc::new(languages.iter().map(|&s| String::from(s)).collect()),
@@ -331,19 +327,22 @@ impl CalcState {
     }
 
     /// Get function keyboard
-    pub fn get_function_pad(&self) -> FuncPad {
-        self.function_pad
+    pub fn get_function_pad(&self) -> FunctionTabs {
+        self.function_tab
     }
 
     /// Change numeric base of the calculated results.
-    pub fn set_function_pad(&mut self, function_pad: FuncPad) {
-        self.function_pad = function_pad;
+    pub fn set_function_pad(&mut self, function_pad: FunctionTabs) {
+        self.function_tab = function_pad;
     }
 
+    /// Get user defined constants
     pub fn get_constants(&self) -> &Constants {
         &self.constants
     }
 
+    /// Add constant as key-value pair to the math library. If constant already exists or its name is not valid,
+    /// function return false
     pub fn add_constant(&mut self, key: String, value: f64) -> bool {
         let bignum = (value * 100000.) as i128;
 
@@ -359,6 +358,7 @@ impl CalcState {
         is_added
     }
 
+    /// Remove constant from math library as well as from `CalcState` data
     pub fn remove_constant(&mut self, index: usize) {
         self.calc
             .borrow_mut()
