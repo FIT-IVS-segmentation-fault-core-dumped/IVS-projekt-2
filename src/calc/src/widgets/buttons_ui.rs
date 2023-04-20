@@ -2,19 +2,21 @@
 
 pub struct ButtonsUI;
 
+use crate::{CalcState, Constants, FunctionTabs, Opt, PressedButton, Theme};
 use core::fmt;
+use druid::commands::CLOSE_WINDOW;
 use druid::kurbo::Circle;
 use druid::widget::{Controller, Either, EnvScope, Flex, Padding, Painter, TextBox, ViewSwitcher};
 use druid::{
-    theme, Color, Env, Event, EventCtx, Insets, Key, LensExt, Menu, MenuItem, MouseButton, Rect,
-    RenderContext, RoundedRectRadii, UnitPoint, WidgetExt,
+    theme, Color, Env, Event, EventCtx, Insets, Key, LensExt, LifeCycle, LifeCycleCtx, Menu,
+    MenuItem, MouseButton, Point, Rect, RenderContext, RoundedRectRadii, Size, TimerToken,
+    UnitPoint, WidgetExt, WindowConfig, WindowId, WindowLevel, WindowSizePolicy,
 };
 use druid::{widget::Label, Widget};
 use math::number::Radix;
 use rust_i18n::t;
 use std::rc::Rc;
-
-use crate::{CalcState, Constants, FuncPad, Opt, PressedButton, Theme};
+use std::time::{Duration, Instant};
 
 const BUTTON_PADDING: f64 = 1.0;
 const BUTTON_BORDER_RADIUS: f64 = 3.0;
@@ -93,30 +95,30 @@ impl<T, W: Widget<T>> Controller<T, W> for ShowContextMenu {
 
 fn make_func_part() -> impl Widget<CalcState> {
     let tabs = Flex::row()
-        .with_flex_child(function_tab(FuncPad::Main), 1.0)
-        .with_flex_child(function_tab(FuncPad::Func), 1.0)
-        .with_flex_child(function_tab(FuncPad::Const), 1.0);
+        .with_flex_child(function_tab(FunctionTabs::Main), 1.)
+        .with_flex_child(function_tab(FunctionTabs::Func), 1.)
+        .with_flex_child(function_tab(FunctionTabs::Const), 1.);
 
     let buttons = ViewSwitcher::new(
         |data: &CalcState, _env| data.get_function_pad(),
         |selector, _data, _env| match selector {
-            FuncPad::Main => Box::new(make_main_btns()),
-            FuncPad::Func => Box::new(make_func_btns()),
-            FuncPad::Const => Box::new(make_const_btns()),
+            FunctionTabs::Main => Box::new(make_main_btns()),
+            FunctionTabs::Func => Box::new(make_func_btns()),
+            FunctionTabs::Const => Box::new(make_const_btns()),
         },
     );
 
     Flex::column()
-        .with_flex_child(tabs, 1.0)
+        .with_flex_child(tabs, 1.)
         .with_spacer(TAB_BOTTOM_MARGIN)
-        .with_flex_child(buttons, 5.0)
+        .with_flex_child(buttons, 5.)
 }
 
 // Make constants buttons with field for adding new constants
 fn make_const_btns() -> impl Widget<CalcState> {
     Flex::column()
-        .with_flex_child(make_const_grid(), 4.0)
-        .with_flex_child(make_add_const_field(), 1.0)
+        .with_flex_child(make_const_grid(), 4.)
+        .with_flex_child(make_add_const_field(), 1.)
 }
 
 // Dynamic grid that change its size based on number of defined constants
@@ -129,16 +131,18 @@ fn make_const_grid() -> impl Widget<CalcState> {
             // Row that is always drown with unremovable buttons for constants 'e' and 'π'.
             let default_row = Flex::row()
                 .with_flex_child(
-                    generic_button("e", Btn::Const("e".to_owned()), BtnType::Function),
-                    1.0,
+                    generic_button("e", Btn::Const("e".to_owned()), BtnType::Function)
+                        .controller(TooltipController::new("2.71".to_string())),
+                    1.,
                 )
                 .with_flex_child(
-                    generic_button("π", Btn::Const("π".to_owned()), BtnType::Function),
-                    1.0,
+                    generic_button("π", Btn::Const("π".to_owned()), BtnType::Function)
+                        .controller(TooltipController::new("3.14".to_string())),
+                    1.,
                 )
-                .with_flex_child(make_const_button(0), 1.0);
+                .with_flex_child(make_const_button(0), 1.);
 
-            flex.add_flex_child(default_row, 1.0);
+            flex.add_flex_child(default_row, 1.);
 
             // Other rows with user defined constants. The number of rows depends on the number of constants.
             let line_count = (selector + 1) / 3;
@@ -146,22 +150,156 @@ fn make_const_grid() -> impl Widget<CalcState> {
                 let mut row = Flex::row();
 
                 for j in 0..3 {
-                    row.add_flex_child(make_const_button(i * 3 + j + 1), 1.0);
+                    row.add_flex_child(make_const_button(i * 3 + j + 1), 1.);
                 }
-                flex.add_flex_child(row, 1.0);
+                flex.add_flex_child(row, 1.);
             }
 
             // Fill the available space so that the minimum number of rows of grid is 4
             match line_count {
-                0 => flex.add_flex_spacer(3.0),
-                1 => flex.add_flex_spacer(2.0),
-                2 => flex.add_flex_spacer(1.0),
-                _ => flex.add_flex_spacer(0.0),
+                0 => flex.add_flex_spacer(3.),
+                1 => flex.add_flex_spacer(2.),
+                2 => flex.add_flex_spacer(1.),
+                _ => flex.add_flex_spacer(0.),
             }
 
             Box::new(flex)
         },
     )
+}
+
+enum TooltipState {
+    Showing(WindowId),
+    Waiting {
+        last_move: Instant,
+        timer_expire: Instant,
+        token: TimerToken,
+        position_in_window_coordinates: Point,
+    },
+    Fresh,
+}
+
+// A Controller responsible for listening to mouse hovers and launching tooltip windows.
+// https://github.com/linebender/druid/blob/master/druid/examples/sub_window.rs
+struct TooltipController {
+    tip: String,
+    state: TooltipState,
+}
+
+impl TooltipController {
+    pub fn new(tip: impl Into<String>) -> Self {
+        TooltipController {
+            tip: tip.into(),
+            state: TooltipState::Fresh,
+        }
+    }
+}
+
+impl<T, W: Widget<T>> Controller<T, W> for TooltipController {
+    fn event(&mut self, child: &mut W, ctx: &mut EventCtx, event: &Event, data: &mut T, env: &Env) {
+        let wait_duration = Duration::from_millis(300);
+        let resched_dur = Duration::from_millis(50);
+        let cursor_size = Size::new(10., 25.);
+        let now = Instant::now();
+        let new_state = match &self.state {
+            TooltipState::Fresh => match event {
+                Event::MouseMove(me) if ctx.is_hot() => Some(TooltipState::Waiting {
+                    last_move: now,
+                    timer_expire: now + wait_duration,
+                    token: ctx.request_timer(wait_duration),
+                    position_in_window_coordinates: me.window_pos,
+                }),
+                _ => None,
+            },
+            TooltipState::Waiting {
+                last_move,
+                timer_expire,
+                token,
+                position_in_window_coordinates,
+            } => match event {
+                Event::MouseMove(me) if ctx.is_hot() => {
+                    let (cur_token, cur_expire) = if *timer_expire - now < resched_dur {
+                        (ctx.request_timer(wait_duration), now + wait_duration)
+                    } else {
+                        (*token, *timer_expire)
+                    };
+                    Some(TooltipState::Waiting {
+                        last_move: now,
+                        timer_expire: cur_expire,
+                        token: cur_token,
+                        position_in_window_coordinates: me.window_pos,
+                    })
+                }
+                Event::Timer(tok) if tok == token => {
+                    let deadline = *last_move + wait_duration;
+                    ctx.set_handled();
+                    if deadline > now {
+                        let wait_for = deadline - now;
+                        Some(TooltipState::Waiting {
+                            last_move: *last_move,
+                            timer_expire: deadline,
+                            token: ctx.request_timer(wait_for),
+                            position_in_window_coordinates: *position_in_window_coordinates,
+                        })
+                    } else {
+                        let tooltip_position_in_window_coordinates =
+                            (position_in_window_coordinates.to_vec2() + cursor_size.to_vec2())
+                                .to_point();
+                        let win_id = ctx.new_sub_window(
+                            WindowConfig::default()
+                                .show_titlebar(false)
+                                .window_size_policy(WindowSizePolicy::Content)
+                                .set_level(WindowLevel::Tooltip(ctx.window().clone()))
+                                .set_position(tooltip_position_in_window_coordinates),
+                            Label::<()>::new(self.tip.clone())
+                                .background(env.get(theme::WINDOW_BACKGROUND_COLOR)),
+                            (),
+                            env.clone(),
+                        );
+                        Some(TooltipState::Showing(win_id))
+                    }
+                }
+                _ => None,
+            },
+            TooltipState::Showing(win_id) => match event {
+                Event::MouseMove(me) if !ctx.is_hot() => {
+                    ctx.submit_command(CLOSE_WINDOW.to(*win_id));
+                    Some(TooltipState::Waiting {
+                        last_move: now,
+                        timer_expire: now + wait_duration,
+                        token: ctx.request_timer(wait_duration),
+                        position_in_window_coordinates: me.window_pos,
+                    })
+                }
+                _ => None,
+            },
+        };
+
+        if let Some(state) = new_state {
+            self.state = state;
+        }
+
+        if !ctx.is_handled() {
+            child.event(ctx, event, data, env);
+        }
+    }
+
+    fn lifecycle(
+        &mut self,
+        child: &mut W,
+        ctx: &mut LifeCycleCtx,
+        event: &LifeCycle,
+        data: &T,
+        env: &Env,
+    ) {
+        if let LifeCycle::HotChanged(false) = event {
+            if let TooltipState::Showing(win_id) = self.state {
+                ctx.submit_command(CLOSE_WINDOW.to(win_id));
+            }
+            self.state = TooltipState::Fresh;
+        }
+        child.lifecycle(ctx, event, data, env)
+    }
 }
 
 // Make a button that represents a constant at the given `index`.
@@ -173,12 +311,11 @@ fn make_const_button(index: usize) -> impl Widget<CalcState> {
             true => Box::new(Label::new("")),
             false => {
                 let key = _data.get_constants().keys.get(index).unwrap();
-
-                // Tooltip
-                // let value = _data.get_constants().values.get(index).unwrap();
+                let value = _data.get_constants().values.get(index).unwrap();
 
                 Box::new(
                     generic_button(key, Btn::Const(key.to_string()), BtnType::Function)
+                        .controller(TooltipController::new(value.to_string()))
                         .controller(ShowContextMenu::new(index)),
                 )
             }
@@ -220,7 +357,7 @@ impl<W: Widget<CalcState>> Controller<CalcState, W> for LengthController {
             } else {
                 // Check if the length of the current text in the textbox
                 // is greater than or equal to the maximum allowed length
-                if data.constants.key_str.len() >= self.max_length {
+                if data.get_constants().key_str.len() >= self.max_length {
                     ctx.set_handled();
                     return;
                 }
@@ -235,7 +372,7 @@ fn make_add_const_field() -> impl Widget<CalcState> {
     let mut flex = Flex::row();
     let key_field = TextBox::new()
         .with_placeholder(t!("key"))
-        .padding(5.0)
+        .padding(5.)
         .expand_height()
         .align_vertical(UnitPoint::CENTER)
         .lens(CalcState::constants.then(Constants::key_str))
@@ -244,14 +381,14 @@ fn make_add_const_field() -> impl Widget<CalcState> {
     let value_field = TextBox::new()
         .with_placeholder(t!("value"))
         .expand_height()
-        .padding(5.0)
+        .padding(5.)
         .expand_width()
         .align_vertical(UnitPoint::CENTER)
         .lens(CalcState::constants.then(Constants::value_str));
 
-    flex.add_flex_child(key_field, 1.0);
+    flex.add_flex_child(key_field, 1.);
     flex.add_child(Label::new("="));
-    flex.add_flex_child(value_field, 3.0);
+    flex.add_flex_child(value_field, 3.);
     flex.add_child(make_add_const_btn());
     flex
 }
@@ -263,8 +400,8 @@ fn make_add_const_btn() -> impl Widget<CalcState> {
         .background(Painter::new(|ctx, data: &CalcState, env| {
             let width = ctx.size().width;
             let bounds = Circle::new(
-                ((width / 2.0 - 1.0), ctx.size().height / 2.0 + 2.0),
-                width / 2.0 - 1.0,
+                ((width / 2. - 1.), ctx.size().height / 2. + 2.),
+                width / 2. - 1.,
             );
             let background_key = Key::<Color>::new(Box::leak(
                 format!(
@@ -301,7 +438,8 @@ fn make_add_const_btn() -> impl Widget<CalcState> {
 
             let is_added = data.add_constant(key, value);
             if is_added {
-                data.clear_const_field();
+                data.constants.key_str.clear();
+                data.constants.value_str.clear();
                 _ctx.request_focus();
             } else {
                 eprintln!("Constant already exist");
@@ -568,7 +706,7 @@ fn radix_tab(radix: Radix) -> impl Widget<CalcState> {
     )
 }
 
-fn function_tab(text: FuncPad) -> impl Widget<CalcState> {
+fn function_tab(text: FunctionTabs) -> impl Widget<CalcState> {
     EnvScope::new(
         |env, data| {
             if data.get_theme(true) == Theme::Dark {
@@ -579,7 +717,7 @@ fn function_tab(text: FuncPad) -> impl Widget<CalcState> {
         },
         Padding::new(
             TAB_PADDING,
-            Label::new(text.to_string())
+            Label::new(format!("{:?}", text))
                 .with_text_color(TAB_TEXT_COLOR)
                 .with_text_size(TAB_TEXT_SIZE)
                 .center()
@@ -595,8 +733,8 @@ fn get_tab_painter() -> Painter<CalcState> {
     Painter::new(|ctx, _data: &CalcState, _env| {
         let size = ctx.size();
         let rectangle_height = TAB_UNDERLINE_SIZE;
-        let bounds = Rect::new(0.0, size.height, size.width, size.height - rectangle_height)
-            .to_rounded_rect(5.0);
+        let bounds = Rect::new(0., size.height, size.width, size.height - rectangle_height)
+            .to_rounded_rect(5.);
 
         if ctx.is_disabled() {
             ctx.fill(bounds, TAB_ACTIVE_COLOR);
