@@ -303,7 +303,7 @@ fn make_num_part() -> impl Widget<CalcState> {
             1.,
         )
         .with_flex_child(
-            generic_button("+", Btn::BinOpt(Opt::Sum), BtnType::Operation),
+            generic_button("+", Btn::BinOpt(Opt::Add), BtnType::Operation),
             1.,
         )
         .with_flex_child(
@@ -415,13 +415,13 @@ fn make_main_btns() -> impl Widget<CalcState> {
 
     let mut second_row = Flex::row();
     function_button(&mut second_row, "ⁿ√", Btn::BinOpt(Opt::Root));
-    function_button(&mut second_row, "a²", Btn::Pow2);
+    function_button(&mut second_row, "a²", Btn::UnaryOpt(Opt::Pow2));
     function_button(&mut second_row, "π", Btn::Const("π".to_owned()));
 
     let mut third_row = Flex::row();
     function_button(&mut third_row, "n!", Btn::UnaryOpt(Opt::Fact));
     function_button(&mut third_row, "|a|", Btn::UnaryOpt(Opt::Abs));
-    function_button(&mut third_row, "³√", Btn::Root3);
+    function_button(&mut third_row, "³√", Btn::UnaryOpt(Opt::Root3));
 
     let mut forth_row = Flex::row();
     function_button(&mut forth_row, "sin", Btn::UnaryOpt(Opt::Sin));
