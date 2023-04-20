@@ -56,7 +56,14 @@ impl ToExpr for PressedButton {
             Self::BracketLeft =>  ExprItem::new("(", "("),
             Self::BracketRight => ExprItem::new(")", ")"),
             Self::Comma =>        ExprItem::new(",", "."),  // FIXME: Maybe we should localize this.
-            Self::Const(name) =>  ExprItem::new(name, format!("{name}()")),
+            Self::Const(name) =>  {
+                // Replace known constants with their characters.
+                match name.as_str() {
+                    "pi" => ExprItem::new("π", "pi()"),
+                    "phi" => ExprItem::new("ϕ", "phi()"),
+                    _ => ExprItem::new(name, format!("{name}()"))
+                }
+            },
             Self::Ans => todo!(),
             _ => return None,
         })
