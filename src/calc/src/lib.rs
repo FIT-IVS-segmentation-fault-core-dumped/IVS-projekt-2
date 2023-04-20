@@ -22,8 +22,14 @@ pub enum Opt {
     Add, Sub, Mul, Div,
     Sin, Cos, Tg, Cotg,
     Arcsin, Arccos, Arctg, Arccotg,
-    Log, LogN, Ln, Sqrt, Root, Pow, Pow2, Root3,
+    Log, LogN, Ln, Sqrt, Root, Pow, 
+    /// Reprezents `a^2` operation.
+    Pow2, 
+    /// Reprezents `root(3, a)` operation.
+    Root3,
     Abs, Comb, Fact, Mod,
+    /// Operation, which generates random number
+    /// on each evaluation.
     Random
 }
 
@@ -36,7 +42,9 @@ pub enum Opt {
 pub enum PressedButton {
     /// Numpad 0-9 or A-F (10 - 15)
     Num(u8),
+    /// Operations, that require 2 operands.
     BinOpt(Opt),
+    /// Operations, that require only 1 operand.
     UnaryOpt(Opt),
     /// Constant with given name.
     /// Name is an entry to the table of constants, which will
@@ -55,7 +63,9 @@ pub enum PressedButton {
     Evaluate,
     BracketLeft,
     BracketRight,
+    /// Floating point.
     Comma,
+    /// Last result.
     Ans,
 }
 
@@ -67,6 +77,8 @@ pub enum Theme {
     System,
 }
 
+/// Used by druid widgets to switch between
+/// function tabs (to the left of numpad).
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum FuncPad {
     Main,
