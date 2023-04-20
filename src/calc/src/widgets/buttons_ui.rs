@@ -3,16 +3,24 @@
 pub struct ButtonsUI;
 
 use core::fmt;
-use druid::widget::{Either, EnvScope, Flex, Padding, Painter};
-use druid::{theme, Color, Insets, Key, Rect, RenderContext, RoundedRectRadii, WidgetExt};
+use druid::kurbo::Circle;
+use druid::widget::{Controller, Either, EnvScope, Flex, Padding, Painter, TextBox, ViewSwitcher};
+use druid::{
+    theme, Color, Env, Event, EventCtx, Insets, Key, LensExt, Menu, MenuItem, MouseButton, Rect,
+    RenderContext, RoundedRectRadii, UnitPoint, WidgetExt,
+};
 use druid::{widget::Label, Widget};
 use math::number::Radix;
+use rust_i18n::t;
+use std::rc::Rc;
 
-use crate::{CalcState, FuncPad, Opt, PressedButton, Theme};
+use crate::{CalcState, Constants, FuncPad, Opt, PressedButton, Theme};
 
 const BUTTON_PADDING: f64 = 1.0;
 const BUTTON_BORDER_RADIUS: f64 = 3.0;
 const BUTTON_TEXT_SIZE: f64 = 16.0;
+
+const ADD_CONST_BUTTON_TEXT_SIZE: f64 = 22.0;
 
 const TAB_BOTTOM_MARGIN: f64 = 5.0;
 const TAB_PADDING: Insets = Insets::uniform_xy(8.0, 0.0);
@@ -53,6 +61,36 @@ impl ButtonsUI {
     }
 }
 
+// Controller that displays a context menu when right-clicked. `index` represents a particular
+// constant in the vector of the user defined constants.
+struct ShowContextMenu {
+    index: usize,
+}
+
+impl ShowContextMenu {
+    fn new(index: usize) -> Self {
+        Self { index }
+    }
+}
+
+impl<T, W: Widget<T>> Controller<T, W> for ShowContextMenu {
+    fn event(&mut self, child: &mut W, ctx: &mut EventCtx, event: &Event, data: &mut T, env: &Env) {
+        if let Event::MouseDown(mouse_event) = event {
+            if mouse_event.button == MouseButton::Right {
+                let index = Rc::new(self.index);
+                let menu: Menu<CalcState> =
+                    Menu::empty().entry(MenuItem::new(t!("remove")).on_activate(
+                        move |_ctx, data: &mut CalcState, _env| {
+                            data.remove_constant(*index);
+                        },
+                    ));
+                ctx.show_context_menu(menu, mouse_event.window_pos);
+            }
+        }
+        child.event(ctx, event, data, env)
+    }
+}
+
 fn make_func_part() -> impl Widget<CalcState> {
     let tabs = Flex::row()
         .with_flex_child(function_tab(FuncPad::Main), 1.0)
@@ -64,6 +102,7 @@ fn make_func_part() -> impl Widget<CalcState> {
         |selector, _data, _env| match selector {
             FuncPad::Main => Box::new(make_main_btns()),
             FuncPad::Func => Box::new(make_func_btns()),
+            FuncPad::Const => Box::new(make_const_btns()),
         },
     );
 
@@ -71,6 +110,180 @@ fn make_func_part() -> impl Widget<CalcState> {
         .with_flex_child(tabs, 1.0)
         .with_spacer(TAB_BOTTOM_MARGIN)
         .with_flex_child(buttons, 5.0)
+}
+
+// Make constants buttons with field for adding new constants
+fn make_const_btns() -> impl Widget<CalcState> {
+    Flex::column()
+        .with_flex_child(make_const_grid(), 4.0)
+        .with_flex_child(make_add_const_field(), 1.0)
+}
+
+// Dynamic grid that change its size based on number of defined constants
+fn make_const_grid() -> impl Widget<CalcState> {
+    ViewSwitcher::new(
+        move |data: &CalcState, _env| data.get_constants().keys.len(),
+        move |selector, _data, _env| {
+            let mut flex = Flex::column();
+
+            // Row that is always drown with unremovable buttons for constants 'e' and 'π'.
+            let default_row = Flex::row()
+                .with_flex_child(
+                    generic_button("e", Btn::Const("e".to_owned()), BtnType::Function),
+                    1.0,
+                )
+                .with_flex_child(
+                    generic_button("π", Btn::Const("π".to_owned()), BtnType::Function),
+                    1.0,
+                )
+                .with_flex_child(make_const_button(0), 1.0);
+
+            flex.add_flex_child(default_row, 1.0);
+
+            // Other rows with user defined constants. The number of rows depends on the number of constants.
+            let line_count = (selector + 1) / 3;
+            for i in 0..line_count {
+                let mut row = Flex::row();
+
+                for j in 0..3 {
+                    row.add_flex_child(make_const_button(i * 3 + j + 1), 1.0);
+                }
+                flex.add_flex_child(row, 1.0);
+            }
+
+            // Fill the available space so that the minimum number of rows of grid is 4
+            match line_count {
+                0 => flex.add_flex_spacer(3.0),
+                1 => flex.add_flex_spacer(2.0),
+                2 => flex.add_flex_spacer(1.0),
+                _ => flex.add_flex_spacer(0.0),
+            }
+
+            Box::new(flex)
+        },
+    )
+}
+
+// Make a button that represents a constant at the given `index`.
+// If there is not any constant at the given `index`, the empty widget is returned.
+fn make_const_button(index: usize) -> impl Widget<CalcState> {
+    ViewSwitcher::new(
+        move |data: &CalcState, _env| data.get_constants().keys.get(index).is_none(),
+        move |selector, _data, _env| match selector {
+            true => Box::new(Label::new("")),
+            false => {
+                let key = _data.get_constants().keys.get(index).unwrap();
+
+                // Tooltip
+                // let value = _data.get_constants().values.get(index).unwrap();
+
+                Box::new(
+                    generic_button(key, Btn::Const(key.to_string()), BtnType::Function)
+                        .controller(ShowContextMenu::new(index)),
+                )
+            }
+        },
+    )
+}
+
+// Widget that enables user to add own constants to the app
+fn make_add_const_field() -> impl Widget<CalcState> {
+    let mut flex = Flex::row();
+    let key_field = TextBox::new()
+        .with_placeholder(t!("key"))
+        .padding(5.0)
+        .expand_height()
+        .align_vertical(UnitPoint::CENTER)
+        .lens(CalcState::constants.then(Constants::key_str));
+
+    let value_field = TextBox::new()
+        .with_placeholder(t!("value"))
+        .expand_height()
+        .padding(5.0)
+        .expand_width()
+        .align_vertical(UnitPoint::CENTER)
+        .lens(CalcState::constants.then(Constants::value_str));
+
+    flex.add_flex_child(key_field, 1.0);
+    flex.add_child(Label::new("="));
+    flex.add_flex_child(value_field, 3.0);
+    flex.add_child(make_add_const_btn());
+    flex
+}
+
+fn make_add_const_btn() -> impl Widget<CalcState> {
+    Label::new("+")
+        .with_text_size(ADD_CONST_BUTTON_TEXT_SIZE)
+        .padding(BUTTON_PADDING)
+        .background(Painter::new(|ctx, data: &CalcState, env| {
+            let width = ctx.size().width;
+            let bounds = Circle::new(
+                ((width / 2.0 - 1.0), ctx.size().height / 2.0 + 2.0),
+                width / 2.0 - 1.0,
+            );
+            let background_key = Key::<Color>::new(Box::leak(
+                format!(
+                    "calc.{:?}.{}.background",
+                    data.get_theme(true),
+                    BtnType::Function
+                )
+                .into_boxed_str(),
+            ));
+            if ctx.is_hot() {
+                ctx.fill(bounds, &env.get(background_key));
+            }
+        }))
+        .on_click(|_ctx, data: &mut CalcState, _env| {
+            let consts = data.get_constants();
+            let value: f64;
+            let key: String;
+
+            match validate_value(&consts.value_str) {
+                Ok(val) => value = val,
+                Err(e) => {
+                    eprintln!("{}", e);
+                    return;
+                }
+            }
+
+            match validate_key(&consts.key_str) {
+                Ok(k) => key = k,
+                Err(e) => {
+                    eprintln!("{}", e);
+                    return;
+                }
+            }
+
+            let is_added = data.add_constant(key, value);
+            if is_added {
+                data.clear_const_field();
+                _ctx.request_focus();
+            } else {
+                eprintln!("Constant already exist");
+            }
+        })
+}
+
+// Check if `value` is a number
+fn validate_value(value: &String) -> Result<f64, String> {
+    match value.parse() {
+        Ok(val) => Ok(val),
+        Err(_) => Err(format!("Failed to parse {} into a number", value)),
+    }
+}
+
+// Check if `key` starts with an aphabetic character
+fn validate_key(key: &String) -> Result<String, String> {
+    if let Some(first_char) = key.chars().next() {
+        match first_char.is_alphabetic() {
+            true => Ok(key.to_string()),
+            false => Err(format!(
+                "Variable name must start with an alphabetic character"
+            )),
+        }
+    } else {
+        Err(format!("Variable name must be provided"))
+    }
 }
 
 fn make_num_part() -> impl Widget<CalcState> {
