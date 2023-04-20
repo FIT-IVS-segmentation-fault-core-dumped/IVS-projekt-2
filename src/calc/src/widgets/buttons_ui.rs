@@ -4,7 +4,7 @@ pub struct ButtonsUI;
 
 use core::fmt;
 use druid::widget::{Either, EnvScope, Flex, Padding, Painter};
-use druid::{theme, Color, Insets, Key, Rect, RenderContext, WidgetExt, RoundedRectRadii};
+use druid::{theme, Color, Insets, Key, Rect, RenderContext, RoundedRectRadii, WidgetExt};
 use druid::{widget::Label, Widget};
 use math::number::Radix;
 
@@ -17,8 +17,7 @@ const BUTTON_TEXT_SIZE: f64 = 16.0;
 const TAB_BOTTOM_MARGIN: f64 = 5.0;
 const TAB_PADDING: Insets = Insets::uniform_xy(8.0, 0.0);
 const TAB_UNDERLINE_SIZE: f64 = 4.0;
-
-const TAB_TEXT_COLOR: Key<Color> = Key::<Color>::new("calc.active_textcolor");
+const TAB_TEXT_COLOR: Key<Color> = Key::<Color>::new("calc.tab_textcolor");
 const TAB_ACTIVE_TEXT_COLOR_DARK: Color = Color::grey8(230);
 const TAB_ACTIVE_TEXT_COLOR_LIGHT: Color = Color::grey8(10);
 const TAB_ACTIVE_COLOR: &Color = &Color::rgb8(189, 197, 242);
@@ -49,292 +48,226 @@ impl ButtonsUI {
     pub fn build_ui() -> impl Widget<CalcState> {
         Flex::row()
             .cross_axis_alignment(druid::widget::CrossAxisAlignment::End)
-            .with_flex_child(build_func_pad(), 1.0)
-            .with_flex_child(build_num_pad(), 1.0)
+            .with_flex_child(make_func_part(), 1.)
+            .with_flex_child(make_num_part(), 1.)
     }
 }
 
-fn build_func_pad() -> impl Widget<CalcState> {
+fn make_func_part() -> impl Widget<CalcState> {
+    let tabs = Flex::row()
+        .with_flex_child(function_tab(FuncPad::Main), 1.0)
+        .with_flex_child(function_tab(FuncPad::Func), 1.0)
+        .with_flex_child(function_tab(FuncPad::Const), 1.0);
+
+    let buttons = ViewSwitcher::new(
+        |data: &CalcState, _env| data.get_function_pad(),
+        |selector, _data, _env| match selector {
+            FuncPad::Main => Box::new(make_main_btns()),
+            FuncPad::Func => Box::new(make_func_btns()),
+        },
+    );
+
     Flex::column()
+        .with_flex_child(tabs, 1.0)
+        .with_spacer(TAB_BOTTOM_MARGIN)
+        .with_flex_child(buttons, 5.0)
+}
+
+fn make_num_part() -> impl Widget<CalcState> {
+    let tabs = Flex::row()
+        .with_flex_child(generic_button("←", Btn::MoveLeft, BtnType::Operation), 1.)
+        .with_flex_child(generic_button("→", Btn::MoveRight, BtnType::Operation), 1.)
+        .with_flex_child(generic_button("C", Btn::Clear, BtnType::Operation), 1.)
+        .with_flex_child(generic_button("⌫", Btn::Delete, BtnType::Operation), 1.);
+
+    let operations = Flex::column()
+        .with_flex_child(
+            generic_button("÷", Btn::BinOpt(Opt::Div), BtnType::Operation),
+            1.,
+        )
+        .with_flex_child(
+            generic_button("⨯", Btn::BinOpt(Opt::Mul), BtnType::Operation),
+            1.,
+        )
+        .with_flex_child(
+            generic_button("+", Btn::BinOpt(Opt::Sum), BtnType::Operation),
+            1.,
+        )
+        .with_flex_child(
+            generic_button("-", Btn::BinOpt(Opt::Sub), BtnType::Operation),
+            1.,
+        );
+
+    Flex::column()
+        .with_flex_child(make_radix_tabs(), 1.)
+        .with_spacer(TAB_BOTTOM_MARGIN)
+        .with_flex_child(tabs, 1.)
         .with_flex_child(
             Flex::row()
-                .with_flex_child(function_pad_tab(FuncPad::Main), 1.0)
-                .with_flex_child(function_pad_tab(FuncPad::Func), 1.0),
-            1.0,
-        )
-        .with_spacer(TAB_BOTTOM_MARGIN)
-        .with_flex_child(
-            Either::new(
-                |data, _env| data.get_function_pad() == FuncPad::Func,
-                make_func_btns(),
-                make_main_btns(),
-            ),
-            5.0,
+                .with_flex_child(make_number_keyboard(), 3.)
+                .with_flex_child(operations, 1.),
+            4.,
         )
 }
 
-fn build_num_pad() -> impl Widget<CalcState> {
-    Flex::column()
-        .with_flex_child(make_radix_tabs(), 1.0)
-        .with_spacer(TAB_BOTTOM_MARGIN)
-        .with_flex_child(
-            Flex::row()
-                .with_flex_child(make_button("←", Btn::MoveLeft, BtnType::Operation), 1.)
-                .with_flex_child(make_button("→", Btn::MoveRight, BtnType::Operation), 1.)
-                .with_flex_child(make_button("C", Btn::Clear, BtnType::Operation), 1.)
-                .with_flex_child(make_button("⌫", Btn::Delete, BtnType::Operation), 1.),
-            1.0,
-        )
-        .with_flex_child(
-            Flex::row()
-                .with_flex_child(make_number_keyboard(), 3.0)
-                .with_flex_child(
-                    Flex::column()
-                        .with_flex_child(
-                            make_button("÷", Btn::BinOpt(Opt::Div), BtnType::Operation),
-                            1.,
-                        )
-                        .with_flex_child(
-                            make_button("⨯", Btn::BinOpt(Opt::Mul), BtnType::Operation),
-                            1.,
-                        )
-                        .with_flex_child(
-                            make_button("+", Btn::BinOpt(Opt::Add), BtnType::Operation),
-                            1.,
-                        )
-                        .with_flex_child(
-                            make_button("-", Btn::BinOpt(Opt::Sub), BtnType::Operation),
-                            1.0,
-                        ),
-                    1.0,
-                ),
-            4.0,
-        )
-}
-
-// Buttons 0-9 + ANS + ,
 fn make_num_btns() -> impl Widget<CalcState> {
-    let first_row = Flex::row()
+    let row_789 = Flex::row()
         .with_flex_child(
-            make_button("7", Btn::Num(7), BtnType::Digit)
+            generic_button("7", Btn::Num(7), BtnType::Digit)
                 .disabled_if(|data, _env| data.get_radix() == Radix::Bin),
             1.,
         )
         .with_flex_child(
-            make_button("8", Btn::Num(8), BtnType::Digit)
+            generic_button("8", Btn::Num(8), BtnType::Digit)
                 .disabled_if(|data, _env| data.get_radix() == Radix::Bin),
             1.,
         )
         .with_flex_child(
-            make_button("9", Btn::Num(9), BtnType::Digit).disabled_if(|data, _env| {
+            generic_button("9", Btn::Num(9), BtnType::Digit).disabled_if(|data, _env| {
                 data.get_radix() == Radix::Bin || data.get_radix() == Radix::Oct
             }),
             1.,
         );
 
-    let second_row = Flex::row()
+    let row_456 = Flex::row()
         .with_flex_child(
-            make_button("4", Btn::Num(4), BtnType::Digit)
+            generic_button("4", Btn::Num(4), BtnType::Digit)
                 .disabled_if(|data, _env| data.get_radix() == Radix::Bin),
             1.,
         )
         .with_flex_child(
-            make_button("5", Btn::Num(5), BtnType::Digit)
+            generic_button("5", Btn::Num(5), BtnType::Digit)
                 .disabled_if(|data, _env| data.get_radix() == Radix::Bin),
             1.,
         )
         .with_flex_child(
-            make_button("6", Btn::Num(6), BtnType::Digit)
+            generic_button("6", Btn::Num(6), BtnType::Digit)
                 .disabled_if(|data, _env| data.get_radix() == Radix::Bin),
             1.,
         );
 
-    let third_row = Flex::row()
-        .with_flex_child(make_button("1", Btn::Num(1), BtnType::Digit), 1.)
+    let row_123 = Flex::row()
+        .with_flex_child(generic_button("1", Btn::Num(1), BtnType::Digit), 1.)
         .with_flex_child(
-            make_button("2", Btn::Num(2), BtnType::Digit)
+            generic_button("2", Btn::Num(2), BtnType::Digit)
                 .disabled_if(|data, _env| data.get_radix() == Radix::Bin),
             1.,
         )
         .with_flex_child(
-            make_button("3", Btn::Num(3), BtnType::Digit)
+            generic_button("3", Btn::Num(3), BtnType::Digit)
                 .disabled_if(|data, _env| data.get_radix() == Radix::Bin),
             1.,
         );
 
-    let forth_row = Flex::row()
-        .with_flex_child(make_button(",", Btn::Comma, BtnType::Operation), 1.)
-        .with_flex_child(make_button("0", Btn::Num(0), BtnType::Digit), 1.)
-        .with_flex_child(make_button("=", Btn::Evaluate, BtnType::Operation), 1.);
+    let row_0 = Flex::row()
+        .with_flex_child(generic_button(",", Btn::Comma, BtnType::Operation), 1.)
+        .with_flex_child(generic_button("0", Btn::Num(0), BtnType::Digit), 1.)
+        .with_flex_child(generic_button("=", Btn::Evaluate, BtnType::Operation), 1.);
 
     Flex::column()
         .main_axis_alignment(druid::widget::MainAxisAlignment::End)
-        .with_flex_child(first_row, 1.0)
-        .with_flex_child(second_row, 1.0)
-        .with_flex_child(third_row, 1.0)
-        .with_flex_child(forth_row, 1.0)
+        .with_flex_child(row_789, 1.)
+        .with_flex_child(row_456, 1.)
+        .with_flex_child(row_123, 1.)
+        .with_flex_child(row_0, 1.)
 }
 
 // Make either decimal or hexadecimal keyboard
 fn make_number_keyboard() -> impl Widget<CalcState> {
-    let first_row = Flex::row()
-        .with_flex_child(make_button("D", Btn::Num(13), BtnType::Digit), 1.)
-        .with_flex_child(make_button("E", Btn::Num(14), BtnType::Digit), 1.)
-        .with_flex_child(make_button("F", Btn::Num(15), BtnType::Digit), 1.);
+    let row_def = Flex::row()
+        .with_flex_child(generic_button("D", Btn::Num(13), BtnType::Digit), 1.)
+        .with_flex_child(generic_button("E", Btn::Num(14), BtnType::Digit), 1.)
+        .with_flex_child(generic_button("F", Btn::Num(15), BtnType::Digit), 1.);
 
-    let second_row = Flex::row()
-        .with_flex_child(make_button("A", Btn::Num(10), BtnType::Digit), 1.)
-        .with_flex_child(make_button("B", Btn::Num(11), BtnType::Digit), 1.)
-        .with_flex_child(make_button("C", Btn::Num(12), BtnType::Digit), 1.);
+    let row_abc = Flex::row()
+        .with_flex_child(generic_button("A", Btn::Num(10), BtnType::Digit), 1.)
+        .with_flex_child(generic_button("B", Btn::Num(11), BtnType::Digit), 1.)
+        .with_flex_child(generic_button("C", Btn::Num(12), BtnType::Digit), 1.);
 
     Either::new(
         |data, _env| data.get_radix() == Radix::Hex,
         Flex::column()
-            .with_flex_child(first_row, 1.0)
-            .with_flex_child(second_row, 1.0)
-            .with_flex_child(make_num_btns(), 4.0),
+            .with_flex_child(row_def, 1.)
+            .with_flex_child(row_abc, 1.)
+            .with_flex_child(make_num_btns(), 4.),
         make_num_btns(),
     )
 }
 
 fn make_main_btns() -> impl Widget<CalcState> {
-    let first_row = Flex::row()
-        .with_flex_child(
-            make_button("√", Btn::UnaryOpt(Opt::Sqrt), BtnType::Function),
-            1.,
-        )
-        .with_flex_child(
-            make_button("aⁿ", Btn::BinOpt(Opt::Pow), BtnType::Function),
-            1.,
-        )
-        .with_flex_child(
-            make_button("e", Btn::Const("e".to_owned()), BtnType::Function),
-            1.,
-        );
+    let mut first_row = Flex::row();
+    function_button(&mut first_row, "√", Btn::UnaryOpt(Opt::Sqrt));
+    function_button(&mut first_row, "aⁿ", Btn::BinOpt(Opt::Pow));
+    function_button(&mut first_row, "e", Btn::Const("e".to_owned()));
 
-    let second_row = Flex::row()
-        .with_flex_child(
-            make_button("ⁿ√", Btn::BinOpt(Opt::Root), BtnType::Function),
-            1.,
-        )
-        .with_flex_child(make_button("a²", Btn::Num(9), BtnType::Function), 1.)
-        .with_flex_child(
-            make_button("pi", Btn::Const("π".to_owned()), BtnType::Function),
-            1.,
-        );
+    let mut second_row = Flex::row();
+    function_button(&mut second_row, "ⁿ√", Btn::BinOpt(Opt::Root));
+    function_button(&mut second_row, "a²", Btn::Pow2);
+    function_button(&mut second_row, "π", Btn::Const("π".to_owned()));
 
-    let third_row = Flex::row()
-        .with_flex_child(
-            make_button("n!", Btn::UnaryOpt(Opt::Fact), BtnType::Function),
-            1.,
-        )
-        .with_flex_child(
-            make_button("|a|", Btn::UnaryOpt(Opt::Abs), BtnType::Function),
-            1.,
-        )
-        .with_flex_child(
-            make_button("Const", Btn::UnaryOpt(Opt::Abs), BtnType::Function),
-            1.0,
-        );
+    let mut third_row = Flex::row();
+    function_button(&mut third_row, "n!", Btn::UnaryOpt(Opt::Fact));
+    function_button(&mut third_row, "|a|", Btn::UnaryOpt(Opt::Abs));
+    function_button(&mut third_row, "³√", Btn::Root3);
 
-    let forth_row = Flex::row()
-        .with_flex_child(
-            make_button("sin", Btn::UnaryOpt(Opt::Sin), BtnType::Function),
-            1.,
-        )
-        .with_flex_child(
-            make_button("cos", Btn::UnaryOpt(Opt::Cos), BtnType::Function),
-            1.,
-        )
-        .with_flex_child(
-            make_button("ln", Btn::UnaryOpt(Opt::Ln), BtnType::Function),
-            1.,
-        );
+    let mut forth_row = Flex::row();
+    function_button(&mut forth_row, "sin", Btn::UnaryOpt(Opt::Sin));
+    function_button(&mut forth_row, "cos", Btn::UnaryOpt(Opt::Cos));
+    function_button(&mut forth_row, "ln", Btn::UnaryOpt(Opt::Ln));
 
-    let fifth_row = Flex::row()
-        .with_flex_child(make_button("(", Btn::BracketLeft, BtnType::Function), 1.)
-        .with_flex_child(make_button(")", Btn::BracketRight, BtnType::Function), 1.)
-        .with_flex_child(make_button("ANS", Btn::Ans, BtnType::Function), 1.);
+    let mut fifth_row = Flex::row();
+    function_button(&mut fifth_row, "ANS", Btn::Ans);
+    function_button(&mut fifth_row, "(", Btn::BracketLeft);
+    function_button(&mut fifth_row, ")", Btn::BracketRight);
 
     Flex::column()
-        .with_flex_child(first_row, 1.0)
-        .with_flex_child(second_row, 1.0)
-        .with_flex_child(third_row, 1.0)
-        .with_flex_child(forth_row, 1.0)
-        .with_flex_child(fifth_row, 1.0)
+        .with_flex_child(first_row, 1.)
+        .with_flex_child(second_row, 1.)
+        .with_flex_child(third_row, 1.)
+        .with_flex_child(forth_row, 1.)
+        .with_flex_child(fifth_row, 1.)
 }
 
 fn make_func_btns() -> impl Widget<CalcState> {
-    let first_row = Flex::row()
-        .with_flex_child(
-            make_button("sin", Btn::UnaryOpt(Opt::Sin), BtnType::Function),
-            1.0,
-        )
-        .with_flex_child(
-            make_button("cos", Btn::UnaryOpt(Opt::Cos), BtnType::Function),
-            1.,
-        )
-        .with_flex_child(
-            make_button("ln", Btn::UnaryOpt(Opt::Ln), BtnType::Function),
-            1.,
-        );
+    let mut first_row = Flex::row();
+    function_button(&mut first_row, "sin", Btn::UnaryOpt(Opt::Sin));
+    function_button(&mut first_row, "cos", Btn::UnaryOpt(Opt::Cos));
+    function_button(&mut first_row, "ln", Btn::UnaryOpt(Opt::Ln));
 
-    let second_row = Flex::row()
-        .with_flex_child(
-            make_button("arcsin", Btn::UnaryOpt(Opt::Arcsin), BtnType::Function),
-            1.,
-        )
-        .with_flex_child(
-            make_button("arccos", Btn::UnaryOpt(Opt::Arccos), BtnType::Function),
-            1.,
-        )
-        .with_flex_child(
-            make_button("log", Btn::UnaryOpt(Opt::Log), BtnType::Function),
-            1.,
-        );
+    let mut second_row = Flex::row();
+    function_button(&mut second_row, "sin⁻¹", Btn::UnaryOpt(Opt::Arcsin));
+    function_button(&mut second_row, "cos⁻¹", Btn::UnaryOpt(Opt::Arccos));
+    function_button(&mut second_row, "log", Btn::UnaryOpt(Opt::Log));
 
-    let third_row = Flex::row()
-        .with_flex_child(
-            make_button("tg", Btn::UnaryOpt(Opt::Tg), BtnType::Function),
-            1.,
-        )
-        .with_flex_child(
-            make_button("cotg", Btn::UnaryOpt(Opt::Cotg), BtnType::Function),
-            1.,
-        )
-        .with_flex_child(
-            make_button("logₙ", Btn::BinOpt(Opt::LogN), BtnType::Function),
-            1.,
-        );
+    let mut third_row = Flex::row();
+    function_button(&mut third_row, "tg", Btn::UnaryOpt(Opt::Tg));
+    function_button(&mut third_row, "cotg", Btn::UnaryOpt(Opt::Cotg));
+    function_button(&mut third_row, "logₙ", Btn::BinOpt(Opt::LogN));
 
-    let forth_row = Flex::row()
-        .with_flex_child(
-            make_button("arctg", Btn::UnaryOpt(Opt::Arctg), BtnType::Function),
-            1.,
-        )
-        .with_flex_child(
-            make_button("arccotg", Btn::UnaryOpt(Opt::Arccotg), BtnType::Function),
-            1.,
-        )
-        .with_flex_child(
-            make_button("mod", Btn::BinOpt(Opt::Mod), BtnType::Function),
-            1.,
-        );
+    let mut forth_row = Flex::row();
+    function_button(&mut forth_row, "tg⁻¹", Btn::UnaryOpt(Opt::Arctg));
+    function_button(&mut forth_row, "cotg⁻¹", Btn::UnaryOpt(Opt::Arccotg));
+    function_button(&mut forth_row, "mod", Btn::BinOpt(Opt::Mod));
 
-    let fifth_row = Flex::row()
-        .with_flex_child(make_button("nCr", Btn::BinOpt(Opt::Comb), BtnType::Function), 1.)
-        .with_flex_child(make_button("(", Btn::BracketLeft, BtnType::Function), 1.)
-        .with_flex_child(make_button(")", Btn::BracketRight, BtnType::Function), 1.);
+    let mut fifth_row = Flex::row();
+    function_button(&mut fifth_row, "nCr", Btn::BinOpt(Opt::Comb));
+    function_button(&mut fifth_row, "(", Btn::BracketLeft);
+    function_button(&mut fifth_row, ")", Btn::BracketRight);
 
     Flex::column()
-        .with_flex_child(first_row, 1.0)
-        .with_flex_child(second_row, 1.0)
-        .with_flex_child(third_row, 1.0)
-        .with_flex_child(forth_row, 1.0)
-        .with_flex_child(fifth_row, 1.0)
+        .with_flex_child(first_row, 1.)
+        .with_flex_child(second_row, 1.)
+        .with_flex_child(third_row, 1.)
+        .with_flex_child(forth_row, 1.)
+        .with_flex_child(fifth_row, 1.)
 }
 
-fn make_button(text: &str, button: Btn, button_type: BtnType) -> impl Widget<CalcState> {
+fn function_button(flex: &mut Flex<CalcState>, text: &str, button: Btn) {
+    flex.add_flex_child(generic_button(text, button, BtnType::Function), 1.);
+}
+
+// Generic button for numbers, functions and operations
+fn generic_button(text: &str, button: Btn, button_type: BtnType) -> impl Widget<CalcState> {
     Padding::new(
         BUTTON_PADDING,
         Label::new(text)
@@ -348,10 +281,10 @@ fn make_button(text: &str, button: Btn, button_type: BtnType) -> impl Widget<Cal
 
 fn make_radix_tabs() -> impl Widget<CalcState> {
     Flex::row()
-        .with_flex_child(radix_tab(Radix::Dec), 1.0)
-        .with_flex_child(radix_tab(Radix::Hex), 1.0)
-        .with_flex_child(radix_tab(Radix::Oct), 1.0)
-        .with_flex_child(radix_tab(Radix::Bin), 1.0)
+        .with_flex_child(radix_tab(Radix::Dec), 1.)
+        .with_flex_child(radix_tab(Radix::Hex), 1.)
+        .with_flex_child(radix_tab(Radix::Oct), 1.)
+        .with_flex_child(radix_tab(Radix::Bin), 1.)
 }
 
 fn radix_tab(radix: Radix) -> impl Widget<CalcState> {
@@ -377,7 +310,7 @@ fn radix_tab(radix: Radix) -> impl Widget<CalcState> {
     )
 }
 
-fn function_pad_tab(text: FuncPad) -> impl Widget<CalcState> {
+fn function_tab(text: FuncPad) -> impl Widget<CalcState> {
     EnvScope::new(
         |env, data| {
             if data.get_theme(true) == Theme::Dark {
