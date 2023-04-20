@@ -18,6 +18,9 @@ impl CalcMenu {
 /// Creates menu on top of the main window.
 fn make_menu(_window: Option<WindowId>, _data: &CalcState, _env: &Env) -> Menu<CalcState> {
     Menu::empty()
+        .rebuild_on(|old_data: &CalcState, data, _env| {
+            old_data.get_language() != data.get_language()
+        })
         .entry(
             Menu::new(t!("menu.file"))
                 .entry(
