@@ -6,9 +6,9 @@ pub mod expr_manager;
 pub mod widgets;
 use druid::{Data, Lens};
 use expr_manager::ExprManager;
-use math::number::Radix;
+use math::{number::Radix, Number};
 use serde::{Deserialize, Serialize};
-use std::{cell::RefCell, fmt, rc::Rc};
+use std::{cell::RefCell, rc::Rc};
 
 const APP_NAME: &str = "Calculator";
 
@@ -345,23 +345,25 @@ impl CalcState {
     }
 
     pub fn add_constant(&mut self, key: String, value: f64) -> bool {
-        // let is_added = self.calc.add_constant(&key, self.calc.);
-        // if is_added {
-        self.constants.keys.push(key);
-        self.constants.values.push(value);
-        // }
-        // is_added
-        true
+        let bignum = (value * 100000.) as i128;
+
+        let is_added = self
+            .calc
+            .borrow_mut()
+            .add_constant(&key, Number::new(bignum, 100000).unwrap());
+
+        if is_added {
+            self.constants.keys.push(key);
+            self.constants.values.push(value);
+        }
+        is_added
     }
 
     pub fn remove_constant(&mut self, index: usize) {
-        eprintln!("{}", index);
+        self.calc
+            .borrow_mut()
+            .remove_constant(self.constants.keys[index].as_str());
         self.constants.keys.remove(index);
         self.constants.values.remove(index);
-    }
-
-    pub fn clear_const_field(&mut self) {
-        self.constants.value_str.clear();
-        self.constants.key_str.clear();
     }
 }
