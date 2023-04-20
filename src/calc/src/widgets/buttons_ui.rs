@@ -186,6 +186,50 @@ fn make_const_button(index: usize) -> impl Widget<CalcState> {
     )
 }
 
+// Prevents text from exceeding `max_length` characters
+struct LengthController {
+    max_length: usize,
+}
+
+impl LengthController {
+    fn new(max_length: usize) -> Self {
+        Self { max_length }
+    }
+}
+impl<W: Widget<CalcState>> Controller<CalcState, W> for LengthController {
+    fn event(
+        &mut self,
+        child: &mut W,
+        ctx: &mut druid::EventCtx,
+        event: &Event,
+        data: &mut CalcState,
+        env: &Env,
+    ) {
+        if let Event::KeyDown(key_event) = event {
+            if matches!(
+                key_event.key,
+                druid::keyboard_types::Key::ArrowLeft
+                    | druid::keyboard_types::Key::ArrowRight
+                    | druid::keyboard_types::Key::ArrowUp
+                    | druid::keyboard_types::Key::ArrowDown
+                    | druid::keyboard_types::Key::Delete
+                    | druid::keyboard_types::Key::Backspace
+            ) {
+                // Allow arrow keys, delete key, and backspace key
+                child.event(ctx, event, data, env);
+            } else {
+                // Check if the length of the current text in the textbox
+                // is greater than or equal to the maximum allowed length
+                if data.constants.key_str.len() >= self.max_length {
+                    ctx.set_handled();
+                    return;
+                }
+            }
+        }
+        child.event(ctx, event, data, env);
+    }
+}
+
 // Widget that enables user to add own constants to the app
 fn make_add_const_field() -> impl Widget<CalcState> {
     let mut flex = Flex::row();
@@ -194,7 +238,8 @@ fn make_add_const_field() -> impl Widget<CalcState> {
         .padding(5.0)
         .expand_height()
         .align_vertical(UnitPoint::CENTER)
-        .lens(CalcState::constants.then(Constants::key_str));
+        .lens(CalcState::constants.then(Constants::key_str))
+        .controller(LengthController::new(3));
 
     let value_field = TextBox::new()
         .with_placeholder(t!("value"))
