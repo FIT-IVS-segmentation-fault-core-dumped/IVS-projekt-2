@@ -1,0 +1,3 @@
+The math library currently use too much heap allocation, which takes a lot of time allocate and reallocate memory.
+When optimalize the library, should look for a way to reduce the number of allocation,
+one idea is that dynamically change where the inner data be, only put the number on to the heap when needed.
