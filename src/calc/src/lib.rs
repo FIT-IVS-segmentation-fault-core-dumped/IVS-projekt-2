@@ -76,6 +76,7 @@ pub enum Theme {
     System,
 }
 
+/// String representations for `Theme`
 impl fmt::Display for Theme {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{:?}", self)
@@ -347,8 +348,8 @@ impl CalcState {
         &self.constants
     }
 
-    /// Add constant as key-value pair to the math library. If constant already exists or its name is not valid,
-    /// function return false
+    /// Add constant as key-value pair to the math library. If constant name is not valid (sin, cos, log...)
+    /// function returns false
     pub fn add_constant(&mut self, key: String, value: f64) -> bool {
         let bignum = (value * 100000.) as i128;
 
@@ -371,5 +372,13 @@ impl CalcState {
             .remove_constant(self.constants.keys[index].as_str());
         self.constants.keys.remove(index);
         self.constants.values.remove(index);
+    }
+
+    /// Check if the constant is already created
+    pub fn is_new_constant(&self, key: String) -> bool {
+        if self.constants.keys.contains(&key) || key == "e" || key == "pi" {
+            return false;
+        }
+        return true;
     }
 }
