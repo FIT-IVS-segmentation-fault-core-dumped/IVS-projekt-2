@@ -20,7 +20,7 @@ use std::time::{Duration, Instant};
 
 const SHOW_ERROR: Selector<String> = Selector::new("error");
 const ERROR_TEXT_SIZE: f64 = 14.0;
-const ERROR_BACKGROUND_COLOR: Color = Color::rgba8(240, 20, 20, 50);
+const ERROR_BACKGROUND_COLOR: Color = Color::rgb8(150, 20, 20);
 
 const BUTTON_PADDING: f64 = 1.0;
 const BUTTON_BORDER_RADIUS: f64 = 3.0;
@@ -672,23 +672,23 @@ fn make_number_keyboard() -> impl Widget<CalcState> {
 fn make_main_btns() -> impl Widget<CalcState> {
     let mut first_row = Flex::row();
     function_button(&mut first_row, "√", Btn::UnaryOpt(Opt::Sqrt));
-    function_button(&mut first_row, "aⁿ", Btn::BinOpt(Opt::Pow));
+    function_button(&mut first_row, "a²", Btn::UnaryOpt(Opt::Pow2));
     function_button(&mut first_row, "e", Btn::Const("e".to_owned()));
 
     let mut second_row = Flex::row();
     function_button(&mut second_row, "ⁿ√", Btn::BinOpt(Opt::Root));
-    function_button(&mut second_row, "a²", Btn::UnaryOpt(Opt::Pow2));
+    function_button(&mut second_row, "aⁿ", Btn::BinOpt(Opt::Pow));
     function_button(&mut second_row, "π", Btn::Const("π".to_owned()));
 
     let mut third_row = Flex::row();
-    function_button(&mut third_row, "n!", Btn::UnaryOpt(Opt::Fact));
-    function_button(&mut third_row, "|a|", Btn::UnaryOpt(Opt::Abs));
     function_button(&mut third_row, "³√", Btn::UnaryOpt(Opt::Root3));
+    function_button(&mut third_row, "|a|", Btn::UnaryOpt(Opt::Abs));
+    function_button(&mut third_row, "n!", Btn::UnaryOpt(Opt::Fact));
 
     let mut forth_row = Flex::row();
     function_button(&mut forth_row, "sin", Btn::UnaryOpt(Opt::Sin));
     function_button(&mut forth_row, "cos", Btn::UnaryOpt(Opt::Cos));
-    function_button(&mut forth_row, "ln", Btn::UnaryOpt(Opt::Ln));
+    function_button(&mut forth_row, "Rnd", Btn::Random);
 
     let mut fifth_row = Flex::row();
     function_button(&mut fifth_row, "ANS", Btn::Ans);
