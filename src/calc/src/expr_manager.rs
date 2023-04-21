@@ -11,6 +11,7 @@ trait ToExpr {
 }
 
 impl ToExpr for Opt {
+    #[rustfmt::skip]
     fn to_expr(&self) -> Option<ExprItem> {
         Some(match self {
             //                             Disp         Eval     Priority LeftAsoc SkipConv
@@ -43,11 +44,15 @@ impl ToExpr for Opt {
 }
 
 impl ToExpr for PressedButton {
+    #[rustfmt::skip]
     fn to_expr(&self) -> Option<ExprItem> {
         Some(match self {
             Self::Num(num) => {
+                // Convert number to digit.
                 let s = match *num >= 10 {
+                    // A-F
                     true => char::from_digit(*num as u32, 16).unwrap().to_string().to_uppercase(),
+                    // 0-9
                     false => num.to_string()
                 };
                 ExprItem::new(&s, &s, 0, true, true)
@@ -77,24 +82,35 @@ impl ToExpr for PressedButton {
 struct ExprItem {
     disp: String,
     eval: String,
+
+    // Below properties are used to correctly convert to
+    // evaluate string.
+
     // Priority of this function used in `ExprManager::to_postfix()` method.
     priority: u32,
+    // Flags if given button is left associative or not.
+    // If the button is not an operation, then this property
+    // is ignored.
     left_asoc: bool,
     // Skip convertion to function notation, when converting,
     // to evaluation string. Used in `ExprManager::to_eval_str()` method.
+    // Ignored for non-operation buttons.
     skip_conv: bool,
 }
 
 impl ExprItem {
     /// Construct ExprItem from anything convertable to string.
-    pub fn new<T, U>(disp: T, eval: U, priority: u32, left_asoc: bool, skip_conv: bool) -> Self 
-        where T: ToString,
-              U: ToString
+    pub fn new<T, U>(disp: T, eval: U, priority: u32, left_asoc: bool, skip_conv: bool) -> Self
+    where
+        T: ToString,
+        U: ToString,
     {
         Self {
             disp: disp.to_string(),
             eval: eval.to_string(),
-            priority, left_asoc, skip_conv
+            priority,
+            left_asoc,
+            skip_conv,
         }
     }
 }
@@ -109,14 +125,19 @@ pub struct ExprManager {
     // Buttons, which compose the resulting expressoin string.
     btn_stack: Vec<Btn>,
     // Used for invalidating the expression manager (for druid repaint).
-    dirty_flipper: bool
+    dirty_flipper: bool,
 }
 
 impl Data for ExprManager {
     // Dont compare `btn_stack` for performance reasons.
     fn same(&self, other: &Self) -> bool {
-        self.dirty_flipper == other.dirty_flipper
-            && self.cursor_pos == other.cursor_pos
+        self.dirty_flipper == other.dirty_flipper && self.cursor_pos == other.cursor_pos
+    }
+}
+
+impl Default for ExprManager {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -140,7 +161,9 @@ impl ExprManager {
     pub fn process_button(&mut self, btn: &PressedButton) {
         match btn {
             Btn::Clear => self.btn_stack.clear(),
-            Btn::Delete => { self.btn_stack.pop(); },
+            Btn::Delete => {
+                self.btn_stack.pop();
+            }
             Btn::MoveRight => self.move_cursor(false),
             Btn::MoveLeft => self.move_cursor(true),
             Btn::Evaluate => panic!("Invalid btn {:?}", btn),
@@ -154,7 +177,7 @@ impl ExprManager {
     pub fn invalidate(&mut self) {
         self.dirty_flipper = !self.dirty_flipper;
     }
-    
+
     // Move cursor to the left or right in the evaluate expression string.
     fn move_cursor(&mut self, _left: bool) {
         todo!()
@@ -174,8 +197,8 @@ impl ExprManager {
                 Some(item) => item.disp,
                 None => {
                     eprintln!("error: Cannot convert btn to expr. {:?}", btn);
-                    continue
-                },
+                    continue;
+                }
             };
         }
         disp_str
@@ -187,90 +210,146 @@ impl ExprManager {
             return Ok("0".to_string());
         }
 
-        let tokens = self.tokenize();
-        let postfix = self.to_postfix(&tokens)?;
+        // We convert button inputs to postfix notation and then assble the evaluation string.
+        // In the process we convert oprators from binary to function notation. That is
+        // skipped if `ExprItem::skip_conv` is set to `true`.
 
-        Ok(self.to_eval_str(&postfix)?)
+        // Tokenize the button inputs.
+        let tokens = self.tokenize();
+        // Convert them to postfix.
+        let postfix = self.to_postfix(&tokens)?;
+        // Generate final evaluation string from postfix.
+        self.to_eval_str(&postfix)
     }
 
     // Pop the operands off the stack, create resulting evaluate string,
     // and push onto the stack.
+    //
+    // The final pushed Token has `Token::btn` set to `PressedButton::Evaluate`
+    // in order to differenciate between compound tokens and non-operation tokens.
     fn push_func(&self, eval_stack: &mut Vec<Token>, token: &Token) -> Result<(), String> {
+        // Check if there are needed oprands on the stack for given function.
         let stack_size = eval_stack.len();
         if stack_size < token.arity as usize {
             return Err("Not enough operands for token".to_string());
         } else if token.arity == 0 {
-            return Ok(())
+            return Ok(());
         }
-        
+
+        // Converts token into operand. If the inner token is compound operation (it was already processed
+        // by push_func) it is encapsulated in brackets if needed.
         let to_operand = |tok: &Token| -> String {
-            if tok.btn == Btn::Evaluate 
-                && tok.item.skip_conv 
-                && tok.item.priority < token.item.priority 
-                && token.item.skip_conv {
+            if tok.btn == Btn::Evaluate         // Is compound operation
+                && tok.item.skip_conv           // Inner operation is in _binary_ notation
+                && tok.item.priority < token.item.priority  // Has lower priority than the
+                                                            // encapsulating operation
+                && token.item.skip_conv
+            {
+                // Encapsulating operation is in function
+                // notation
+                // Encapsulate inner operation in brackets.
                 format!("({})", tok.item.eval)
             } else {
+                // No need to encapsulate inner function, as the result will be unaffected.
                 tok.item.eval.clone()
             }
         };
+
+        // Evaluate string, that will be pushed with the new Token onto the stack.
         let mut eval = String::new();
+
+        // Based on the arity, take given number of operands and convert them to
+        // function or binary notation. Note that 1 operand is left on the stack,
+        // so we can edit its contents instead of pushing new token.
         match token.arity {
             1 => {
                 let operand = to_operand(eval_stack.last().unwrap());
+                // We give factorial special treatment, as it is the only
+                // unary operator, that is on the right side.
                 eval = if token.item.skip_conv {
                     if token.btn == Btn::UnaryOpt(Opt::Fact) {
+                        // Unary notation on the right side.
                         format!("{}!", operand)
                     } else {
+                        // Unary notation on the left side.
                         format!("{}{}", token.item.eval, operand)
                     }
                 } else {
+                    // Unary function notation.
                     format!("{}({})", token.item.eval, operand)
                 }
-            },
+            }
             2 => {
                 let operand2 = to_operand(&eval_stack.pop().unwrap());
-                let operand1 = to_operand(&eval_stack.last().unwrap());
+                let operand1 = to_operand(eval_stack.last().unwrap());
                 eval = if token.item.skip_conv {
+                    // Binary notation. If we skip convertion.
                     format!("{}{}{}", operand1, token.item.eval, operand2)
                 } else {
+                    // Binary function notation.
                     format!("{}({},{})", token.item.eval, operand1, operand2)
                 }
-            },
+            }
             _ => {}
         }
+
+        // Change the top of the stack to the new compound operation (insead
+        // of creating new one).
         let top = eval_stack.last_mut().unwrap();
-        top.btn = Btn::Evaluate;
-        top.item.eval = eval;
+        top.btn = Btn::Evaluate; // Mark as compound operation.
+        top.item.eval = eval; // Set the newly generated evaluate string. Note that we don't
+                              // care about disp string as it is not used in the convertion
+                              // process.
         top.item.skip_conv = token.item.skip_conv;
         top.item.priority = token.item.priority;
         top.arity = token.arity;
 
         Ok(())
     }
-    
-    // Construct evaluation string for the math library.
+
+    // Construct final evaluation string from the tokens in postfix order.
     fn to_eval_str(&self, postfix: &Vec<&Token>) -> Result<String, String> {
         if postfix.is_empty() {
-            return Ok("".to_string());
+            // This should never happen, as it is already handled in `get_eval_str()`.
+            // But just to know, if something has gone wrong.
+            panic!("Postfix is empty.");
         }
 
+        // Holds the evaluated compound tokens.
         let mut eval_stack: Vec<Token> = Vec::new();
+
+        // Evaluate tokens. Push the non-operation tokens onto the stack
+        // and then convert them to operations based on the operation tokens.
+        // The resulting compound token will be left on the top.
         for token in postfix {
             match token.btn {
-                Btn::Num(_) | Btn::Comma | Btn::Const(_) | Btn::Random => eval_stack.push((*token).clone()),
-                Btn::UnaryOpt(_) | Btn::BinOpt(_) => { self.push_func(&mut eval_stack, token)? },
+                // Non-operation tokens. Just push them onto the stack.
+                Btn::Num(_) | Btn::Comma | Btn::Const(_) | Btn::Random => {
+                    eval_stack.push((*token).clone())
+                }
+                // Operation tokens. This will pop the non-operation tokens (number depends on `token.arity`)
+                // and create a compound token on the top of the stack.
+                Btn::UnaryOpt(_) | Btn::BinOpt(_) => self.push_func(&mut eval_stack, token)?,
+                // TODO: Handle ans
                 Btn::Ans => todo!(),
-                _ => unreachable!(),
+                // There should only be operation and non-operation tokens on the stack.
+                _ => panic!("Invalid token on the evaluate stack. {:?}", token),
             };
         }
 
-        Ok(eval_stack.pop().unwrap().item.eval.clone())
+        // Pop the resulting compound token and get its eval string.
+        // We can safely unwrap it, because the `postfix` is never empty.
+        Ok(eval_stack.pop().unwrap().item.eval)
     }
 
     // Convert tokens to postfix notation.
     fn to_postfix<'a>(&'a self, tokens: &'a Vec<Token>) -> Result<Vec<&'a Token>, String> {
-        // Shunting Yard algorithm.
+        // Shunting Yard algorithm. Based on pseudo-code
+        // from [wiki](https://en.wikipedia.org/wiki/Shunting_yard_algorithm).
+
+        // The token queue.
         let mut postfix: Vec<&Token> = Vec::new();
+        // The option stack for operation tokens.
         let mut opt_stack: Vec<&Token> = Vec::new();
 
         for token in tokens {
@@ -280,35 +359,39 @@ impl ExprManager {
                     while opt_stack.last().is_some() {
                         let top = opt_stack.last().unwrap();
 
-                        if top.btn == Btn::BracketLeft ||
-                            top.item.priority < token.item.priority ||
-                            (top.item.priority == token.item.priority && !token.item.left_asoc) {
-                                break;
+                        if top.btn == Btn::BracketLeft
+                            || top.item.priority < token.item.priority
+                            || (top.item.priority == token.item.priority && !token.item.left_asoc)
+                        {
+                            break;
                         }
 
                         postfix.push(opt_stack.pop().unwrap());
                     }
                     opt_stack.push(token);
-                },
+                }
                 Btn::UnaryOpt(_) | Btn::BracketLeft => opt_stack.push(token),
                 Btn::BracketRight => {
                     // Pop all operators until the left bracket from the operator stack.
-                    while opt_stack.last().is_some() && opt_stack.last().unwrap().btn != Btn::BracketLeft {
+                    while opt_stack.last().is_some()
+                        && opt_stack.last().unwrap().btn != Btn::BracketLeft
+                    {
                         postfix.push(opt_stack.pop().unwrap());
                     }
                     // Check if left bracket was found.
-                    if opt_stack.last().is_none() || opt_stack.last().unwrap().btn != Btn::BracketLeft {
+                    if opt_stack.last().is_none()
+                        || opt_stack.last().unwrap().btn != Btn::BracketLeft
+                    {
                         return Err("Failed to match left parenthesis.".to_string());
                     }
                     // Pop the left bracket.
                     opt_stack.pop();
                     // If there is unary operator before the left bracket, then pop it to the
                     // postfix queue.
-                    match opt_stack.last() {
-                        Some(token) => if let Btn::UnaryOpt(_) = token.btn {
+                    if let Some(token) = opt_stack.last() {
+                        if let Btn::UnaryOpt(_) = token.btn {
                             postfix.push(opt_stack.pop().unwrap());
-                        },
-                        None => {}
+                        }
                     }
                 }
                 _ => return Err(format!("Invalid token button {:?}", token.btn)),
@@ -332,70 +415,92 @@ impl ExprManager {
                 None => continue,
             };
 
-            // Check for implicit multiplication sign
+            // Check for implicit multiplication sign. And add it if found.
+            // We need to explicitly handle unary operations (for now only Opt::Fact),
+            // that are on the right side of the operand.
             match btn {
-                Btn::Num(_) => if let Some(tok) = tokens.last() {
-                    if let Btn::UnaryOpt(Opt::Fact) = tok.btn {
-                        tokens.push(Token::new(&Btn::BinOpt(Opt::Mul), Opt::Mul.to_expr().unwrap(), Some(2)))
+                // Case: "<righ unary><number>" --> "5!2" ~ "5!*2"
+                Btn::Num(_) => {
+                    if let Some(tok) = tokens.last() {
+                        if let Btn::UnaryOpt(Opt::Fact) = tok.btn {
+                            tokens.push(Token::new(
+                                &Btn::BinOpt(Opt::Mul),
+                                Opt::Mul.to_expr().unwrap(),
+                                Some(2),
+                            ))
+                        }
                     }
                 }
-                Btn::UnaryOpt(Opt::Fact) => {},
+                // Ignore right sided unary operations.
+                Btn::UnaryOpt(Opt::Fact) => {}
+                // Case: "<num|const|right unary><left unary|const|'('>" --> "5!sqrt3" ~ "5!*sqrt3"
                 Btn::UnaryOpt(_) | Btn::Const(_) | Btn::BracketLeft => {
                     if let Some(tok) = tokens.last() {
                         match tok.btn {
-                            Btn::Num(_) | Btn::Const(_) | Btn::UnaryOpt(Opt::Fact) => tokens.push(Token::new(&Btn::BinOpt(Opt::Mul), Opt::Mul.to_expr().unwrap(), Some(2))),
+                            Btn::Num(_) | Btn::Const(_) | Btn::UnaryOpt(Opt::Fact) => {
+                                tokens.push(Token::new(
+                                    &Btn::BinOpt(Opt::Mul),
+                                    Opt::Mul.to_expr().unwrap(),
+                                    Some(2),
+                                ))
+                            }
                             _ => {}
                         }
                     };
-                },
+                }
                 _ => {}
             }
 
             match btn {
+                // Tokenize numbers. Group numbers next to each other into single token.
                 Btn::Num(num) => {
-                    // Group numbers to tokens.
                     match tokens.last_mut() {
                         Some(tok) => match tok.btn {
                             // If the previous token is number or comma, then we merge them together.
                             Btn::Num(_) | Btn::Comma => tok.item.eval += &num.to_string(),
                             // Previous number is not a number, so create new token for this one.
                             _ => tokens.push(Token::new(btn, btn_expr, None)),
-                        }
+                        },
                         None => tokens.push(Token::new(btn, btn_expr, Some(0))),
                     }
                 }
+                // Tokenize comma. If next to number, then group it into single token.
                 Btn::Comma => {
-                    // Group numbers to tokens.
                     match tokens.last_mut() {
                         Some(tok) => match tok.btn {
                             // If the previous token is number or comma, then we merge them together.
                             Btn::Num(_) | Btn::Comma => tok.item.eval += &btn_expr.eval,
                             // Previous number is not a number, so create new token for this one.
                             _ => tokens.push(Token::new(btn, btn_expr, None)),
-                        }
+                        },
                         None => tokens.push(Token::new(btn, btn_expr, Some(0))),
                     }
                 }
+                // Tokenize binary operation.
                 Btn::BinOpt(opt) => {
                     match opt {
-                        // Check for arity. If the previous token is operator or left bracket
-                        // or this is the first token, then this is unary operation.
+                        // Check for arity of '+' and '-' operators. These could actually
+                        // be unary, based on the previous token.
                         Opt::Add | Opt::Sub => {
                             let arity = match tokens.last() {
                                 Some(tok) => match tok.btn {
-                                    Btn::BinOpt(o) | Btn::UnaryOpt(o) => {
-                                        if o != Opt::Fact { 1 } else { 2 }
-                                    },
+                                    // Case: "1*-3"
+                                    Btn::BinOpt(_) => 1,
+                                    // If previous token is right-sided unary operation,
+                                    // then this is binary, as it has bigger priority.
+                                    // Case: "sin 5!-3"
+                                    Btn::UnaryOpt(Opt::Fact) => 2,
+                                    // Case: "2*(-3)"
                                     Btn::BracketLeft => 1,
-                                    _ => 2
+                                    _ => 2,
                                 },
-                                None => 1
+                                None => 1,
                             };
                             tokens.push(Token::new(btn, btn_expr, Some(arity)));
-                        },
+                        }
                         _ => tokens.push(Token::new(btn, btn_expr, Some(2))),
                     };
-                },
+                }
                 Btn::UnaryOpt(_) => tokens.push(Token::new(btn, btn_expr, Some(1))),
                 _ => tokens.push(Token::new(btn, btn_expr, None)),
             };
@@ -423,10 +528,12 @@ impl Token {
         // during the tokenization process. When they are
         // unary, we give them the unary priority.
         if arity.is_some() && arity.unwrap() == 1 {
-            item.priority = 4;
+            item.priority = 3;
         }
-        Self { btn: btn.to_owned(), item, arity: arity.unwrap_or(0) }
+        Self {
+            btn: btn.to_owned(),
+            item,
+            arity: arity.unwrap_or(0),
+        }
     }
 }
-
-
