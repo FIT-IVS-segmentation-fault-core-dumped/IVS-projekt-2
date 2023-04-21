@@ -28,9 +28,6 @@ pub enum Opt {
     /// Reprezents `root(3, a)` operation.
     Root3,
     Abs, Comb, Fact, Mod,
-    /// Operation, which generates random number
-    /// on each evaluation.
-    Random
 }
 
 /// Used to map button presses to functionality.
@@ -66,6 +63,9 @@ pub enum PressedButton {
     Comma,
     /// Last result.
     Ans,
+    /// Operation, which generates random number
+    /// on each evaluation.
+    Random
 }
 
 /// Color theme of the app.
