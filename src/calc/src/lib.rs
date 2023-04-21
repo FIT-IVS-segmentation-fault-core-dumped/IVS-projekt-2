@@ -65,7 +65,7 @@ pub enum PressedButton {
     Ans,
     /// Operation, which generates random number
     /// on each evaluation.
-    Random
+    Random,
 }
 
 /// Color theme of the app.
@@ -246,12 +246,12 @@ impl CalcState {
                 // Compute result from evaluate string
                 let eval_str = match self.expr_man.get_eval_str() {
                     Ok(str) => str,
-                    Err(msg) => { eprintln!("error: {}", msg); return; }
+                    Err(msg) => {
+                        eprintln!("error: {}", msg);
+                        return;
+                    }
                 };
-                let result = self
-                    .calc
-                    .borrow_mut()
-                    .evaluate(&eval_str);
+                let result = self.calc.borrow_mut().evaluate(&eval_str);
 
                 // Set resulting variable according to the resulting value.
                 (self.result, self.result_is_err) = match result {
@@ -368,9 +368,6 @@ impl CalcState {
 
     /// Check if the constant is already created
     pub fn is_new_constant(&self, key: String) -> bool {
-        if self.constants.keys.contains(&key) || key == "e" || key == "pi" {
-            return false;
-        }
-        return true;
+        !(self.constants.keys.contains(&key) || key == "e" || key == "pi")
     }
 }

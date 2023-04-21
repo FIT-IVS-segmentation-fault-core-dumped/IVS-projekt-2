@@ -2,7 +2,7 @@
 
 use crate::Opt;
 
-use super::{ExprManager, Btn, ToExpr};
+use super::{Btn, ExprManager, ToExpr};
 
 // Wrapper for testing the get_eval_str() method.
 fn convert(btn_stack: Vec<Btn>) -> String {
@@ -49,14 +49,14 @@ fn to_opt_seq(str: &str, rep: Vec<&Opt>) -> Vec<Btn> {
             '@' => {
                 n_rep += 1;
                 Btn::BinOpt((*rep.get(n_rep - 1).unwrap()).to_owned())
-            },
+            }
             '&' => {
                 n_rep += 1;
                 Btn::UnaryOpt((*rep.get(n_rep - 1).unwrap()).to_owned())
-            },
+            }
             '$' => {
                 expect_const = true;
-                continue
+                continue;
             }
             _ => panic!("Invalid character '{}'", c),
         });
@@ -95,13 +95,19 @@ fn bin_opt_template(display_opt: &Opt, eval_opt: &Opt) {
 
     // convert("3root8*4root16") == "root(3,8)*root(4,16)"
     assert_eq!(
-        convert(to_opt_seq("3@8*4@16", Vec::from([display_opt, display_opt]))),
+        convert(to_opt_seq(
+            "3@8*4@16",
+            Vec::from([display_opt, display_opt])
+        )),
         format!("{}(3,8)*{}(4,16)", eval, eval)
     );
 
     // convert("3root(4root16)") == "root(3,root(4,16))"
     assert_eq!(
-        convert(to_opt_seq("3@(4@16)", Vec::from([display_opt, display_opt]))),
+        convert(to_opt_seq(
+            "3@(4@16)",
+            Vec::from([display_opt, display_opt])
+        )),
         format!("{}(3,{}(4,16))", eval, eval)
     );
 }
@@ -202,24 +208,36 @@ fn convert_fact() {
 fn convert_pi() {
     assert_eq!(convert(to_opt_seq("$pi$", Vec::new())), "pi()");
     assert_eq!(convert(to_opt_seq("4-$pi$-4", Vec::new())), "4-pi()-4");
-    assert_eq!(convert(to_opt_seq("$pi$@$pi$", Vec::from([&Opt::Root]))), "root(pi(),pi())");
+    assert_eq!(
+        convert(to_opt_seq("$pi$@$pi$", Vec::from([&Opt::Root]))),
+        "root(pi(),pi())"
+    );
 }
 
 #[test]
 fn convert_e() {
     assert_eq!(convert(to_opt_seq("$e$", Vec::new())), "e()");
     assert_eq!(convert(to_opt_seq("4-$e$-4", Vec::new())), "4-e()-4");
-    assert_eq!(convert(to_opt_seq("$e$@$e$", Vec::from([&Opt::Root]))), "root(e(),e())");
+    assert_eq!(
+        convert(to_opt_seq("$e$@$e$", Vec::from([&Opt::Root]))),
+        "root(e(),e())"
+    );
 }
 
 #[test]
 fn convert_expression() {
     assert_eq!(
-        convert(to_opt_seq("&4&+2@(&0.707)", Vec::from([&Opt::Sqrt, &Opt::Fact, &Opt::Root, &Opt::Cos]))),
+        convert(to_opt_seq(
+            "&4&+2@(&0.707)",
+            Vec::from([&Opt::Sqrt, &Opt::Fact, &Opt::Root, &Opt::Cos])
+        )),
         "sqrt(4!)+root(2,cos(0.707))"
     );
-    assert_eq!( 
-        convert(to_opt_seq("2@($e$+5@3)", Vec::from([&Opt::Pow, &Opt::Comb]))),
+    assert_eq!(
+        convert(to_opt_seq(
+            "2@($e$+5@3)",
+            Vec::from([&Opt::Pow, &Opt::Comb])
+        )),
         "2^(e()+comb(5,3))"
     );
 }
