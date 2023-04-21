@@ -6,13 +6,21 @@ menu:
     help: Help
 
 theme: Theme
-dark: Dark
-light: Light
-system: System
+themes:
+    dark: Dark
+    light: Light
+    system: System
 
 language: Language
-czech: Czech
-english: English
-japanese: Japanese
-slovak: Slovak
-vietnamese: Vietnamese
+
+context_menu:
+    remove: Remove
+
+constants:
+    name: name
+    value: value
+
+errors:
+    string_to_int_error: Failed to parse value into a number
+    invalid_constant_name: Invalid constant name
+    constant_already_exists: Constant already exists
