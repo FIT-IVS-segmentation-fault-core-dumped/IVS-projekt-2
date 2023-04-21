@@ -18,10 +18,13 @@ use rust_i18n::t;
 use std::rc::Rc;
 use std::time::{Duration, Instant};
 
+const SHOW_ERROR: Selector<String> = Selector::new("error");
+const ERROR_TEXT_SIZE: f64 = 14.0;
+const ERROR_BACKGROUND_COLOR: Color = Color::rgba8(240, 20, 20, 50);
+
 const BUTTON_PADDING: f64 = 1.0;
 const BUTTON_BORDER_RADIUS: f64 = 3.0;
 const BUTTON_TEXT_SIZE: f64 = 16.0;
-
 const ADD_CONST_BUTTON_TEXT_SIZE: f64 = 22.0;
 
 const TAB_BOTTOM_MARGIN: f64 = 5.0;
@@ -398,58 +401,138 @@ fn make_add_const_field() -> impl Widget<CalcState> {
     flex
 }
 
+// Represents states that can be assumed by `ErrorMessageController`
+enum ErrorMessageState {
+    Showing(WindowId), // Showing for a ceratain period of time
+    Fresh,             // Waiting for `SHOW_ERROR` command
+}
+
+// Controller responsible for displaying error messages
+struct ErrorMessageController {
+    state: ErrorMessageState,
+    destruction_time: TimerToken,
+}
+
+// Constructor for `ErrorMessageController`
+impl ErrorMessageController {
+    pub fn new() -> Self {
+        ErrorMessageController {
+            state: ErrorMessageState::Fresh,
+            destruction_time: TimerToken::next(),
+        }
+    }
+}
+
+impl<T, W: Widget<T>> Controller<T, W> for ErrorMessageController {
+    fn event(&mut self, child: &mut W, ctx: &mut EventCtx, event: &Event, data: &mut T, env: &Env) {
+        match &self.state {
+            // Waiting `self.time` seconds, then close notification
+            ErrorMessageState::Showing(win_id) => {
+                if let Event::Timer(tok) = event {
+                    if tok == &self.destruction_time {
+                        ctx.submit_command(druid::commands::CLOSE_WINDOW.to(*win_id));
+                        self.state = ErrorMessageState::Fresh;
+                        ctx.set_handled();
+                    }
+                }
+            }
+
+            // Waiting for error command
+            ErrorMessageState::Fresh => {
+                if let Event::Command(cmd) = event {
+                    if cmd.is(SHOW_ERROR) {
+                        let error_msg = cmd.get_unchecked(SHOW_ERROR).to_string();
+                        let label_size =
+                            std::cmp::min(300, error_msg.len() * (ERROR_TEXT_SIZE as usize) / 2);
+
+                        let window_pos = Point::new(
+                            ctx.window().get_size().width / 2. - label_size as f64 / 2.,
+                            ctx.window().get_size().height * 0.8,
+                        );
+
+                        // Error message
+                        let error_text = Label::<()>::new(error_msg.to_string())
+                            .with_text_alignment(druid::TextAlignment::Center)
+                            .with_text_size(ERROR_TEXT_SIZE)
+                            .with_line_break_mode(druid::widget::LineBreaking::WordWrap)
+                            .background(ERROR_BACKGROUND_COLOR)
+                            .fix_width(label_size as f64);
+
+                        // Error notification
+                        let win_id: WindowId = ctx.new_sub_window(
+                            WindowConfig::default()
+                                .show_titlebar(false)
+                                .resizable(false)
+                                .window_size_policy(WindowSizePolicy::Content)
+                                .set_level(WindowLevel::Tooltip(ctx.window().clone()))
+                                .set_position(window_pos)
+                                .transparent(true),
+                            error_text,
+                            (),
+                            env.clone(),
+                        );
+                        self.state = ErrorMessageState::Showing(win_id);
+                        self.destruction_time = ctx.request_timer(Duration::from_secs(3));
+                    }
+                }
+            }
+        }
+        child.event(ctx, event, data, env)
+    }
+}
+
+// Button that add constants to the application
 fn make_add_const_btn() -> impl Widget<CalcState> {
     Label::new("+")
         .with_text_size(ADD_CONST_BUTTON_TEXT_SIZE)
         .padding(BUTTON_PADDING)
-        .background(Painter::new(|ctx, data: &CalcState, env| {
-            let width = ctx.size().width;
-            let bounds = Circle::new(
-                ((width / 2. - 1.), ctx.size().height / 2. + 2.),
-                width / 2. - 1.,
-            );
-            let background_key = Key::<Color>::new(Box::leak(
-                format!(
-                    "calc.{:?}.{}.background",
-                    data.get_theme(true),
-                    BtnType::Function
-                )
-                .into_boxed_str(),
-            ));
-            if ctx.is_hot() {
-                ctx.fill(bounds, &env.get(background_key));
-            }
-        }))
-        .on_click(|_ctx, data: &mut CalcState, _env| {
-            let consts = data.get_constants();
-            let value: f64;
-            let key: String;
+        .controller(ErrorMessageController::new())
+        .background(get_add_btn_painter())
+        .on_click(|ctx, data: &mut CalcState, _env| handle_add_contant(ctx, data))
+}
 
-            match validate_value(&consts.value_str) {
-                Ok(val) => value = val,
-                Err(e) => {
-                    eprintln!("{}", e);
-                    return;
-                }
-            }
+// Add constant into the application and to the math library. If the constant
+// name or value is not valid, an error message is displayed
+fn handle_add_contant(ctx: &mut EventCtx, data: &mut CalcState) {
+    let consts = data.get_constants();
 
-            match validate_key(&consts.key_str) {
-                Ok(k) => key = k,
-                Err(e) => {
-                    eprintln!("{}", e);
-                    return;
-                }
-            }
+    // Ignore if one of the fields is empty
+    if consts.key_str.is_empty() || consts.value_str.is_empty() {
+        return;
+    }
 
-            let is_added = data.add_constant(key, value);
-            if is_added {
-                data.constants.key_str.clear();
-                data.constants.value_str.clear();
-                _ctx.request_focus();
-            } else {
-                eprintln!("Constant already exist");
-            }
-        })
+    // Check if the string in the value field is numeric
+    let value = match validate_value(&consts.value_str) {
+        Ok(val) => val,
+        Err(e) => {
+            ctx.submit_command(SHOW_ERROR.with(e));
+            return;
+        }
+    };
+
+    // Check if the string in key field starts with aphabetic character
+    let key = match validate_key(&consts.key_str) {
+        Ok(k) => k,
+        Err(e) => {
+            ctx.submit_command(SHOW_ERROR.with(e));
+            return;
+        }
+    };
+
+    // Check if the constant already exists in the app data
+    if !data.is_new_constant(key.clone()) {
+        ctx.submit_command(SHOW_ERROR.with(t!("errors.constant_already_exists")));
+        return;
+    }
+
+    // Add a constant to the appliation if name does not conflict with the function names (sin, cos, log...)
+    if data.add_constant(key, value) {
+        data.constants.key_str.clear();
+        data.constants.value_str.clear();
+        ctx.request_focus();
+    } else {
+        ctx.submit_command(SHOW_ERROR.with(t!("errors.invalid_constant_name")));
+    }
 }
 
 // Check if `value` is a number
@@ -783,6 +866,34 @@ fn get_button_painter(button_type: BtnType) -> Painter<CalcState> {
             if ctx.is_active() {
                 ctx.fill(bounds, &env.get(&active_key));
             }
+        }
+    })
+}
+
+// Create a circular background painter
+fn get_add_btn_painter() -> Painter<CalcState> {
+    Painter::new(|ctx, data: &CalcState, env| {
+        let width = ctx.size().width;
+
+        // Make circular background
+        let bounds = Circle::new(
+            ((width / 2. - 1.), ctx.size().height / 2. + 2.),
+            width / 2. - 1.,
+        );
+
+        // Button background color according to the set theme
+        let background_key = Key::<Color>::new(Box::leak(
+            format!(
+                "calc.{:?}.{}.background",
+                data.get_theme(true),
+                BtnType::Function
+            )
+            .into_boxed_str(),
+        ));
+
+        // Highlight when hovering
+        if ctx.is_hot() {
+            ctx.fill(bounds, &env.get(background_key));
         }
     })
 }
