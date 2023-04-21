@@ -76,8 +76,8 @@ impl ToExpr for PressedButton {
     }
 }
 
-// Holds strings, which are used to convert buttons
-// to display/evaluate strings.
+/// Holds strings, which are used to convert buttons
+/// to display/evaluate strings.
 #[derive(Debug, Clone)]
 struct ExprItem {
     disp: String,
@@ -86,15 +86,15 @@ struct ExprItem {
     // Below properties are used to correctly convert to
     // evaluate string.
 
-    // Priority of this function used in `ExprManager::to_postfix()` method.
+    /// Priority of this function used in `ExprManager::to_postfix()` method.
     priority: u32,
-    // Flags if given button is left associative or not.
-    // If the button is not an operation, then this property
-    // is ignored.
+    /// Flags if given button is left associative or not.
+    /// If the button is not an operation, then this property
+    /// is ignored.
     left_asoc: bool,
-    // Skip convertion to function notation, when converting,
-    // to evaluation string. Used in `ExprManager::to_eval_str()` method.
-    // Ignored for non-operation buttons.
+    /// Skip convertion to function notation, when converting,
+    /// to evaluation string. Used in `ExprManager::to_eval_str()` method.
+    /// Ignored for non-operation buttons.
     skip_conv: bool,
 }
 
@@ -120,11 +120,11 @@ impl ExprItem {
 /// strings for displaying and evaluating.
 #[derive(Debug, Clone)]
 pub struct ExprManager {
-    // Cursor position in the string.
+    /// Cursor position in the string.
     cursor_pos: u32,
-    // Buttons, which compose the resulting expressoin string.
+    /// Buttons, which compose the resulting expressoin string.
     btn_stack: Vec<Btn>,
-    // Used for invalidating the expression manager (for druid repaint).
+    /// Used for invalidating the expression manager (for druid repaint).
     dirty_flipper: bool,
 }
 
@@ -178,7 +178,7 @@ impl ExprManager {
         self.dirty_flipper = !self.dirty_flipper;
     }
 
-    // Move cursor to the left or right in the evaluate expression string.
+    /// Move cursor to the left or right in the evaluate expression string.
     fn move_cursor(&mut self, _left: bool) {
         todo!()
     }
@@ -222,11 +222,11 @@ impl ExprManager {
         self.to_eval_str(&postfix)
     }
 
-    // Pop the operands off the stack, create resulting evaluate string,
-    // and push onto the stack.
-    //
-    // The final pushed Token has `Token::btn` set to `PressedButton::Evaluate`
-    // in order to differenciate between compound tokens and non-operation tokens.
+    /// Pop the operands off the stack, create resulting evaluate string,
+    /// and push onto the stack.
+    ///
+    /// The final pushed Token has `Token::btn` set to `PressedButton::Evaluate`
+    /// in order to differenciate between compound tokens and non-operation tokens.
     fn push_func(&self, eval_stack: &mut Vec<Token>, token: &Token) -> Result<(), String> {
         // Check if there are needed oprands on the stack for given function.
         let stack_size = eval_stack.len();
@@ -257,7 +257,7 @@ impl ExprManager {
 
         // Evaluate string, that will be pushed with the new Token onto the stack.
         let mut eval = String::new();
-        eprintln!("push_func(): {:?}", &token);
+
         // Based on the arity, take given number of operands and convert them to
         // function or binary notation. Note that 1 operand is left on the stack,
         // so we can edit its contents instead of pushing new token.
@@ -303,9 +303,9 @@ impl ExprManager {
         top.arity = token.arity;
 
         Ok(())
-    }
+    }   // push_func()
 
-    // Construct final evaluation string from the tokens in postfix order.
+    /// Construct final evaluation string from the tokens in postfix order.
     fn to_eval_str(&self, postfix: &Vec<&Token>) -> Result<String, String> {
         if postfix.is_empty() {
             // This should never happen, as it is already handled in `get_eval_str()`.
@@ -340,7 +340,7 @@ impl ExprManager {
         Ok(eval_stack.pop().unwrap().item.eval)
     }
 
-    // Convert tokens to postfix notation.
+    /// Convert tokens to postfix notation.
     fn to_postfix<'a>(&'a self, tokens: &'a Vec<Token>) -> Result<Vec<&'a Token>, String> {
         // Shunting Yard algorithm. Based on pseudo-code
         // from [wiki](https://en.wikipedia.org/wiki/Shunting_yard_algorithm).
@@ -404,7 +404,7 @@ impl ExprManager {
         Ok(postfix)
     }
 
-    // Tokenize the `btn_stack`.
+    /// Tokenize the `btn_stack`.
     fn tokenize(&self) -> Vec<Token> {
         let mut tokens: Vec<Token> = Vec::new();
         for btn in &self.btn_stack {
@@ -505,18 +505,20 @@ impl ExprManager {
         } // for btn in tokens
         tokens
     } // tokenize()
-}
+} // ExprManager
 
-// Reprezents a single token in expression string.
+/// Reprezents a single token in expression string.
 #[derive(Clone, Debug)]
 struct Token {
-    // When the btn is number, then a single token,
-    // could be composed of multiple buttons (such
-    // as numbers). In this case we only store the first
-    // button and append to ItemExpr::expr string
-    // to group numbers together.
+    /// When the btn is number, then a single token,
+    /// could be composed of multiple buttons (such
+    /// as numbers). In this case we only store the first
+    /// button and append to ItemExpr::expr string
+    /// to group numbers together.
     btn: Btn,
+    /// Item associated with `btn`
     item: ExprItem,
+    /// Arity of the `btn` operation.
     arity: u32,
 }
 
@@ -535,3 +537,4 @@ impl Token {
         }
     }
 }
+
