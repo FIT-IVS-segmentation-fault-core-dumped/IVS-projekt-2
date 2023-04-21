@@ -9,8 +9,8 @@ use druid::kurbo::Circle;
 use druid::widget::{Controller, Either, EnvScope, Flex, Padding, Painter, TextBox, ViewSwitcher};
 use druid::{
     theme, Color, Env, Event, EventCtx, Insets, Key, LensExt, LifeCycle, LifeCycleCtx, Menu,
-    MenuItem, MouseButton, Point, Rect, RenderContext, RoundedRectRadii, Size, TimerToken,
-    UnitPoint, WidgetExt, WindowConfig, WindowId, WindowLevel, WindowSizePolicy,
+    MenuItem, MouseButton, Point, Rect, RenderContext, RoundedRectRadii, Selector, Size,
+    TimerToken, UnitPoint, WidgetExt, WindowConfig, WindowId, WindowLevel, WindowSizePolicy,
 };
 use druid::{widget::Label, Widget};
 use math::number::Radix;
@@ -32,18 +32,29 @@ const TAB_ACTIVE_TEXT_COLOR_DARK: Color = Color::grey8(230);
 const TAB_ACTIVE_TEXT_COLOR_LIGHT: Color = Color::grey8(10);
 const TAB_ACTIVE_COLOR: &Color = &Color::rgb8(189, 197, 242);
 const TAB_HOVER_COLOR: &Color = &Color::grey8(120);
-
 const TAB_TEXT_SIZE: f64 = 14.0;
 
 type Btn = PressedButton;
 
-#[derive(Debug)]
+/// Encapsulation of the keyboard user interface
+impl ButtonsUI {
+    /// Render all buttons used to control the display
+    pub fn build_ui() -> impl Widget<CalcState> {
+        Flex::row()
+            .cross_axis_alignment(druid::widget::CrossAxisAlignment::End)
+            .with_flex_child(make_func_part(), 1.)
+            .with_flex_child(make_num_part(), 1.)
+    }
+}
+
+// Button types that determines color of different buttons
 enum BtnType {
     Digit,
     Operation,
     Function,
 }
 
+// String representation of `BtnType`
 impl fmt::Display for BtnType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
@@ -54,16 +65,7 @@ impl fmt::Display for BtnType {
     }
 }
 
-impl ButtonsUI {
-    pub fn build_ui() -> impl Widget<CalcState> {
-        Flex::row()
-            .cross_axis_alignment(druid::widget::CrossAxisAlignment::End)
-            .with_flex_child(make_func_part(), 1.)
-            .with_flex_child(make_num_part(), 1.)
-    }
-}
-
-// Controller that displays a context menu when right-clicked. `index` represents a particular
+// Controller that displays a context menu when right-clicked. `index` represents position of a particular
 // constant in the vector of the user defined constants.
 struct ShowContextMenu {
     index: usize,
@@ -81,7 +83,7 @@ impl<T, W: Widget<T>> Controller<T, W> for ShowContextMenu {
             if mouse_event.button == MouseButton::Right {
                 let index = Rc::new(self.index);
                 let menu: Menu<CalcState> =
-                    Menu::empty().entry(MenuItem::new(t!("remove")).on_activate(
+                    Menu::empty().entry(MenuItem::new(t!("context_menu.remove")).on_activate(
                         move |_ctx, data: &mut CalcState, _env| {
                             data.remove_constant(*index);
                         },
@@ -93,6 +95,7 @@ impl<T, W: Widget<T>> Controller<T, W> for ShowContextMenu {
     }
 }
 
+// Widget that makes layout from function tabs and one of the function keyboard (Main, Func, Const)
 fn make_func_part() -> impl Widget<CalcState> {
     let tabs = Flex::row()
         .with_flex_child(function_tab(FunctionTabs::Main), 1.)
@@ -114,7 +117,7 @@ fn make_func_part() -> impl Widget<CalcState> {
         .with_flex_child(buttons, 5.)
 }
 
-// Make constants buttons with field for adding new constants
+// Make constants buttons with a field for adding new constants
 fn make_const_btns() -> impl Widget<CalcState> {
     Flex::column()
         .with_flex_child(make_const_grid(), 4.)
@@ -128,7 +131,7 @@ fn make_const_grid() -> impl Widget<CalcState> {
         move |selector, _data, _env| {
             let mut flex = Flex::column();
 
-            // Row that is always drown with unremovable buttons for constants 'e' and 'π'.
+            // Row that is always drawn with unremovable buttons for constants 'e' and 'π'.
             let default_row = Flex::row()
                 .with_flex_child(
                     generic_button("e", Btn::Const("e".to_owned()), BtnType::Function)
@@ -136,7 +139,7 @@ fn make_const_grid() -> impl Widget<CalcState> {
                     1.,
                 )
                 .with_flex_child(
-                    generic_button("π", Btn::Const("π".to_owned()), BtnType::Function)
+                    generic_button("π", Btn::Const("pi".to_owned()), BtnType::Function)
                         .controller(TooltipController::new("3.14".to_string())),
                     1.,
                 )
@@ -323,7 +326,7 @@ fn make_const_button(index: usize) -> impl Widget<CalcState> {
     )
 }
 
-// Prevents text from exceeding `max_length` characters
+// Prevents text in `TextBox` from exceeding limit `max_length` characters
 struct LengthController {
     max_length: usize,
 }
@@ -333,6 +336,7 @@ impl LengthController {
         Self { max_length }
     }
 }
+
 impl<W: Widget<CalcState>> Controller<CalcState, W> for LengthController {
     fn event(
         &mut self,
@@ -367,11 +371,12 @@ impl<W: Widget<CalcState>> Controller<CalcState, W> for LengthController {
     }
 }
 
-// Widget that enables user to add own constants to the app
+// Group of widgets that enable user to add own constants to the application
 fn make_add_const_field() -> impl Widget<CalcState> {
     let mut flex = Flex::row();
     let key_field = TextBox::new()
-        .with_placeholder(t!("key"))
+        .with_text_alignment(druid::TextAlignment::Center)
+        .with_placeholder(t!("constants.name"))
         .padding(5.)
         .expand_height()
         .align_vertical(UnitPoint::CENTER)
@@ -379,14 +384,14 @@ fn make_add_const_field() -> impl Widget<CalcState> {
         .controller(LengthController::new(3));
 
     let value_field = TextBox::new()
-        .with_placeholder(t!("value"))
+        .with_placeholder(t!("constants.value"))
         .expand_height()
         .padding(5.)
         .expand_width()
         .align_vertical(UnitPoint::CENTER)
         .lens(CalcState::constants.then(Constants::value_str));
 
-    flex.add_flex_child(key_field, 1.);
+    flex.add_flex_child(key_field, 1.5);
     flex.add_child(Label::new("="));
     flex.add_flex_child(value_field, 3.);
     flex.add_child(make_add_const_btn());
@@ -451,7 +456,7 @@ fn make_add_const_btn() -> impl Widget<CalcState> {
 fn validate_value(value: &String) -> Result<f64, String> {
     match value.parse() {
         Ok(val) => Ok(val),
-        Err(_) => Err(format!("Failed to parse {} into a number", value)),
+        Err(_) => Err(t!("errors.string_to_int_error")),
     }
 }
 
@@ -465,39 +470,28 @@ fn validate_key(key: &String) -> Result<String, String> {
             )),
         }
     } else {
-        Err(format!("Variable name must be provided"))
+        unreachable!()
     }
 }
 
+// Make a layout with radix tabs, numeric and operation buttons
 fn make_num_part() -> impl Widget<CalcState> {
-    let tabs = Flex::row()
-        .with_flex_child(generic_button("←", Btn::MoveLeft, BtnType::Operation), 1.)
-        .with_flex_child(generic_button("→", Btn::MoveRight, BtnType::Operation), 1.)
-        .with_flex_child(generic_button("C", Btn::Clear, BtnType::Operation), 1.)
-        .with_flex_child(generic_button("⌫", Btn::Delete, BtnType::Operation), 1.);
+    let mut top_row = Flex::row();
+    operation_button(&mut top_row, "←", Btn::MoveLeft);
+    operation_button(&mut top_row, "→", Btn::MoveRight);
+    operation_button(&mut top_row, "C", Btn::Clear);
+    operation_button(&mut top_row, "⌫", Btn::Delete);
 
-    let operations = Flex::column()
-        .with_flex_child(
-            generic_button("÷", Btn::BinOpt(Opt::Div), BtnType::Operation),
-            1.,
-        )
-        .with_flex_child(
-            generic_button("⨯", Btn::BinOpt(Opt::Mul), BtnType::Operation),
-            1.,
-        )
-        .with_flex_child(
-            generic_button("+", Btn::BinOpt(Opt::Add), BtnType::Operation),
-            1.,
-        )
-        .with_flex_child(
-            generic_button("-", Btn::BinOpt(Opt::Sub), BtnType::Operation),
-            1.,
-        );
+    let mut operations = Flex::column();
+    operation_button(&mut operations, "÷", Btn::BinOpt(Opt::Div));
+    operation_button(&mut operations, "⨯", Btn::BinOpt(Opt::Mul));
+    operation_button(&mut operations, "+", Btn::BinOpt(Opt::Add));
+    operation_button(&mut operations, "-", Btn::BinOpt(Opt::Sub));
 
     Flex::column()
         .with_flex_child(make_radix_tabs(), 1.)
         .with_spacer(TAB_BOTTOM_MARGIN)
-        .with_flex_child(tabs, 1.)
+        .with_flex_child(top_row, 1.)
         .with_flex_child(
             Flex::row()
                 .with_flex_child(make_number_keyboard(), 3.)
@@ -506,6 +500,7 @@ fn make_num_part() -> impl Widget<CalcState> {
         )
 }
 
+// Create numeric decimal keyboard
 fn make_num_btns() -> impl Widget<CalcState> {
     let row_789 = Flex::row()
         .with_flex_child(
@@ -590,6 +585,7 @@ fn make_number_keyboard() -> impl Widget<CalcState> {
     )
 }
 
+// Buttons in the function tab - Main
 fn make_main_btns() -> impl Widget<CalcState> {
     let mut first_row = Flex::row();
     function_button(&mut first_row, "√", Btn::UnaryOpt(Opt::Sqrt));
@@ -624,6 +620,7 @@ fn make_main_btns() -> impl Widget<CalcState> {
         .with_flex_child(fifth_row, 1.)
 }
 
+// Buttons in the function tab - Func
 fn make_func_btns() -> impl Widget<CalcState> {
     let mut first_row = Flex::row();
     function_button(&mut first_row, "sin", Btn::UnaryOpt(Opt::Sin));
@@ -658,8 +655,14 @@ fn make_func_btns() -> impl Widget<CalcState> {
         .with_flex_child(fifth_row, 1.)
 }
 
+// Add fucntion button to the `flex` widget
 fn function_button(flex: &mut Flex<CalcState>, text: &str, button: Btn) {
     flex.add_flex_child(generic_button(text, button, BtnType::Function), 1.);
+}
+
+// Add operation button to the `flex` widget
+fn operation_button(flex: &mut Flex<CalcState>, text: &str, button: Btn) {
+    flex.add_flex_child(generic_button(text, button, BtnType::Operation), 1.);
 }
 
 // Generic button for numbers, functions and operations
@@ -683,6 +686,7 @@ fn make_radix_tabs() -> impl Widget<CalcState> {
         .with_flex_child(radix_tab(Radix::Bin), 1.)
 }
 
+// Represents tab for changing radix
 fn radix_tab(radix: Radix) -> impl Widget<CalcState> {
     EnvScope::new(
         |env, data| {
@@ -706,6 +710,7 @@ fn radix_tab(radix: Radix) -> impl Widget<CalcState> {
     )
 }
 
+// Tab that switchs between different function keyboards
 fn function_tab(text: FunctionTabs) -> impl Widget<CalcState> {
     EnvScope::new(
         |env, data| {
@@ -729,6 +734,7 @@ fn function_tab(text: FunctionTabs) -> impl Widget<CalcState> {
     )
 }
 
+// Create a tab background painter
 fn get_tab_painter() -> Painter<CalcState> {
     Painter::new(|ctx, _data: &CalcState, _env| {
         let size = ctx.size();
@@ -739,17 +745,15 @@ fn get_tab_painter() -> Painter<CalcState> {
         if ctx.is_disabled() {
             ctx.fill(bounds, TAB_ACTIVE_COLOR);
         } else {
-            // Outline when hovering
+            // Highlight when hovering
             if ctx.is_hot() {
-                ctx.fill(bounds, TAB_HOVER_COLOR);
-            }
-            if ctx.is_active() {
                 ctx.fill(bounds, TAB_HOVER_COLOR);
             }
         }
     })
 }
 
+// Create a button background painter
 fn get_button_painter(button_type: BtnType) -> Painter<CalcState> {
     Painter::new(move |ctx, data: &CalcState, env| {
         let bounds = ctx
@@ -771,7 +775,7 @@ fn get_button_painter(button_type: BtnType) -> Painter<CalcState> {
                 format!("calc.{:?}.{}.hover", theme, button_type).into_boxed_str(),
             ));
 
-            // Outline when hovering
+            // Highlight when hovering
             if ctx.is_hot() {
                 ctx.fill(bounds, &env.get(&hot_key));
             }
