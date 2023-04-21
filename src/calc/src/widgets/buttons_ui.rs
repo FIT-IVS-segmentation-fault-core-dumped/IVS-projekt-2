@@ -381,20 +381,20 @@ fn make_add_const_field() -> impl Widget<CalcState> {
         .with_text_alignment(druid::TextAlignment::Center)
         .with_placeholder(t!("constants.name"))
         .padding(5.)
-        .expand_height()
+        .center()
+        .fix_width(60.)
         .align_vertical(UnitPoint::CENTER)
         .lens(CalcState::constants.then(Constants::key_str))
         .controller(LengthController::new(3));
 
     let value_field = TextBox::new()
         .with_placeholder(t!("constants.value"))
-        .expand_height()
         .padding(5.)
         .expand_width()
         .align_vertical(UnitPoint::CENTER)
         .lens(CalcState::constants.then(Constants::value_str));
 
-    flex.add_flex_child(key_field, 1.5);
+    flex.add_child(key_field);
     flex.add_child(Label::new("="));
     flex.add_flex_child(value_field, 3.);
     flex.add_child(make_add_const_btn());
@@ -445,13 +445,19 @@ impl<T, W: Widget<T>> Controller<T, W> for ErrorMessageController {
                         let label_size =
                             std::cmp::min(300, error_msg.len() * (ERROR_TEXT_SIZE as usize) / 2);
 
+                        #[cfg(target_os = "linux")]
+                        let label_top_offset = 0.9;
+                        #[cfg(target_os = "windows")]
+                        let label_top_offset = 0.8;
+
                         let window_pos = Point::new(
                             ctx.window().get_size().width / 2. - label_size as f64 / 2.,
-                            ctx.window().get_size().height * 0.8,
+                            ctx.window().get_size().height * label_top_offset,
                         );
 
                         // Error message
                         let error_text = Label::<()>::new(error_msg.to_string())
+                            .with_text_color(*TAB_ACTIVE_COLOR)
                             .with_text_alignment(druid::TextAlignment::Center)
                             .with_text_size(ERROR_TEXT_SIZE)
                             .with_line_break_mode(druid::widget::LineBreaking::WordWrap)
@@ -462,11 +468,9 @@ impl<T, W: Widget<T>> Controller<T, W> for ErrorMessageController {
                         let win_id: WindowId = ctx.new_sub_window(
                             WindowConfig::default()
                                 .show_titlebar(false)
-                                .resizable(false)
                                 .window_size_policy(WindowSizePolicy::Content)
                                 .set_level(WindowLevel::Tooltip(ctx.window().clone()))
-                                .set_position(window_pos)
-                                .transparent(true),
+                                .set_position(window_pos),
                             error_text,
                             (),
                             env.clone(),
