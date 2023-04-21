@@ -244,10 +244,14 @@ impl CalcState {
         match button {
             PressedButton::Evaluate => {
                 // Compute result from evaluate string
+                let eval_str = match self.expr_man.get_eval_str() {
+                    Ok(str) => str,
+                    Err(msg) => { eprintln!("error: {}", msg); return; }
+                };
                 let result = self
                     .calc
                     .borrow_mut()
-                    .evaluate(&self.expr_man.get_eval_str());
+                    .evaluate(&eval_str);
 
                 // Set resulting variable according to the resulting value.
                 (self.result, self.result_is_err) = match result {
@@ -265,18 +269,6 @@ impl CalcState {
             // Relay other buttons to the expression manager.
             other => self.expr_man.process_button(other),
         };
-    }
-
-    /// Convert CalcState::inner_expr to *evaluate string*, which
-    /// can then be passed to the `math::evaluate` function.
-    pub fn get_eval_str(&self) -> String {
-        self.expr_man.get_eval_str()
-    }
-
-    /// Convert CalcState::inner_expr to *display string*, which will
-    /// be actually displayed on the calculator display.
-    pub fn get_display_str(&self) -> String {
-        self.expr_man.get_display_str()
     }
 
     /// Store CalcState::config on the disk using *confy* create.
