@@ -33,8 +33,8 @@ impl ToExpr for Opt {
             Self::Sqrt =>    ExprItem::new("√",         "sqrt",     3,      false,  false),
             Self::Root =>    ExprItem::new("ⁿ√",        "root",     2,      true,   false),
             Self::Root3 =>   ExprItem::new("³√",        "root",     3,      false,  false),  // FIXME: How am I gonna handle this?
-            Self::Pow =>     ExprItem::new("^",         "^",        3,      false,  true),
-            Self::Pow2 =>    ExprItem::new("²",         "^(2)",     3,      true,   true),
+            Self::Pow =>     ExprItem::new("^",         "^",        3,      true,   true),
+            Self::Pow2 =>    ExprItem::new("²",         "^2",       3,      true,   true),
             Self::Abs =>     ExprItem::new("abs ",      "abs",      3,      false,  false),
             Self::Comb =>    ExprItem::new("C",         "comb",     2,      true,   false),
             Self::Fact =>    ExprItem::new("!",         "!",        3,      true,   true),
@@ -257,19 +257,17 @@ impl ExprManager {
 
         // Evaluate string, that will be pushed with the new Token onto the stack.
         let mut eval = String::new();
-
+        eprintln!("push_func(): {:?}", &token);
         // Based on the arity, take given number of operands and convert them to
         // function or binary notation. Note that 1 operand is left on the stack,
         // so we can edit its contents instead of pushing new token.
         match token.arity {
             1 => {
                 let operand = to_operand(eval_stack.last().unwrap());
-                // We give factorial special treatment, as it is the only
-                // unary operator, that is on the right side.
                 eval = if token.item.skip_conv {
-                    if token.btn == Btn::UnaryOpt(Opt::Fact) {
+                    if let Btn::UnaryOpt(Opt::Fact | Opt::Pow2) = token.btn {
                         // Unary notation on the right side.
-                        format!("{}!", operand)
+                        format!("{}{}", operand, token.item.eval)
                     } else {
                         // Unary notation on the left side.
                         format!("{}{}", token.item.eval, operand)
@@ -422,7 +420,7 @@ impl ExprManager {
                 // Case: "<righ unary><number>" --> "5!2" ~ "5!*2"
                 Btn::Num(_) => {
                     if let Some(tok) = tokens.last() {
-                        if let Btn::UnaryOpt(Opt::Fact) = tok.btn {
+                        if let Btn::UnaryOpt(Opt::Fact | Opt::Pow2) = tok.btn {
                             tokens.push(Token::new(
                                 &Btn::BinOpt(Opt::Mul),
                                 Opt::Mul.to_expr().unwrap(),
@@ -432,12 +430,12 @@ impl ExprManager {
                     }
                 }
                 // Ignore right sided unary operations.
-                Btn::UnaryOpt(Opt::Fact) => {}
+                Btn::UnaryOpt(Opt::Fact | Opt::Pow2) => {}
                 // Case: "<num|const|right unary><left unary|const|'('>" --> "5!sqrt3" ~ "5!*sqrt3"
                 Btn::UnaryOpt(_) | Btn::Const(_) | Btn::BracketLeft => {
                     if let Some(tok) = tokens.last() {
                         match tok.btn {
-                            Btn::Num(_) | Btn::Const(_) | Btn::UnaryOpt(Opt::Fact) => {
+                            Btn::Num(_) | Btn::Const(_) | Btn::UnaryOpt(Opt::Fact | Opt::Pow2) => {
                                 tokens.push(Token::new(
                                     &Btn::BinOpt(Opt::Mul),
                                     Opt::Mul.to_expr().unwrap(),
@@ -489,7 +487,7 @@ impl ExprManager {
                                     // If previous token is right-sided unary operation,
                                     // then this is binary, as it has bigger priority.
                                     // Case: "sin 5!-3"
-                                    Btn::UnaryOpt(Opt::Fact) => 2,
+                                    Btn::UnaryOpt(Opt::Fact | Opt::Pow2) => 2,
                                     // Case: "2*(-3)"
                                     Btn::BracketLeft => 1,
                                     _ => 2,
@@ -504,9 +502,9 @@ impl ExprManager {
                 Btn::UnaryOpt(_) => tokens.push(Token::new(btn, btn_expr, Some(1))),
                 _ => tokens.push(Token::new(btn, btn_expr, None)),
             };
-        }
+        } // for btn in tokens
         tokens
-    }
+    } // tokenize()
 }
 
 // Reprezents a single token in expression string.
