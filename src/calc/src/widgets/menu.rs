@@ -43,7 +43,8 @@ fn make_menu(_window: Option<WindowId>, _data: &CalcState, _env: &Env) -> Menu<C
 }
 
 fn make_theme_button(theme: Theme) -> MenuItem<CalcState> {
-    MenuItem::new(t!(&theme.to_string().to_lowercase()))
+    let theme_name = format!("themes.{}", theme.to_string().to_lowercase());
+    MenuItem::new(t!(&theme_name))
         .selected_if(move |data: &CalcState, _env| data.get_theme(false) == theme)
         .on_activate(move |_ctx, data: &mut CalcState, _env| data.set_theme(theme))
 }
@@ -51,7 +52,7 @@ fn make_theme_button(theme: Theme) -> MenuItem<CalcState> {
 fn make_language_button(lang: String) -> MenuItem<CalcState> {
     let lang_rc = Rc::new(lang);
     let lang_clone = lang_rc.clone();
-    MenuItem::new(t!(lang_rc.as_str()))
+    MenuItem::new(t!("locale_name", locale = lang_rc.as_str()))
         .on_activate(move |_ctx, data: &mut CalcState, _env| data.set_language(&lang_clone))
         .selected_if(move |data, _env| data.get_language() == lang_rc.as_ref())
 }
