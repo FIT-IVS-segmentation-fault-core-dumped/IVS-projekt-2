@@ -181,10 +181,10 @@ pub mod calcstate_lenses {
 
 impl Lens<CalcState, String> for calcstate_lenses::displayed_text {
     fn with<V, F: FnOnce(&String) -> V>(&self, data: &CalcState, f: F) -> V {
-        f(&data.expr_man.get_display_str())
+        f(&data.expr_man.get_display_str(true))
     }
     fn with_mut<V, F: FnOnce(&mut String) -> V>(&self, data: &mut CalcState, f: F) -> V {
-        let mut dis = data.expr_man.get_display_str();
+        let mut dis = data.expr_man.get_display_str(true);
         f(&mut dis)
     }
 }

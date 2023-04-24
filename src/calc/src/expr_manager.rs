@@ -6,6 +6,9 @@ use crate::*;
 
 type Btn = PressedButton;
 
+/// Will put continuous underscore to previous character in string.
+const UNDERSCORE_PREV: char = '\u{032d}';
+
 trait ToExpr {
     fn to_expr(&self) -> Option<ExprItem>;
 }
@@ -118,7 +121,7 @@ impl ExprItem {
 #[derive(Debug, Clone)]
 pub struct ExprManager {
     /// Cursor position in the string.
-    cursor_pos: u32,
+    cursor_pos: usize,
     /// Buttons, which compose the resulting expressoin string.
     btn_stack: Vec<Btn>,
     /// Used for invalidating the expression manager (for druid repaint).
@@ -157,14 +160,23 @@ impl ExprManager {
     /// cannot compute results and thus should never get this.
     pub fn process_button(&mut self, btn: &PressedButton) {
         match btn {
-            Btn::Clear => self.btn_stack.clear(),
+            Btn::Clear =>  {
+                self.btn_stack.clear();
+                self.cursor_pos = 0;
+            },
             Btn::Delete => {
-                self.btn_stack.pop();
+                if self.cursor_pos != 0 {
+                    self.btn_stack.remove(self.cursor_pos.saturating_sub(1));
+                    self.move_cursor(true);
+                }
             }
             Btn::MoveRight => self.move_cursor(false),
             Btn::MoveLeft => self.move_cursor(true),
-            Btn::Evaluate => panic!("Invalid btn {:?}", btn),
-            _ => self.btn_stack.push(btn.clone()),
+            Btn::Evaluate => panic!("Cannot process `PressedButton::Evaluate`."),
+            _ => {
+                self.btn_stack.insert(self.cursor_pos, btn.clone());
+                self.move_cursor(false);
+            }
         };
         self.invalidate();
     }
@@ -176,28 +188,47 @@ impl ExprManager {
     }
 
     /// Move cursor to the left or right in the evaluate expression string.
-    fn move_cursor(&mut self, _left: bool) {
-        todo!()
+    fn move_cursor(&mut self, left: bool) {
+        match left {
+            true => self.cursor_pos = self.cursor_pos.saturating_sub(1),
+            false => self.cursor_pos += 1
+        };
+        self.cursor_pos = self.cursor_pos.clamp(0, self.btn_stack.len());
     }
 
     /// Get string to be displayed to [`DisplayUI`](widgets::display::DisplayUI).
-    pub fn get_display_str(&self) -> String {
-        // By default, the empty Display string is 0
+    pub fn get_display_str(&self, with_cursor: bool) -> String {
+        // By default, the empty Display string is only cursor.
         if self.btn_stack.is_empty() {
-            return "0".to_string();
+            if with_cursor {
+                // Zero-length whitespace, in order to combine the cursor character with something.
+                return "\u{0020}".to_string() + &UNDERSCORE_PREV.to_string();
+            } else {
+                return "0".to_string();
+            }
         }
 
         // Append all display strings from the stack.
         let mut disp_str = String::new();
-        for btn in &self.btn_stack {
+        if self.cursor_pos == 0 && with_cursor {
+            disp_str = "\u{0020}".to_string() + &UNDERSCORE_PREV.to_string();
+        }
+        for (i, btn) in self.btn_stack.iter().enumerate() {
             disp_str += &match btn.to_expr() {
-                Some(item) => item.disp,
+                Some(item) => {
+                    if i == self.cursor_pos.saturating_sub(1) && self.cursor_pos != 0 {
+                        item.disp + &UNDERSCORE_PREV.to_string()
+                    } else {
+                        item.disp
+                    }
+                },
                 None => {
                     eprintln!("error: Cannot convert btn to expr. {:?}", btn);
                     continue;
                 }
             };
         }
+
         disp_str
     }
 
