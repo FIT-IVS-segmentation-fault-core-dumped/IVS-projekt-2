@@ -1,7 +1,5 @@
 //! The buttons UI part of the calculator
 
-pub struct ButtonsUI;
-
 use crate::{CalcState, Constants, FunctionTabs, Opt, PressedButton, Theme};
 use core::fmt;
 use druid::commands::CLOSE_WINDOW;
@@ -22,6 +20,9 @@ const SHOW_ERROR: Selector<String> = Selector::new("error");
 const ERROR_TEXT_SIZE: f64 = 14.0;
 const ERROR_BACKGROUND_COLOR: Color = Color::rgb8(150, 20, 20);
 
+const TEXTBOX_PADDING: f64 = 5.0;
+const KEY_TEXTBOX_WIDTH: f64 = 60.0;
+
 const BUTTON_PADDING: f64 = 1.0;
 const BUTTON_BORDER_RADIUS: f64 = 3.0;
 const BUTTON_TEXT_SIZE: f64 = 16.0;
@@ -38,6 +39,7 @@ const TAB_HOVER_COLOR: &Color = &Color::grey8(120);
 const TAB_TEXT_SIZE: f64 = 14.0;
 
 type Btn = PressedButton;
+pub struct ButtonsUI;
 
 /// Encapsulation of the keyboard user interface
 impl ButtonsUI {
@@ -106,7 +108,7 @@ fn make_func_part() -> impl Widget<CalcState> {
         .with_flex_child(function_tab(FunctionTabs::Const), 1.);
 
     let buttons = ViewSwitcher::new(
-        |data: &CalcState, _env| data.get_function_pad(),
+        |data: &CalcState, _env| data.get_function_tab(),
         |selector, _data, _env| match selector {
             FunctionTabs::Main => Box::new(make_main_btns()),
             FunctionTabs::Func => Box::new(make_func_btns()),
@@ -376,29 +378,35 @@ impl<W: Widget<CalcState>> Controller<CalcState, W> for LengthController {
 
 // Group of widgets that enable user to add own constants to the application
 fn make_add_const_field() -> impl Widget<CalcState> {
-    let mut flex = Flex::row();
-    let key_field = TextBox::new()
-        .with_text_alignment(druid::TextAlignment::Center)
-        .with_placeholder(t!("constants.name"))
-        .padding(5.)
-        .center()
-        .fix_width(60.)
-        .align_vertical(UnitPoint::CENTER)
-        .lens(CalcState::constants.then(Constants::key_str))
-        .controller(LengthController::new(3));
+    // ViewSwitcher is used as a notifier -> observe langage data
+    ViewSwitcher::new(
+        |data: &CalcState, _env| data.get_language().to_owned(),
+        |_selector, _data, _env| {
+            let mut flex = Flex::row();
+            let key_field = TextBox::new()
+                .with_text_alignment(druid::TextAlignment::Center)
+                .with_placeholder(t!("constants.name"))
+                .padding(TEXTBOX_PADDING)
+                .center()
+                .fix_width(KEY_TEXTBOX_WIDTH)
+                .align_vertical(UnitPoint::CENTER)
+                .lens(CalcState::constants.then(Constants::key_str))
+                .controller(LengthController::new(3));
 
-    let value_field = TextBox::new()
-        .with_placeholder(t!("constants.value"))
-        .padding(5.)
-        .expand_width()
-        .align_vertical(UnitPoint::CENTER)
-        .lens(CalcState::constants.then(Constants::value_str));
+            let value_field = TextBox::new()
+                .with_placeholder(t!("constants.value"))
+                .padding(TEXTBOX_PADDING)
+                .expand_width()
+                .align_vertical(UnitPoint::CENTER)
+                .lens(CalcState::constants.then(Constants::value_str));
 
-    flex.add_child(key_field);
-    flex.add_child(Label::new("="));
-    flex.add_flex_child(value_field, 3.);
-    flex.add_child(make_add_const_btn());
-    flex
+            flex.add_child(key_field);
+            flex.add_child(Label::new("="));
+            flex.add_flex_child(value_field, 3.);
+            flex.add_child(make_add_const_btn());
+            Box::new(flex)
+        },
+    )
 }
 
 // Represents states that can be assumed by `ErrorMessageController`
@@ -552,9 +560,7 @@ fn validate_key(key: &String) -> Result<String, String> {
     if let Some(first_char) = key.chars().next() {
         match first_char.is_alphabetic() {
             true => Ok(key.to_string()),
-            false => Err(format!(
-                "Variable name must start with an alphabetic character"
-            )),
+            false => Err(t!("errors.must_start_with_aplhabet")),
         }
     } else {
         unreachable!()
@@ -815,8 +821,8 @@ fn function_tab(text: FunctionTabs) -> impl Widget<CalcState> {
                 .center()
                 .background(get_tab_painter())
                 .expand()
-                .disabled_if(move |data: &CalcState, _env| data.get_function_pad() == text)
-                .on_click(move |_ctx, data: &mut CalcState, _env| data.set_function_pad(text)),
+                .disabled_if(move |data: &CalcState, _env| data.get_function_tab() == text)
+                .on_click(move |_ctx, data: &mut CalcState, _env| data.set_function_tab(text)),
         ),
     )
 }
