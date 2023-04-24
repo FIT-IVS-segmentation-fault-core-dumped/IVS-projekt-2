@@ -7,7 +7,7 @@ use crate::*;
 type Btn = PressedButton;
 
 /// Will put continuous underscore to previous character in string.
-const UNDERSCORE_PREV: char = '\u{032d}';
+const UNDERSCORE_PREV: char = '\u{02f0}';
 
 trait ToExpr {
     fn to_expr(&self) -> Option<ExprItem>;
@@ -202,7 +202,7 @@ impl ExprManager {
         if self.btn_stack.is_empty() {
             if with_cursor {
                 // Zero-length whitespace, in order to combine the cursor character with something.
-                return "\u{0020}".to_string() + &UNDERSCORE_PREV.to_string();
+                return UNDERSCORE_PREV.to_string();
             } else {
                 return "0".to_string();
             }
@@ -211,7 +211,7 @@ impl ExprManager {
         // Append all display strings from the stack.
         let mut disp_str = String::new();
         if self.cursor_pos == 0 && with_cursor {
-            disp_str = "\u{0020}".to_string() + &UNDERSCORE_PREV.to_string();
+            disp_str = UNDERSCORE_PREV.to_string();
         }
         for (i, btn) in self.btn_stack.iter().enumerate() {
             disp_str += &match btn.to_expr() {
