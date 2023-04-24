@@ -1,18 +1,48 @@
 locale_name: Slovenčina
-title: Kalkulačka
+
+window:
+    main: Kalkulačka
+    history: História
+    help: Nápoveda
+    about: O aplikácii
+
 menu:
-    file: Súbor
+    options: Možnosti
     edit: Upraviť
     help: Nápoveda
+    about: O aplikácii
 
-theme: Motív
-dark: Tmavý
-light: Svetlý
-system: Systém
+edit:
+    copy_expr: Skopírovať výraz
+    copy_res: Skopírovať výsledok
 
-language: Jazyk
-czech: Čeština
-english: Angličtina
-japanese: Japončina
-slovak: Slovenčina
-vietnamese: Vietnamčina
+options:
+    theme: Motív
+    language: Jazyk
+    angular_unit: Uhlová jednotka
+    record_hist: Zaznamenávanie histórie
+    show_hist: Zobraziť históriu
+
+angular_units:
+    radians: Radiány
+    degrees: Stupne
+
+themes:
+    dark: Tmavý
+    light: Svetlý
+    system: Systém
+
+context_menu:
+    remove: Odstrániť
+
+constants:
+    name: meno
+    value: hodnota
+
+clear: Vymazať
+
+errors:
+    string_to_int_error: Hodnota konštatny musí byť numerická
+    invalid_constant_name: Nespávne meno konštanty
+    constant_already_exists: Konštanta už existuje
+    must_start_with_aplhabet: Meno konštanty musí začínať abecedným znakom
