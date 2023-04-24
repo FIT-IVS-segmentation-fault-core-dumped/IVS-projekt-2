@@ -10,6 +10,8 @@ use math::{number::Radix, Number};
 use serde::{Deserialize, Serialize};
 use std::{cell::RefCell, fmt, rc::Rc};
 
+pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
+
 const APP_NAME: &str = "Calculator";
 
 // Initialize locales in "locales" directory.
