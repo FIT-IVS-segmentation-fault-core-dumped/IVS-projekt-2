@@ -83,7 +83,7 @@ impl Calculator {
         res.add_constant("pi", Number::pi());
 
         let mut keywords = res.add_builtin_function();
-        keywords.push("mod");
+        keywords.extend_from_slice(&["mod", "e", "pi"]);
         res.builtin_keywords = keywords.into_boxed_slice();
 
         res
@@ -126,7 +126,7 @@ impl Calculator {
     /// # use math::Calculator;
     /// # use math::Number;
     /// let mut calculator = Calculator::new();
-    /// assert_eq!(calculator.add_constant("pi", Number::from(3)), true);
+    /// assert_eq!(calculator.add_constant("pi", Number::from(3)), false);
     /// assert_eq!(calculator.add_constant("sqrt", Number::random()), false);
     /// ```
     pub fn add_constant(&mut self, name: &str, num: impl Into<Number>) -> bool {
