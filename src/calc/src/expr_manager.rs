@@ -202,7 +202,7 @@ impl ExprManager {
     }
 
     /// Get string to be passed to [`Calculator`](math::Calculator).
-    pub fn get_eval_str(&self) -> Result<String, String> {
+    pub fn get_eval_str(&self) -> Result<String> {
         if self.btn_stack.is_empty() {
             return Ok("0".to_string());
         }
@@ -224,11 +224,11 @@ impl ExprManager {
     ///
     /// The final pushed Token has `Token::btn` set to `PressedButton::Evaluate`
     /// in order to differenciate between compound tokens and non-operation tokens.
-    fn push_func(&self, eval_stack: &mut Vec<Token>, token: &Token) -> Result<(), String> {
+    fn push_func(&self, eval_stack: &mut Vec<Token>, token: &Token) -> Result<()> {
         // Check if there are needed oprands on the stack for given function.
         let stack_size = eval_stack.len();
         if stack_size < token.arity as usize {
-            return Err("Not enough operands for token".to_string());
+            return Err("Not enough operands for token".to_string().into());
         } else if token.arity == 0 {
             return Ok(());
         }
@@ -303,7 +303,7 @@ impl ExprManager {
     }   // push_func()
 
     /// Construct final evaluation string from the tokens in postfix order.
-    fn to_eval_str(&self, postfix: &Vec<&Token>) -> Result<String, String> {
+    fn to_eval_str(&self, postfix: &Vec<&Token>) -> Result<String> {
         if postfix.is_empty() {
             // This should never happen, as it is already handled in `get_eval_str()`.
             // But just to know, if something has gone wrong.
@@ -338,7 +338,7 @@ impl ExprManager {
     }
 
     /// Convert tokens to postfix notation.
-    fn to_postfix<'a>(&'a self, tokens: &'a [Token]) -> Result<Vec<&'a Token>, String> {
+    fn to_postfix<'a>(&'a self, tokens: &'a [Token]) -> Result<Vec<&'a Token>> {
         // Shunting Yard algorithm. Based on pseudo-code
         // from [wiki](https://en.wikipedia.org/wiki/Shunting_yard_algorithm).
 
@@ -377,7 +377,7 @@ impl ExprManager {
                     if opt_stack.last().is_none()
                         || opt_stack.last().unwrap().btn != Btn::BracketLeft
                     {
-                        return Err("Failed to match left parenthesis.".to_string());
+                        return Err("Failed to match left parenthesis.".to_string().into());
                     }
                     // Pop the left bracket.
                     opt_stack.pop();
@@ -389,7 +389,7 @@ impl ExprManager {
                         }
                     }
                 }
-                _ => return Err(format!("Invalid token button {:?}", token.btn)),
+                _ => return Err(format!("Invalid token button {:?}", token.btn).into()),
             };
         }
 
@@ -471,30 +471,26 @@ impl ExprManager {
                     }
                 }
                 // Tokenize binary operation.
-                Btn::BinOpt(opt) => {
-                    match opt {
-                        // Check for arity of '+' and '-' operators. These could actually
-                        // be unary, based on the previous token.
-                        Opt::Add | Opt::Sub => {
-                            let arity = match tokens.last() {
-                                Some(tok) => match tok.btn {
-                                    // Case: "1*-3"
-                                    Btn::BinOpt(_) => 1,
-                                    // If previous token is right-sided unary operation,
-                                    // then this is binary, as it has bigger priority.
-                                    // Case: "sin 5!-3"
-                                    Btn::UnaryOpt(Opt::Fact | Opt::Pow2) => 2,
-                                    // Case: "2*(-3)"
-                                    Btn::BracketLeft => 1,
-                                    _ => 2,
-                                },
-                                None => 1,
-                            };
-                            tokens.push(Token::new(btn, btn_expr, Some(arity)));
-                        }
-                        _ => tokens.push(Token::new(btn, btn_expr, Some(2))),
+                // Check for arity of '+' and '-' operators. These could actually
+                // be unary, based on the previous token.
+                Btn::BinOpt(Opt::Add | Opt::Sub) => {
+                    let arity = match tokens.last() {
+                        Some(tok) => match tok.btn {
+                            // Case: "1*-3"
+                            Btn::BinOpt(_) => 1,
+                            // If previous token is right-sided unary operation,
+                            // then this is binary, as it has bigger priority.
+                            // Case: "sin 5!-3"
+                            Btn::UnaryOpt(Opt::Fact | Opt::Pow2) => 2,
+                            // Case: "2*(-3)"
+                            Btn::BracketLeft => 1,
+                            _ => 2,
+                        },
+                        None => 1,
                     };
-                }
+                    tokens.push(Token::new(btn, btn_expr, Some(arity)));
+                },
+                Btn::BinOpt(_) => tokens.push(Token::new(btn, btn_expr, Some(2))),
                 Btn::UnaryOpt(_) => tokens.push(Token::new(btn, btn_expr, Some(1))),
                 _ => tokens.push(Token::new(btn, btn_expr, None)),
             };
