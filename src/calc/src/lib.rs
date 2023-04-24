@@ -179,6 +179,8 @@ pub struct CalcState {
     result_is_err: bool,
     /// Use degrees in trigonometric computations, otherwise use radians.
     degrees: bool,
+    /// Result from the last calculation
+    ans: f64,
 }
 
 /// Contains dummy structs for custom druid::Lens implementations.
@@ -243,6 +245,7 @@ impl CalcState {
             result: String::new(),
             result_is_err: false,
             degrees: true,
+            ans: 0.0,
         }
     }
 
@@ -381,6 +384,20 @@ impl CalcState {
 
     /// Check if the constant already exists
     pub fn is_new_constant(&self, key: String) -> bool {
+        !(self.constants.keys.contains(&key) || key == "e" || key == "pi" || key == "ANS")
+    }
+
+    /// Copy the currently displayed result into the system clipboard
+    pub fn copy_result(&self) {
+        let mut clipboard = Application::global().clipboard();
+        clipboard.put_string(self.result.clone());
+    }
+
+    /// Copy the currently displayed expression into the system clipboard
+    pub fn copy_expression(&self) {
+        let mut clipboard = Application::global().clipboard();
+        clipboard.put_string(self.expr_man.get_display_str());
+    }
 
     /// Get a reference to History struct
     pub fn get_history(&self) -> &History {
@@ -401,5 +418,18 @@ impl CalcState {
         self.store_config_data();
     }
 
+    /// Set angular unit based on `degrees` on either degrees or radians
+    pub fn set_angular_unit(&mut self, degrees: bool) {
+        self.degrees = degrees;
+    }
+
+    /// Get currently set angular unit (true = degrees, false = radians)
+    pub fn get_angular_unit(&self) -> bool {
+        self.degrees
+    }
+
+    /// Update value of ans. Should be called after each calculation
+    pub fn update_ans(&mut self, value: f64) {
+        self.ans = value;
     }
 }
