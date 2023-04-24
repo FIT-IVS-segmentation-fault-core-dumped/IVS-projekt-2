@@ -82,10 +82,10 @@ fn evaluate_mod() -> math::Result<()> {
 }
 #[test]
 fn evaluate_root() -> math::Result<()> {
-    assert_eq!(eval_dec("root(64, 2)", 0)?, "8");
-    assert_eq!(eval_dec("root(-64, 3)", 0)?, "-4");
-    assert!(eval_dec("root(-64, 2)", 3).is_err());
-    assert!(eval_dec("root(-64, 122)", 3).is_err());
+    assert_eq!(eval_dec("root(2, 64)", 0)?, "8");
+    assert_eq!(eval_dec("root(3, -64)", 0)?, "-4");
+    assert!(eval_dec("root(2, -64)", 3).is_err());
+    assert!(eval_dec("root(122, -64)", 3).is_err());
 
     assert_eq!(eval_dec("sqrt(2)", 6)?, "1.414214");
     assert!(eval_dec("sqrt(-2)", 3).is_err());
@@ -247,7 +247,7 @@ fn evaluate_expr() -> math::Result<()> {
     dec_eq("123", "123", 0)?;
     dec_eq("0.1", "0.2 - 0.1", 2)?;
     dec_eq("ln(pow(5, 13))", "13 * ln(5)", 4)?;
-    dec_eq("root(pow(3, 13), 13)", "3", 0)?;
+    dec_eq("root(13, pow(3, 13))", "3", 0)?;
 
     Ok(())
 }
