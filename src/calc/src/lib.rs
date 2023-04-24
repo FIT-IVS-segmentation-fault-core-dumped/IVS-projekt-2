@@ -3,9 +3,11 @@
 //! This file contains definition of calculator state,
 //! which defines functionality of our app.
 pub mod expr_manager;
+mod history;
 pub mod widgets;
-use druid::{Data, Lens};
+use druid::{Application, Data, Lens};
 use expr_manager::ExprManager;
+use history::History;
 use math::{number::Radix, Number};
 use serde::{Deserialize, Serialize};
 use std::{cell::RefCell, fmt, rc::Rc};
@@ -95,10 +97,11 @@ pub enum FunctionTabs {
 
 /// Holds application configuration, which is saved on the disk.
 /// This is loaded at each start of the application.
-#[derive(Serialize, Deserialize, Lens, Clone, Data)]
+#[derive(Serialize, Deserialize, Lens, Clone)]
 pub struct CalcConfig {
     theme: Theme,
     language: String,
+    history: History,
 }
 
 /// Defines what will the initial config hold (when no config is found on the disk).
@@ -107,7 +110,16 @@ impl Default for CalcConfig {
         Self {
             theme: Theme::System,
             language: "en".to_owned(),
+            history: History::default(),
         }
+    }
+}
+
+impl Data for CalcConfig {
+    fn same(&self, other: &Self) -> bool {
+        self.theme == other.theme
+            && self.language == other.language
+            && self.history.same(&other.history)
     }
 }
 
@@ -148,15 +160,13 @@ pub struct CalcState {
     expr_man: ExprManager,
     /// Displayed base of the computed result.
     radix: Radix,
-
     /// User defined constants
     constants: Constants,
-
+    /// Switch between fucntional keyboards
     function_tab: FunctionTabs,
     /// Contains all available languages at runtime.
     /// This is loaded from rust-i18n and as such has to be constructed in new() method.
     available_languages: Rc<Vec<String>>,
-
     /// Confing deserialized from disk using *confy* crate.
     config: CalcConfig,
     /// Parser of mathematical expressions.
@@ -268,6 +278,7 @@ impl CalcState {
                     self.result_is_err = false;
                 }
             }
+
             // Relay other buttons to the expression manager.
             other => self.expr_man.process_button(other),
         };
@@ -328,13 +339,13 @@ impl CalcState {
     }
 
     /// Get function keyboard
-    pub fn get_function_pad(&self) -> FunctionTabs {
+    pub fn get_function_tab(&self) -> FunctionTabs {
         self.function_tab
     }
 
     /// Change numeric base of the calculated results.
-    pub fn set_function_pad(&mut self, function_pad: FunctionTabs) {
-        self.function_tab = function_pad;
+    pub fn set_function_tab(&mut self, function_tab: FunctionTabs) {
+        self.function_tab = function_tab;
     }
 
     /// Get user defined constants
@@ -368,8 +379,27 @@ impl CalcState {
         self.constants.values.remove(index);
     }
 
-    /// Check if the constant is already created
+    /// Check if the constant already exists
     pub fn is_new_constant(&self, key: String) -> bool {
-        !(self.constants.keys.contains(&key) || key == "e" || key == "pi")
+
+    /// Get a reference to History struct
+    pub fn get_history(&self) -> &History {
+        &self.config.history
+    }
+
+    /// Get a mutable reference to History struct
+    pub fn get_mut_history(&mut self) -> &mut History {
+        &mut self.config.history
+    }
+
+    /// Save the expression and result to history
+    pub fn save_equation(&mut self) {
+        self.config
+            .history
+            .data
+            .push((self.expr_man.get_display_str(), self.result.clone()));
+        self.store_config_data();
+    }
+
     }
 }
