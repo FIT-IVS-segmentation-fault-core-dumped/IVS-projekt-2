@@ -32,7 +32,7 @@ impl ToExpr for Opt {
             Self::Ln =>      ExprItem::new("ln ",       "ln",       3,      false,  false),
             Self::Sqrt =>    ExprItem::new("√",         "sqrt",     3,      false,  false),
             Self::Root =>    ExprItem::new("ⁿ√",        "root",     2,      true,   false),
-            Self::Root3 =>   ExprItem::new("³√",        "root",     3,      false,  false),  // FIXME: How am I gonna handle this?
+            Self::Root3 =>   ExprItem::new("³√",        "root",     3,      false,  false),
             Self::Pow =>     ExprItem::new("^",         "^",        3,      true,   true),
             Self::Pow2 =>    ExprItem::new("²",         "^2",       3,      true,   true),
             Self::Abs =>     ExprItem::new("abs ",      "abs",      3,      false,  false),
@@ -270,8 +270,13 @@ impl ExprManager {
                         format!("{}{}", token.item.eval, operand)
                     }
                 } else {
-                    // Unary function notation.
-                    format!("{}({})", token.item.eval, operand)
+                    // Math library doesn't have a function for 3. root
+                    if let Btn::UnaryOpt(Opt::Root3) = token.btn {
+                        format!("{}(3, {})", token.item.eval, operand)
+                    } else {
+                        // Unary function notation.
+                        format!("{}({})", token.item.eval, operand)
+                    }
                 }
             }
             2 => {
