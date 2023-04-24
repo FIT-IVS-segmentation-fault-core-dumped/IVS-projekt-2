@@ -30,7 +30,7 @@ pub fn set_digit_btn_envs(env: &mut Env) {
 
     env.set(
         Key::<Color>::new("calc.Dark.digit_btn.hover"),
-        Color::grey8(70),
+        Color::grey8(65),
     );
     env.set(
         Key::<Color>::new("calc.Light.digit_btn.hover"),
@@ -39,7 +39,7 @@ pub fn set_digit_btn_envs(env: &mut Env) {
 
     env.set(
         Key::<Color>::new("calc.Dark.digit_btn.active"),
-        Color::grey8(100),
+        Color::grey8(80),
     );
     env.set(
         Key::<Color>::new("calc.Light.digit_btn.active"),
@@ -59,7 +59,7 @@ pub fn set_func_btn_envs(env: &mut Env) {
 
     env.set(
         Key::<Color>::new("calc.Dark.func_btn.hover"),
-        Color::grey8(50),
+        Color::grey8(45),
     );
     env.set(
         Key::<Color>::new("calc.Light.func_btn.hover"),
@@ -68,7 +68,7 @@ pub fn set_func_btn_envs(env: &mut Env) {
 
     env.set(
         Key::<Color>::new("calc.Dark.func_btn.active"),
-        Color::grey8(80),
+        Color::grey8(60),
     );
     env.set(
         Key::<Color>::new("calc.Light.func_btn.active"),
@@ -88,7 +88,7 @@ pub fn set_operation_btn_envs(env: &mut Env) {
 
     env.set(
         Key::<Color>::new("calc.Dark.operation_btn.hover"),
-        Color::grey8(60),
+        Color::grey8(50),
     );
     env.set(
         Key::<Color>::new("calc.Light.operation_btn.hover"),
@@ -97,7 +97,7 @@ pub fn set_operation_btn_envs(env: &mut Env) {
 
     env.set(
         Key::<Color>::new("calc.Dark.operation_btn.active"),
-        Color::grey8(90),
+        Color::grey8(65),
     );
     env.set(
         Key::<Color>::new("calc.Light.operation_btn.active"),
