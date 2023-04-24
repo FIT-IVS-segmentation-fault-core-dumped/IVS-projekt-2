@@ -396,7 +396,7 @@ impl CalcState {
     /// Copy the currently displayed expression into the system clipboard
     pub fn copy_expression(&self) {
         let mut clipboard = Application::global().clipboard();
-        clipboard.put_string(self.expr_man.get_display_str());
+        clipboard.put_string(self.expr_man.get_display_str(false));
     }
 
     /// Get a reference to History struct
@@ -414,7 +414,7 @@ impl CalcState {
         self.config
             .history
             .data
-            .push((self.expr_man.get_display_str(), self.result.clone()));
+            .push((self.expr_man.get_display_str(false), self.result.clone()));
         self.store_config_data();
     }
 
