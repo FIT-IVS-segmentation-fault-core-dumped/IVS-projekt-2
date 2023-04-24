@@ -1,17 +1,36 @@
 locale_name: English
-title: Calculator
+
+window:
+    main: Calculator
+    history: History
+    help: Help
+    about: About
+
 menu:
-    file: File
+    options: Options
     edit: Edit
     help: Help
+    about: About
 
-theme: Theme
+edit:
+    copy_expr: Copy expression
+    copy_res: Copy result
+
+options:
+    theme: Theme
+    language: Language
+    angular_unit: Angular unit
+    record_hist: Record history
+    show_hist: Show history
+
+angular_units:
+    radians: Radians
+    degrees: Degrees
+
 themes:
     dark: Dark
     light: Light
     system: System
-
-language: Language
 
 context_menu:
     remove: Remove
@@ -20,7 +39,10 @@ constants:
     name: name
     value: value
 
+clear: Clear
+
 errors:
     string_to_int_error: Failed to parse value into a number
     invalid_constant_name: Invalid constant name
     constant_already_exists: Constant already exists
+    must_start_with_aplhabet: Constant name must start with an alphabetic character
