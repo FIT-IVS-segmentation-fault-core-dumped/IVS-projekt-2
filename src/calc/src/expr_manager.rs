@@ -49,12 +49,9 @@ impl ToExpr for PressedButton {
         Some(match self {
             Self::Num(num) => {
                 // Convert number to digit.
-                let s = match *num >= 10 {
-                    // A-F
-                    true => char::from_digit(*num as u32, 16).unwrap().to_string().to_uppercase(),
-                    // 0-9
-                    false => num.to_string()
-                };
+                let s = char::from_digit(*num as u32, 16)?
+                    .to_ascii_uppercase()
+                    .to_string();
                 ExprItem::new(&s, &s, 0, true, true)
             }
             Self::BinOpt(opt) | Self::UnaryOpt(opt) => return opt.to_expr(),
@@ -144,7 +141,7 @@ impl Default for ExprManager {
 impl ExprManager {
     /// Create new instance of expression manager with empty
     /// expression.
-    pub fn new() -> Self {
+    pub const fn new() -> Self {
         Self {
             dirty_flipper: true,
             cursor_pos: 0,
@@ -341,7 +338,7 @@ impl ExprManager {
     }
 
     /// Convert tokens to postfix notation.
-    fn to_postfix<'a>(&'a self, tokens: &'a Vec<Token>) -> Result<Vec<&'a Token>, String> {
+    fn to_postfix<'a>(&'a self, tokens: &'a [Token]) -> Result<Vec<&'a Token>, String> {
         // Shunting Yard algorithm. Based on pseudo-code
         // from [wiki](https://en.wikipedia.org/wiki/Shunting_yard_algorithm).
 
@@ -408,9 +405,8 @@ impl ExprManager {
     fn tokenize(&self) -> Vec<Token> {
         let mut tokens: Vec<Token> = Vec::new();
         for btn in &self.btn_stack {
-            let btn_expr = match btn.to_expr() {
-                Some(e) => e,
-                None => continue,
+            let Some(btn_expr) = btn.to_expr() else {
+                continue;
             };
 
             // Check for implicit multiplication sign. And add it if found.
