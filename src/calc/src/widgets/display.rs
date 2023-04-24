@@ -2,7 +2,7 @@
 
 use crate::CalcState;
 use druid::widget::{Align, Container, Flex};
-use druid::{theme, Color, Env, UnitPoint, WidgetExt};
+use druid::{theme, Color, Env, UnitPoint, WidgetExt, FontDescriptor, FontFamily};
 use druid::{widget::Label, Widget};
 use math::number::Radix;
 
@@ -20,6 +20,7 @@ impl DisplayUI {
     }
 }
 
+#[rustfmt::skip]
 fn get_display() -> impl Widget<CalcState> {
     // As with druid it is hard to dynamically change color based on CalcState data state,
     // it is hard to change color of label dynamically. To solve this we change the
@@ -35,53 +36,19 @@ fn get_display() -> impl Widget<CalcState> {
 
     let status_row = Align::left(
         Flex::row()
-            .with_flex_child(
-                Label::new("Dec")
-                    .with_text_size(10.0)
-                    .disabled_if(radix_eq(Radix::Dec))
-                    .env_scope(radix_env),
-                1.0,
-            )
-            .with_flex_child(
-                Label::new("Hex")
-                    .with_text_size(10.0)
-                    .disabled_if(radix_eq(Radix::Hex))
-                    .env_scope(radix_env),
-                1.0,
-            )
-            .with_flex_child(
-                Label::new("Oct")
-                    .with_text_size(10.0)
-                    .disabled_if(radix_eq(Radix::Oct))
-                    .env_scope(radix_env),
-                1.0,
-            )
-            .with_flex_child(
-                Label::new("Bin")
-                    .with_text_size(10.0)
-                    .disabled_if(radix_eq(Radix::Bin))
-                    .env_scope(radix_env),
-                1.0,
-            )
+            .with_flex_child(Label::new("Dec").with_text_size(10.0).disabled_if(radix_eq(Radix::Dec)).env_scope(radix_env), 1.0)
+            .with_flex_child(Label::new("Hex").with_text_size(10.0).disabled_if(radix_eq(Radix::Hex)).env_scope(radix_env), 1.0)
+            .with_flex_child(Label::new("Oct").with_text_size(10.0).disabled_if(radix_eq(Radix::Oct)).env_scope(radix_env), 1.0)
+            .with_flex_child(Label::new("Bin").with_text_size(10.0).disabled_if(radix_eq(Radix::Bin)).env_scope(radix_env), 1.0)
             .with_flex_spacer(1.0)
-            .with_flex_child(
-                Label::new("Deg")
-                    .with_text_size(10.0)
-                    .disabled_if(tuni_eq(true))
-                    .env_scope(tuni_env),
-                1.0,
-            )
-            .with_flex_child(
-                Label::new("Rad")
-                    .with_text_size(10.0)
-                    .disabled_if(tuni_eq(false))
-                    .env_scope(tuni_env),
-                1.0,
-            ),
+            .with_flex_child(Label::new("Deg").with_text_size(10.0).disabled_if(tuni_eq(true)).env_scope(tuni_env), 1.0)
+            .with_flex_child(Label::new("Rad").with_text_size(10.0).disabled_if(tuni_eq(false)).env_scope(tuni_env), 1.0),
     );
+
+    let font = FontDescriptor::new(FontFamily::SYSTEM_UI).with_size(30.0);
     let expr_row = Align::left(
         Label::new(|data: &String, _env: &_| data.clone())
-            .with_text_size(32.0)
+            .with_font(font)
             .lens(CalcState::displayed_text),
     );
     let result_row = Align::right(
