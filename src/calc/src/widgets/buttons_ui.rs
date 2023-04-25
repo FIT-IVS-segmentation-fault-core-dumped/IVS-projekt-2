@@ -699,7 +699,7 @@ fn make_main_btns() -> impl Widget<CalcState> {
     let mut second_row = Flex::row();
     function_button(&mut second_row, "ⁿ√", Btn::BinOpt(Opt::Root));
     function_button(&mut second_row, "aⁿ", Btn::BinOpt(Opt::Pow));
-    function_button(&mut second_row, "π", Btn::Const("π".to_owned()));
+    function_button(&mut second_row, "π", Btn::Const("pi".to_owned()));
 
     let mut third_row = Flex::row();
     function_button(&mut third_row, "³√", Btn::UnaryOpt(Opt::Root3));
