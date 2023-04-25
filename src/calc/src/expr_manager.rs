@@ -61,7 +61,7 @@ impl ToExpr for PressedButton {
             Self::BracketLeft =>  ExprItem::new("(", "(", 4, true, true),
             Self::BracketRight => ExprItem::new(")", ")", 4, true, true),
             Self::Comma =>        ExprItem::new(",", ".", 0, true, true),  // FIXME: Maybe we should localize this.
-            Self::Random =>       ExprItem::new("⚄", "random", 3, true, true),
+            Self::Random =>       ExprItem::new("⚄", "random", 0, true, true),
             Self::Const(name) =>  {
                 // Replace known constants with their characters.
                 match name.as_str() {
@@ -366,9 +366,15 @@ impl ExprManager {
             };
         }
 
+        // All the remaining tokens on the stack are implicitly multiplied together.
+        let mut final_eval_str = String::new();
+        while !eval_stack.is_empty() {
+            final_eval_str += &eval_stack.remove(0).item.eval;
+        }
+
         // Pop the resulting compound token and get its eval string.
         // We can safely unwrap it, because the `postfix` is never empty.
-        Ok(eval_stack.pop().unwrap().item.eval)
+        Ok(final_eval_str)
     }
 
     /// Convert tokens to postfix notation.
