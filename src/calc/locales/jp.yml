@@ -1,1 +1,48 @@
 locale_name: 日本語
+
+window:
+    main: 計算機
+    history: 歴史
+    help: ヘルプ
+    about: 概要
+
+menu:
+    options: 選択肢
+    edit: 編集部
+    help: ヘルプ
+    about: 概要
+
+edit:
+    copy_expr: 数式をコピーする
+    copy_res: 結果をコピーする
+
+options:
+    theme: テーマ
+    language: 言語
+    angular_unit: 角度の単位
+    record_hist: レコードの履歴
+    show_hist: 履歴を表示する
+
+angular_units:
+    radians: ラジアン
+    degrees: 度
+
+themes:
+    dark: ダーク
+    light: ライト
+    system: システム
+
+context_menu:
+    remove: 削除
+
+constants:
+    name: 名
+    value: 値
+
+clear: クリア
+
+errors:
+    string_to_int_error: 値を数値にパースするのに失敗しました
+    invalid_constant_name: 定数名が無効です
+    constant_already_exists: 定数は既に存在します
+    must_start_with_aplhabet: 定数名は英字で始まる必要があります
