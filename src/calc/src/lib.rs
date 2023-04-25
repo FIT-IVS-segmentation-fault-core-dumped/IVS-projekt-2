@@ -178,10 +178,13 @@ pub struct CalcState {
     /// Last computed result, which is displayed on the display.
     #[lens(ignore)]
     result: String,
+    result_as_num: Option<math::number::Number>,
     /// Is `true` if `CalcState::result` is an error message.
     result_is_err: bool,
     /// Use degrees in trigonometric computations, otherwise use radians.
     degrees: bool,
+    /// How many decimal places should the result have.
+    precision: u8,
     /// main window id
     main_win_id: WindowId,
     /// If `has_focus` is true it means the app will send user keyboard input to display
@@ -223,6 +226,7 @@ impl Data for CalcState {
             && self.config.same(&other.config)
             && self.result == other.result
             && self.constants.same(&other.constants)
+            && self.precision == other.precision
     }
 }
 
@@ -252,6 +256,8 @@ impl CalcState {
             degrees: true,
             display_focus: true,
             main_win_id: WindowId::next(),
+            precision: 5,
+            result_as_num: None,
         }
     }
 
@@ -278,16 +284,20 @@ impl CalcState {
 
                 // Set resulting variable according to the resulting value.
                 (self.result, self.result_is_err) = match result {
-                    Err(e) => (format!("{:?}", e), true),
+                    Err(e) => {
+                        self.result_as_num = None;
+                        (format!("{:?}", e), true)
+                    }
                     Ok(num) => {
+                        self.result_as_num = Some(num.clone());
                         self.save_equation();
-                        (num.to_string(self.radix, 5), false)
+                        (num.to_string(self.radix, self.precision), false)
                     },
                 };
 
                 if !self.result_is_err {
                     self.update_ans();
-                }
+                } 
             }
             PressedButton::Clear => {
                 self.expr_man.process_button(button);
@@ -351,9 +361,20 @@ impl CalcState {
         self.radix
     }
 
+    /// Udpates the base of showed result to match `Self::radix`.
+    pub fn update_result_radix(&mut self) {
+        if self.result_is_err {
+            return;
+        }
+        if let Some(num) = &self.result_as_num {
+            self.result = num.to_string(self.radix, self.precision);
+        }
+    }
+
     /// Change numeric base of the calculated results.
     pub fn set_radix(&mut self, radix: Radix) {
         self.radix = radix;
+        self.update_result_radix();
     }
 
     /// Get function keyboard
