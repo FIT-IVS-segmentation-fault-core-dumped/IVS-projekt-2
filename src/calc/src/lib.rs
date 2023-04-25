@@ -2,10 +2,12 @@
 //!
 //! This file contains definition of calculator state,
 //! which defines functionality of our app.
+pub mod delegate;
 pub mod expr_manager;
-mod history;
+pub mod history;
 pub mod widgets;
-use druid::{Application, Data, Lens};
+
+use druid::{Application, Data, Lens, WindowId};
 use expr_manager::ExprManager;
 use history::History;
 use math::{number::Radix, Number};
@@ -127,7 +129,7 @@ impl Data for CalcConfig {
 #[derive(Lens, Clone)]
 pub struct Constants {
     keys: Vec<String>,
-    values: Vec<f64>,
+    values: Vec<String>,
 
     pub key_str: String,
     pub value_str: String,
@@ -181,6 +183,10 @@ pub struct CalcState {
     degrees: bool,
     /// Result from the last calculation
     ans: f64,
+    /// main window id
+    main_win_id: WindowId,
+    /// If `has_focus` is true it means the app will send user keyboard input to display
+    display_focus: bool,
 }
 
 /// Contains dummy structs for custom druid::Lens implementations.
@@ -246,6 +252,8 @@ impl CalcState {
             result_is_err: false,
             degrees: true,
             ans: 0.0,
+            display_focus: true,
+            main_win_id: WindowId::next(),
         }
     }
 
@@ -358,13 +366,12 @@ impl CalcState {
 
     /// Add constant as key-value pair to the math library. If constant name is not valid (sin, cos, log...)
     /// function returns false
-    pub fn add_constant(&mut self, key: String, value: f64) -> bool {
-        let bignum = (value * 100000.) as i128;
+    pub fn add_constant(&mut self, key: String, value: String) -> bool {
+        let Ok(num) = math::evaluate(&value) else {return false;};
 
-        let is_added = self
-            .calc
-            .borrow_mut()
-            .add_constant(&key, Number::new(bignum, 100000).unwrap());
+        // let bignum = (value * 100000.) as i128;
+
+        let is_added = self.calc.borrow_mut().add_constant(&key, Number::from(num));
 
         if is_added {
             self.constants.keys.push(key);
@@ -426,6 +433,26 @@ impl CalcState {
     /// Get currently set angular unit (true = degrees, false = radians)
     pub fn get_angular_unit(&self) -> bool {
         self.degrees
+    }
+
+    /// Get currently set angular unit (true = degrees, false = radians)
+    pub fn get_main_win_id(&self) -> WindowId {
+        self.main_win_id
+    }
+
+    /// Get currently set angular unit (true = degrees, false = radians)
+    pub fn set_main_win_id(&mut self, win_id: WindowId) {
+        self.main_win_id = win_id;
+    }
+
+    /// Get currently set angular unit (true = degrees, false = radians)
+    pub fn get_display_focus(&self) -> bool {
+        self.display_focus
+    }
+
+    /// Get currently set angular unit (true = degrees, false = radians)
+    pub fn set_display_focus(&mut self, has_focus: bool) {
+        self.display_focus = has_focus;
     }
 
     /// Update value of ans. Should be called after each calculation
