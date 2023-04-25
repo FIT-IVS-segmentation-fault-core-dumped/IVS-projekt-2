@@ -457,6 +457,7 @@ impl Number {
     /// # use math::Number;
     /// assert_eq!(Number::random().power(Number::zero()), Ok(Number::one()));
     /// assert_eq!(Number::from(5).power(2), Ok(Number::from(25)));
+    /// assert_eq!(Number::from(5).power(Number::pi()).unwrap_or_default().to_string(Default::default(), 6), "156.992545");
     /// ```
     pub fn power(&self, exp: impl Into<Self>) -> Result<Self> {
         let exp = exp.into();
@@ -477,7 +478,13 @@ impl Number {
             return Ok(Self::zero());
         }
 
-        let Some(to_pow) = exp.inner.numer().to_i32() else {
+        let exp_digits_points = Self {
+            inner: Arc::new(exp.inner.fract()),
+        }
+        .to_string(Default::default(), 7)
+        .len();
+
+        let Some(to_pow) = exp.inner.numer().to_i32().filter(|_| exp_digits_points <= 7) else {
             let e = exp.inner.to_f64().ok_or_else(|| Error::Message(String::from("Exponent is too large")))?;
             let x = self.inner.to_f64().ok_or_else(|| Error::Message(String::from("Exponent is too large")))?;
             let f = libm::pow(x, e);
