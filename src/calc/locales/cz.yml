@@ -42,7 +42,7 @@ constants:
 clear: Vymazat vše
 
 errors:
-    string_to_int_error: Nelze převést hodnotu na čísla
+    string_to_int_error: Nelze převést hodnotu na číslo
     invalid_constant_name: Invalid constant name
     invalid_constant_name: Neplatné jméno konstanty
     constant_already_exists: Konstanta již existuje
