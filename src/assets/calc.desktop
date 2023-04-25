@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Version=0.1.0
+Name=Calc
+Comment=Calculator written in Rust
+Path=/usr/bin/calc
+Exec=calc
+Icon=calc
+Terminal=false
+Categories=Science;Education;
