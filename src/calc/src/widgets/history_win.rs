@@ -94,6 +94,7 @@ fn make_clear_btn() -> impl Widget<CalcState> {
             .with_text_alignment(druid::TextAlignment::Center)
             .with_line_break_mode(druid::widget::LineBreaking::WordWrap)
             .background(get_btn_painter())
+            .center()
             .controller(ConfirmController::new())
             .on_click(|_, _, _| {})
             .fix_size(CLEAR_BUTTON_WIDTH, CLEAR_BUTTON_HEIGHT),
