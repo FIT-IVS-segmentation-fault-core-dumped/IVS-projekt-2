@@ -70,7 +70,7 @@ impl Widget<CalcState> for Display {
             offset = self.max_width - Display::OVERFLOW_RESERVE - cursor_point.x;
         }
 
-        self.lbl.draw_at(ctx, Point::new(offset, 0.0));
+        text.draw(ctx, (offset, 0.0));
     }
 }
 

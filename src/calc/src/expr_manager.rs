@@ -243,9 +243,9 @@ impl ExprManager {
         // skipped if `ExprItem::skip_conv` is set to `true`.
 
         // Tokenize the button inputs.
-        let tokens = self.tokenize();
+        let mut tokens = self.tokenize();
         // Convert them to postfix.
-        let postfix = self.to_postfix(&tokens)?;
+        let postfix = self.to_postfix(&mut tokens)?;
         // Generate final evaluation string from postfix.
         self.to_eval_str(&postfix)
     }
@@ -374,7 +374,7 @@ impl ExprManager {
     }
 
     /// Convert tokens to postfix notation.
-    fn to_postfix<'a>(&'a self, tokens: &'a [Token]) -> Result<Vec<&'a Token>> {
+    fn to_postfix<'a>(&'a self, tokens: &'a mut [Token]) -> Result<Vec<&'a Token>> {
         // Shunting Yard algorithm. Based on pseudo-code
         // from [wiki](https://en.wikipedia.org/wiki/Shunting_yard_algorithm).
 
@@ -383,9 +383,15 @@ impl ExprManager {
         // The option stack for operation tokens.
         let mut opt_stack: Vec<&Token> = Vec::new();
 
-        for token in tokens {
+        for token in tokens.iter_mut() {
             match token.btn {
                 Btn::Num(_) | Btn::Comma | Btn::Const(_) => postfix.push(token),
+                Btn::Random => {
+                    token.btn = Btn::Const("random".to_string());
+                    token.arity = 0;
+                    token.item = token.btn.to_expr().unwrap();
+                    postfix.push(token);
+                }
                 Btn::BinOpt(_) => {
                     while opt_stack.last().is_some() {
                         let top = opt_stack.last().unwrap();
