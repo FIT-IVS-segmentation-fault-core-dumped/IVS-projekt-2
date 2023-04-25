@@ -1,7 +1,6 @@
 mod environment;
 use calc::delegate::Delegate;
 
-use calc::translate;
 use calc::widgets::menu::CalcMenu;
 use calc::{
     widgets::{buttons_ui::ButtonsUI, display::DisplayUI},
@@ -15,11 +14,12 @@ use druid::{
 };
 use druid::{Env, Event, EventCtx, WidgetExt};
 use environment::*;
-use rust_i18n::t;
 
 /// Initial size of the window, when the app starts.
 const WINDOW_SIZE: Size = Size::new(400.0, 400.0);
 const MIN_WINDOW_SIZE: Size = Size::new(400.0, 400.0);
+
+const APP_NAME: &str = "FIT calc";
 
 /// After each click set focus on the whole app container in order to handle user keyboard events.
 struct AppFocusController;
@@ -60,7 +60,7 @@ fn main() {
 
     // Create the main window with given window parameters.
     let main_window = WindowDesc::new(build_root_widget())
-        .title(t!("window.main"))
+        .title(APP_NAME)
         .window_size(WINDOW_SIZE)
         .with_min_size(MIN_WINDOW_SIZE)
         .menu(CalcMenu::build_ui);
