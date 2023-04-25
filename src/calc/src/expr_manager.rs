@@ -439,6 +439,12 @@ impl ExprManager {
             };
         }
 
+        // Check if there is a left parenthesis on the stack.
+        // That means, that it was not matched and thus is error.
+        if opt_stack.iter().any(|x| x.btn == Btn::BracketLeft) {
+            return Err("Missing right parenthesis".into());
+        }
+
         // Pop any remaining operators from operator stack onto the postfix queue.
         while opt_stack.last().is_some() {
             postfix.push(opt_stack.pop().unwrap());

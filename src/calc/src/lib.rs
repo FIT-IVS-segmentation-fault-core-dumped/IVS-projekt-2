@@ -269,6 +269,8 @@ impl CalcState {
                     Ok(str) => str,
                     Err(msg) => {
                         eprintln!("error: {}", msg);
+                        self.result = "Invalid expression".to_string();
+                        self.result_is_err = true;
                         return;
                     }
                 };
