@@ -6,15 +6,19 @@ use druid::commands::CLOSE_WINDOW;
 use druid::kurbo::Circle;
 use druid::widget::{Controller, Either, EnvScope, Flex, Padding, Painter, TextBox, ViewSwitcher};
 use druid::{
-    theme, Color, Env, Event, EventCtx, Insets, Key, LensExt, LifeCycle, LifeCycleCtx, Menu,
-    MenuItem, MouseButton, Point, Rect, RenderContext, RoundedRectRadii, Selector, Size,
-    TimerToken, UnitPoint, WidgetExt, WindowConfig, WindowId, WindowLevel, WindowSizePolicy,
+    theme, Color, Env, Event, EventCtx, Insets, InternalLifeCycle, Key, LensExt, LifeCycle,
+    LifeCycleCtx, Menu, MenuItem, MouseButton, Point, Rect, RenderContext, RoundedRectRadii,
+    Selector, Size, TimerToken, UnitPoint, WidgetExt, WindowConfig, WindowId, WindowLevel,
+    WindowSizePolicy,
 };
 use druid::{widget::Label, Widget};
 use math::number::Radix;
 use rust_i18n::t;
 use std::rc::Rc;
 use std::time::{Duration, Instant};
+
+const TEXTBOX_FOCUS: Selector<String> = Selector::new("textbox_focus");
+const APP_FOCUS: Selector<String> = Selector::new("app_focus");
 
 const SHOW_ERROR: Selector<String> = Selector::new("error");
 const ERROR_TEXT_SIZE: f64 = 14.0;
@@ -351,28 +355,60 @@ impl<W: Widget<CalcState>> Controller<CalcState, W> for LengthController {
         data: &mut CalcState,
         env: &Env,
     ) {
-        if let Event::KeyDown(key_event) = event {
-            if matches!(
-                key_event.key,
-                druid::keyboard_types::Key::ArrowLeft
-                    | druid::keyboard_types::Key::ArrowRight
-                    | druid::keyboard_types::Key::ArrowUp
-                    | druid::keyboard_types::Key::ArrowDown
-                    | druid::keyboard_types::Key::Delete
-                    | druid::keyboard_types::Key::Backspace
-            ) {
-                // Allow arrow keys, delete key, and backspace key
-                child.event(ctx, event, data, env);
-            } else {
-                // Check if the length of the current text in the textbox
-                // is greater than or equal to the maximum allowed length
-                if data.get_constants().key_str.len() >= self.max_length {
-                    ctx.set_handled();
-                    return;
+        match event {
+            Event::KeyDown(key_event) => {
+                if matches!(
+                    key_event.key,
+                    druid::keyboard_types::Key::ArrowLeft
+                        | druid::keyboard_types::Key::ArrowRight
+                        | druid::keyboard_types::Key::ArrowUp
+                        | druid::keyboard_types::Key::ArrowDown
+                        | druid::keyboard_types::Key::Delete
+                        | druid::keyboard_types::Key::Backspace
+                ) {
+                    // Allow arrow keys, delete key, and backspace key
+                    child.event(ctx, event, data, env);
+                } else {
+                    // Check if the length of the current text in the textbox
+                    // is greater than or equal to the maximum allowed length
+                    if data.get_constants().key_str.len() >= self.max_length {
+                        ctx.set_handled();
+                        return;
+                    }
                 }
             }
+            Event::Paste(_) => {
+                ctx.set_handled();
+                return;
+            }
+            _ => (),
         }
         child.event(ctx, event, data, env);
+    }
+}
+
+struct TextboxFocusController;
+
+impl<W: Widget<CalcState>> Controller<CalcState, W> for TextboxFocusController {
+    fn lifecycle(
+        &mut self,
+        child: &mut W,
+        ctx: &mut LifeCycleCtx,
+        event: &LifeCycle,
+        data: &CalcState,
+        env: &Env,
+    ) {
+        if let LifeCycle::Internal(internal) = event {
+            match internal {
+                InternalLifeCycle::RouteFocusChanged { old: _, new } => match new {
+                    Some(_) => ctx.submit_command(TEXTBOX_FOCUS.with("".to_owned())),
+                    None => ctx.submit_command(APP_FOCUS.with("".to_owned())),
+                },
+                _ => (),
+            }
+        }
+
+        child.lifecycle(ctx, event, data, env)
     }
 }
 
@@ -383,6 +419,7 @@ fn make_add_const_field() -> impl Widget<CalcState> {
         |data: &CalcState, _env| data.get_language().to_owned(),
         |_selector, _data, _env| {
             let mut flex = Flex::row();
+
             let key_field = TextBox::new()
                 .with_text_alignment(druid::TextAlignment::Center)
                 .with_placeholder(t!("constants.name"))
@@ -391,14 +428,15 @@ fn make_add_const_field() -> impl Widget<CalcState> {
                 .fix_width(KEY_TEXTBOX_WIDTH)
                 .align_vertical(UnitPoint::CENTER)
                 .lens(CalcState::constants.then(Constants::key_str))
+                .controller(TextboxFocusController)
                 .controller(LengthController::new(3));
-
             let value_field = TextBox::new()
                 .with_placeholder(t!("constants.value"))
                 .padding(TEXTBOX_PADDING)
                 .expand_width()
                 .align_vertical(UnitPoint::CENTER)
-                .lens(CalcState::constants.then(Constants::value_str));
+                .lens(CalcState::constants.then(Constants::value_str))
+                .controller(TextboxFocusController);
 
             flex.add_child(key_field);
             flex.add_child(Label::new("="));
@@ -507,63 +545,36 @@ fn make_add_const_btn() -> impl Widget<CalcState> {
 // name or value is not valid, an error message is displayed
 fn handle_add_contant(ctx: &mut EventCtx, data: &mut CalcState) {
     let consts = data.get_constants();
+    let value = &consts.value_str;
+    let key = &consts.key_str;
 
     // Ignore if one of the fields is empty
-    if consts.key_str.is_empty() || consts.value_str.is_empty() {
+    if key.is_empty() || value.is_empty() {
         return;
     }
 
     // Check if the string in the value field is numeric
-    let value = match validate_value(&consts.value_str) {
-        Ok(val) => val,
-        Err(e) => {
-            ctx.submit_command(SHOW_ERROR.with(e));
-            return;
-        }
-    };
+    if value.parse::<f64>().is_err() {
+        ctx.submit_command(SHOW_ERROR.with(t!("errors.string_to_int_error")))
+    }
 
     // Check if the string in key field starts with aphabetic character
-    let key = match validate_key(&consts.key_str) {
-        Ok(k) => k,
-        Err(e) => {
-            ctx.submit_command(SHOW_ERROR.with(e));
-            return;
-        }
+    if !key.chars().next().unwrap().is_alphabetic() {
+        ctx.submit_command(SHOW_ERROR.with(t!("errors.must_start_with_aplhabet")))
     };
 
     // Check if the constant already exists in the app data
     if !data.is_new_constant(key.clone()) {
-        ctx.submit_command(SHOW_ERROR.with(t!("errors.constant_already_exists")));
-        return;
+        ctx.submit_command(SHOW_ERROR.with(t!("errors.constant_already_exists")))
     }
 
     // Add a constant to the appliation if name does not conflict with the function names (sin, cos, log...)
-    if data.add_constant(key, value) {
+    if data.add_constant(key.to_string(), value.to_string()) {
         data.constants.key_str.clear();
         data.constants.value_str.clear();
-        ctx.request_focus();
+        data.set_display_focus(true);
     } else {
         ctx.submit_command(SHOW_ERROR.with(t!("errors.invalid_constant_name")));
-    }
-}
-
-// Check if `value` is a number
-fn validate_value(value: &String) -> Result<f64, String> {
-    match value.parse() {
-        Ok(val) => Ok(val),
-        Err(_) => Err(t!("errors.string_to_int_error")),
-    }
-}
-
-// Check if `key` starts with an aphabetic character
-fn validate_key(key: &String) -> Result<String, String> {
-    if let Some(first_char) = key.chars().next() {
-        match first_char.is_alphabetic() {
-            true => Ok(key.to_string()),
-            false => Err(t!("errors.must_start_with_aplhabet")),
-        }
-    } else {
-        unreachable!()
     }
 }
 
