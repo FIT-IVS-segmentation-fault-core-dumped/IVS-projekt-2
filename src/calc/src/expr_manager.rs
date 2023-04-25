@@ -70,7 +70,7 @@ impl ToExpr for PressedButton {
                     _ => ExprItem::new(name, format!("{name}()"), 0, true, true)
                 }
             },
-            Self::Ans => todo!(),
+            Self::Ans => ExprItem::new("Ans", "ans()", 0, true, true),
             _ => return None,
         })
     }
@@ -355,14 +355,12 @@ impl ExprManager {
         for token in postfix {
             match token.btn {
                 // Non-operation tokens. Just push them onto the stack.
-                Btn::Num(_) | Btn::Comma | Btn::Const(_) | Btn::Random => {
+                Btn::Num(_) | Btn::Comma | Btn::Const(_) | Btn::Random | Btn::Ans => {
                     eval_stack.push((*token).clone())
                 }
                 // Operation tokens. This will pop the non-operation tokens (number depends on `token.arity`)
                 // and create a compound token on the top of the stack.
                 Btn::UnaryOpt(_) | Btn::BinOpt(_) => self.push_func(&mut eval_stack, token)?,
-                // TODO: Handle ans
-                Btn::Ans => todo!(),
                 // There should only be operation and non-operation tokens on the stack.
                 _ => panic!("Invalid token on the evaluate stack. {:?}", token),
             };
@@ -385,7 +383,7 @@ impl ExprManager {
 
         for token in tokens.iter_mut() {
             match token.btn {
-                Btn::Num(_) | Btn::Comma | Btn::Const(_) => postfix.push(token),
+                Btn::Num(_) | Btn::Comma | Btn::Const(_) | Btn::Ans => postfix.push(token),
                 Btn::Random => {
                     token.btn = Btn::Const("random".to_string());
                     token.arity = 0;
@@ -470,7 +468,7 @@ impl ExprManager {
                 // Ignore right sided unary operations.
                 Btn::UnaryOpt(Opt::Fact | Opt::Pow2) => {}
                 // Case: "<num|const|right unary><left unary|const|'('>" --> "5!sqrt3" ~ "5!*sqrt3"
-                Btn::UnaryOpt(_) | Btn::Const(_) | Btn::BracketLeft => {
+                Btn::UnaryOpt(_) | Btn::Const(_) | Btn::BracketLeft | Btn::Ans | Btn::Random => {
                     if let Some(tok) = tokens.last() {
                         match tok.btn {
                             Btn::Num(_) | Btn::Const(_) | Btn::UnaryOpt(Opt::Fact | Opt::Pow2) => {

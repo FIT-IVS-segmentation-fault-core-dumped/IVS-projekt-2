@@ -182,8 +182,6 @@ pub struct CalcState {
     result_is_err: bool,
     /// Use degrees in trigonometric computations, otherwise use radians.
     degrees: bool,
-    /// Result from the last calculation
-    ans: f64,
     /// main window id
     main_win_id: WindowId,
     /// If `has_focus` is true it means the app will send user keyboard input to display
@@ -252,7 +250,6 @@ impl CalcState {
             result: String::new(),
             result_is_err: false,
             degrees: true,
-            ans: 0.0,
             display_focus: true,
             main_win_id: WindowId::next(),
         }
@@ -280,8 +277,15 @@ impl CalcState {
                 // Set resulting variable according to the resulting value.
                 (self.result, self.result_is_err) = match result {
                     Err(e) => (format!("{:?}", e), true),
-                    Ok(num) => (num.to_string(self.radix, 5), false),
+                    Ok(num) => {
+                        self.save_equation();
+                        (num.to_string(self.radix, 5), false)
+                    },
                 };
+
+                if !self.result_is_err {
+                    self.update_ans();
+                }
             }
             PressedButton::Clear => {
                 self.expr_man.process_button(button);
@@ -457,7 +461,8 @@ impl CalcState {
     }
 
     /// Update value of ans. Should be called after each calculation
-    pub fn update_ans(&mut self, value: f64) {
-        self.ans = value;
+    pub fn update_ans(&mut self) {
+        self.calc.borrow_mut().remove_constant("ans");
+        self.calc.borrow_mut().add_constant("ans", math::evaluate(&self.result).unwrap());
     }
 }
