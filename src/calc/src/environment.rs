@@ -21,7 +21,7 @@ pub fn set_light_envs(env: &mut Env) {
 pub fn set_digit_btn_envs(env: &mut Env) {
     env.set(
         Key::<Color>::new("calc.Dark.digit_btn.background"),
-        Color::grey8(50),
+        Color::grey8(45),
     );
     env.set(
         Key::<Color>::new("calc.Light.digit_btn.background"),
@@ -30,7 +30,7 @@ pub fn set_digit_btn_envs(env: &mut Env) {
 
     env.set(
         Key::<Color>::new("calc.Dark.digit_btn.hover"),
-        Color::grey8(65),
+        Color::grey8(60),
     );
     env.set(
         Key::<Color>::new("calc.Light.digit_btn.hover"),
@@ -39,7 +39,7 @@ pub fn set_digit_btn_envs(env: &mut Env) {
 
     env.set(
         Key::<Color>::new("calc.Dark.digit_btn.active"),
-        Color::grey8(80),
+        Color::grey8(75),
     );
     env.set(
         Key::<Color>::new("calc.Light.digit_btn.active"),
