@@ -1,8 +1,8 @@
 //! The display UI part of the calculator
 
 use crate::CalcState;
-use druid::widget::{Align, Container, Flex, ViewSwitcher, TextBox, Axis};
-use druid::{theme, Color, Env, UnitPoint, WidgetExt, FontDescriptor, FontFamily, Point, Rect, RenderContext};
+use druid::widget::{Align, Flex, ViewSwitcher, Container};
+use druid::{theme, TextLayout, Color, Env, UnitPoint, WidgetExt, FontDescriptor, FontFamily, Point };
 use druid::{widget::Label, Widget};
 use math::number::Radix;
 
@@ -23,7 +23,7 @@ impl DisplayUI {
 struct Display {
     lbl: Label<CalcState>,
     font: FontDescriptor,
-    offset: f64,
+    max_width: f64,
 }
 
 impl Display {
@@ -34,7 +34,7 @@ impl Display {
             .with_size(30.0);
         let lbl = Label::new(str)
             .with_font(font.clone());
-        Self { lbl, font, offset: 0.0 }
+        Self { lbl, font, max_width: 0.0 }
     }
 }
 
@@ -52,22 +52,25 @@ impl Widget<CalcState> for Display {
     }
 
     fn layout(&mut self, ctx: &mut druid::LayoutCtx, bc: &druid::BoxConstraints, data: &CalcState, env: &Env) -> druid::Size {
-        let inf = druid::BoxConstraints::new(
-            druid::Size { width: 0.0, height: 0.0 },
-            druid::Size { width: 100000000.0, height: 1000.0 }
-        );
-        let lbl_width = self.lbl.compute_max_intrinsic(Axis::Horizontal, ctx, &inf, data, env);
-        let max_width = bc.max().width;
-
-        if lbl_width > max_width - Display::OVERFLOW_RESERVE {
-            self.offset = max_width - Display::OVERFLOW_RESERVE - lbl_width;
-        }
-
+        self.max_width = bc.max().width;
         self.lbl.layout(ctx, bc, data, env)
     }
 
-    fn paint(&mut self, ctx: &mut druid::PaintCtx, _data: &CalcState, _env: &Env) {
-        self.lbl.draw_at(ctx, Point::new(self.offset, 0.0));
+    fn paint(&mut self, ctx: &mut druid::PaintCtx, data: &CalcState, env: &Env) {
+        let expr = data.expr_man.get_display_str(true);
+
+        let mut text = TextLayout::<String>::from_text(&expr);
+        text.set_font(self.font.clone());
+        text.rebuild_if_needed(ctx.text(), env);
+
+        let idx = expr.find(crate::expr_manager::CURSOR_CHAR).unwrap();
+        let cursor_point = text.point_for_text_position(idx);
+        let mut offset = 0.0;
+        if cursor_point.x > self.max_width - Display::OVERFLOW_RESERVE {
+            offset = self.max_width - Display::OVERFLOW_RESERVE - cursor_point.x;
+        }
+
+        self.lbl.draw_at(ctx, Point::new(offset, 0.0));
     }
 }
 
@@ -98,9 +101,10 @@ fn get_display() -> impl Widget<CalcState> {
     let disp = ViewSwitcher::new(
         move |data: &CalcState, _| data.expr_man.get_display_str(true),
         move |_selector, data, _| {
-            let d = Display::new(&data.expr_man.get_display_str(true));
+            let str = data.expr_man.get_display_str(true);
+            let lbl = Display::new(&str);
 
-            Box::new(d)
+            Box::new(lbl)
         }
     );
 
@@ -119,8 +123,8 @@ fn get_display() -> impl Widget<CalcState> {
     Container::new(
         Flex::column()
             .with_flex_child(status_row, 1.0)
-            .with_flex_child(expr_row, 1.0)
-            .with_flex_child(result_row, 2.0)
+            .with_flex_child(expr_row, 2.0)
+            .with_flex_child(result_row, 2.1)
             .align_vertical(UnitPoint::TOP)
             .padding((10.0, 0.0)),
     )
