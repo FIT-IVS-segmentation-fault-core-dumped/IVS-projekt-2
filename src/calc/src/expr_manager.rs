@@ -534,6 +534,7 @@ impl ExprManager {
                             // then this is binary, as it has bigger priority.
                             // Case: "sin 5!-3"
                             Btn::UnaryOpt(Opt::Fact | Opt::Pow2) => 2,
+                            Btn::UnaryOpt(_) => { 1 },
                             // Case: "2*(-3)"
                             Btn::BracketLeft => 1,
                             _ => 2,
@@ -572,7 +573,9 @@ impl Token {
         // during the tokenization process. When they are
         // unary, we give them the unary priority.
         if arity.is_some() && arity.unwrap() == 1 {
-            item.priority = 3;
+            if let Btn::BinOpt(Opt::Add | Opt::Sub) = btn {
+                item.priority = 4;
+            }
         }
         Self {
             btn: btn.to_owned(),
