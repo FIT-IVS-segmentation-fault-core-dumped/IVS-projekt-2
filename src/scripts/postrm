@@ -1,5 +1,0 @@
-#!/bin/bash
-
-rm /usr/share/applications/calc.desktop
-rm /usr/share/icons/calc_128x128.png
-update-desktop-database
