@@ -15,5 +15,6 @@ depends = "$auto"
 section = "utitlity"
 assets = [
     ["assets/calc.desktop", "usr/share/applications/", "644"]
+    ["assets/calc_128x128.png", "usr/share/icons/", "644"]
 ]
 
