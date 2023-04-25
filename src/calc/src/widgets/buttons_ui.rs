@@ -8,8 +8,8 @@ use druid::widget::{Controller, Either, EnvScope, Flex, Padding, Painter, TextBo
 use druid::{
     theme, Color, Env, Event, EventCtx, Insets, InternalLifeCycle, Key, LensExt, LifeCycle,
     LifeCycleCtx, Menu, MenuItem, MouseButton, Point, Rect, RenderContext, RoundedRectRadii,
-    Selector, Size, TimerToken, UnitPoint, WidgetExt, WindowConfig, WindowId, WindowLevel,
-    WindowSizePolicy,
+    Selector, Size, TimerToken, UnitPoint, WidgetExt, WidgetPod, WindowConfig, WindowId,
+    WindowLevel, WindowSizePolicy,
 };
 use druid::{widget::Label, Widget};
 use math::number::Radix;
@@ -555,17 +555,20 @@ fn handle_add_contant(ctx: &mut EventCtx, data: &mut CalcState) {
 
     // Check if the string in the value field is numeric
     if value.parse::<f64>().is_err() {
-        ctx.submit_command(SHOW_ERROR.with(t!("errors.string_to_int_error")))
+        ctx.submit_command(SHOW_ERROR.with(t!("errors.string_to_int_error")));
+        return;
     }
 
     // Check if the string in key field starts with aphabetic character
     if !key.chars().next().unwrap().is_alphabetic() {
-        ctx.submit_command(SHOW_ERROR.with(t!("errors.must_start_with_aplhabet")))
+        ctx.submit_command(SHOW_ERROR.with(t!("errors.must_start_with_aplhabet")));
+        return;
     };
 
     // Check if the constant already exists in the app data
     if !data.is_new_constant(key.clone()) {
-        ctx.submit_command(SHOW_ERROR.with(t!("errors.constant_already_exists")))
+        ctx.submit_command(SHOW_ERROR.with(t!("errors.constant_already_exists")));
+        return;
     }
 
     // Add a constant to the appliation if name does not conflict with the function names (sin, cos, log...)
