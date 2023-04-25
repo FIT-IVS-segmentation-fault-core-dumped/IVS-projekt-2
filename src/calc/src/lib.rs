@@ -3,6 +3,7 @@
 //! This file contains definition of calculator state,
 //! which defines functionality of our app.
 pub mod delegate;
+pub mod environment;
 pub mod expr_manager;
 pub mod history;
 pub mod widgets;
