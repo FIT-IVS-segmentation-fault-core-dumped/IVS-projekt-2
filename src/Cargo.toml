@@ -7,7 +7,13 @@ authors = ["Jakub Kloub", "Le Duy Nguyen", "Matúš Moravčík"]
 description = "Calculator made in rust using Druid"
 homepage = "https://github.com/FIT-IVS-segmentation-fault-core-dumped/IVS-projekt-2"
 repository = "https://github.com/FIT-IVS-segmentation-fault-core-dumped/IVS-projekt-2"
-license = "GPL"
 license-file = "../LICENSE"
 readme = "../README.md"
+
+[workspace.metadata.deb]
+depends = "$auto"
+section = "utitlity"
+assets = [
+    ["assets/calc.desktop", "usr/share/applications/", "644"]
+]
 
