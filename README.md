@@ -2,8 +2,8 @@
 
 ## Calc
 
-The Calc app is a powerful and easy-to-use tool for performing calculations.
-This app was developed as a school project by a team of three students from VUT FIT university.
+The Calc app is a powerful and easy-to-use tool for performing calculations.<br>
+This app was developed as a school project by a team of three students from VUT FIT university.<br>
 Made in Rust and Druid framework.
 
 ## Features
@@ -68,10 +68,10 @@ make build
 + Use the display section to view input and output values.
 
 ## About
-Version: 0.1
+Version: 0.1<br>
 Authors: xnguye27, xkloub03, xmorav48 (VUT FIT University)
 
 ## License
 
-This project is licensed under the GPL-3.0 License - see the LICENSE.md file for details.
+This project is licensed under the GPL-3.0 License - see the [LICENSE.md](LICENSE.md) file for details.
 
