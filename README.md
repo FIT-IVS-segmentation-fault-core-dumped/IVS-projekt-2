@@ -61,7 +61,7 @@ make build
 
 ## Usage
 
-+ Open the Calculator App.
++ Open Calc.
 + Use the numpad to input numbers and the operator buttons to perform operations.
 + Use the function buttons to access more advanced features.
 + Use the menu bar to change app settings.
