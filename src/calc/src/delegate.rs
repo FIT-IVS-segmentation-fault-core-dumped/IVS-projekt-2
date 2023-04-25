@@ -112,34 +112,24 @@ fn handle_keyboard_input(data: &mut CalcState, key: KeyEvent) {
         druid::keyboard_types::Key::ArrowRight => data.process_button(&PressedButton::MoveRight),
         druid::keyboard_types::Key::Backspace => data.process_button(&PressedButton::Delete),
         druid::keyboard_types::Key::Clear => data.process_button(&PressedButton::Clear),
-        druid::keyboard_types::Key::Character(ch) => {
-            match ch.chars().next() {
-                Some(val) => {
-                    let ascii_value = val as u8;
-
-                    // numbers
-                    if ascii_value > 47 && ascii_value < 58 {
-                        process_numeric_key(data, ascii_value - 48);
-                        // A-F characters
-                    } else if ascii_value > 96 && ascii_value < 103 {
-                        process_numeric_key(data, ascii_value - 87);
-
-                    // Dot and comma
-                    } else if ascii_value == 44 || ascii_value == 46 {
-                        data.process_button(&PressedButton::Comma)
-
-                    // Left bracket
-                    } else if ascii_value == 40 {
-                        data.process_button(&PressedButton::BracketLeft)
-
-                    // Right bracket
-                    } else if ascii_value == 41 {
-                        data.process_button(&PressedButton::BracketRight)
-                    }
-                }
-                None => (),
-            }
-        }
+        druid::keyboard_types::Key::Character(ch) => match ch.chars().next() {
+            Some(val) => match val {
+                '0'..='9' => process_numeric_key(data, val as u8 - b'0'),
+                'a'..='f' => process_numeric_key(data, val as u8 - b'a' + 10),
+                'A'..='F' => process_numeric_key(data, val as u8 - b'A' + 10),
+                ',' | '.' => data.process_button(&PressedButton::Comma),
+                '(' => data.process_button(&PressedButton::BracketLeft),
+                ')' => data.process_button(&PressedButton::BracketRight),
+                '+' => data.process_button(&PressedButton::BinOpt(crate::Opt::Add)),
+                '-' => data.process_button(&PressedButton::BinOpt(crate::Opt::Sub)),
+                '*' => data.process_button(&PressedButton::BinOpt(crate::Opt::Mul)),
+                '/' => data.process_button(&PressedButton::BinOpt(crate::Opt::Div)),
+                '^' => data.process_button(&PressedButton::BinOpt(crate::Opt::Pow)),
+                '!' => data.process_button(&PressedButton::UnaryOpt(crate::Opt::Fact)),
+                _ => (),
+            },
+            None => (),
+        },
         _ => (),
     }
 }
