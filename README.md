@@ -67,11 +67,22 @@ make build
 + Use the menu bar to change app settings.
 + Use the display section to view input and output values.
 
-## About
-Version: 0.1<br>
-Authors: xnguye27, xkloub03, xmorav48 (VUT FIT University)
+Environments
+-----------
+
+Ubuntu 64bit
+
+Windows 10 64bit
+
+Authors
+-----------
+
+segmentation fault (core dumped)
+- xmorav48 Matúš Moravčík 
+- xkloub03 Jakub Kloub
+- xnguye27 Le Duy Nguyen
 
 ## License
 
-This project is licensed under the GPL-3.0 License - see the LICENSE file for details.
+This program is licensed under the GPL-3.0 License - see the LICENSE file for details.
 
