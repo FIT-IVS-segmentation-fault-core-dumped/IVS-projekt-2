@@ -1,6 +1,6 @@
 use druid::{
     widget::{Flex, Label, Padding, Scroll},
-    FontDescriptor, FontWeight, Widget,
+    Color, FontDescriptor, FontWeight, Widget,
 };
 
 use crate::CalcState;
@@ -165,6 +165,7 @@ fn build_subsection(text: &str) -> impl Widget<CalcState> {
 
 fn build_text(text: &str) -> impl Widget<CalcState> {
     Label::new(text)
+        .with_text_color(Color::grey8(200))
         .with_font(FontDescriptor::default().with_weight(FontWeight::NORMAL))
         .with_text_size(12.)
 }

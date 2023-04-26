@@ -113,6 +113,7 @@ fn handle_keyboard_input(data: &mut CalcState, key: KeyEvent) {
         druid::keyboard_types::Key::ArrowRight => data.process_button(&PressedButton::MoveRight),
         druid::keyboard_types::Key::Backspace => data.process_button(&PressedButton::Delete),
         druid::keyboard_types::Key::Clear => data.process_button(&PressedButton::Clear),
+        druid::keyboard_types::Key::Enter => data.process_button(&PressedButton::Evaluate),
         druid::keyboard_types::Key::Character(ch) => match ch.chars().next() {
             Some(val) => match val {
                 '0'..='9' => process_numeric_key(data, val as u8 - b'0'),
@@ -127,6 +128,7 @@ fn handle_keyboard_input(data: &mut CalcState, key: KeyEvent) {
                 '/' => data.process_button(&PressedButton::BinOpt(crate::Opt::Div)),
                 '^' => data.process_button(&PressedButton::BinOpt(crate::Opt::Pow)),
                 '!' => data.process_button(&PressedButton::UnaryOpt(crate::Opt::Fact)),
+                '=' => data.process_button(&PressedButton::Evaluate),
                 _ => (),
             },
             None => (),

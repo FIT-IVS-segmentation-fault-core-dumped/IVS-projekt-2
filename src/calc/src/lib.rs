@@ -227,6 +227,7 @@ impl Data for CalcState {
             && self.result == other.result
             && self.constants.same(&other.constants)
             && self.precision == other.precision
+            && self.degrees == other.degrees
     }
 }
 
