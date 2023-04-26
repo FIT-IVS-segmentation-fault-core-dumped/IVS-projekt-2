@@ -8,9 +8,8 @@ use druid::widget::{Controller, Either, EnvScope, Flex, Padding, Painter, TextBo
 use druid::{
     theme, Color, Env, Event, EventCtx, Insets, InternalLifeCycle, Key, LensExt, LifeCycle,
     LifeCycleCtx, Menu, MenuItem, MouseButton, Point, Rect, RenderContext, RoundedRectRadii,
-    Selector, Size, TimerToken, UnitPoint, WidgetExt, WidgetPod, WindowConfig, WindowId,
-    WindowLevel, WindowSizePolicy,
-
+    Selector, Size, TimerToken, UnitPoint, WidgetExt, WindowConfig, WindowId, WindowLevel,
+    WindowSizePolicy,
 };
 use druid::{widget::Label, Widget};
 use math::number::Radix;
