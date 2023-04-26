@@ -89,7 +89,10 @@ fn make_angular_unit_button(name: &str, is_degree: bool) -> MenuItem<CalcState> 
     let text = format!("angular_units.{}", name);
     MenuItem::new(t!(&text))
         .on_activate(move |_ctx, data: &mut CalcState, _env| {
-            data.set_angular_unit(is_degree);
+            // Works only for radians
+            if is_degree == false {
+                data.set_angular_unit(is_degree);
+            }
         })
         .selected_if(move |data, _env| data.get_angular_unit() == is_degree)
 }

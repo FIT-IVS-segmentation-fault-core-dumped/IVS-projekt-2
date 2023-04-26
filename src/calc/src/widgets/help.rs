@@ -153,7 +153,6 @@ impl HelpWin {
 
 fn build_section(text: &str) -> impl Widget<CalcState> {
     Label::new(format!("\n{}", text))
-        .with_text_color(Color::WHITE)
         .with_font(FontDescriptor::default().with_weight(FontWeight::BOLD))
         .with_text_size(18.)
 }
