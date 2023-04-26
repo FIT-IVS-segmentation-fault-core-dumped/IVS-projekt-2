@@ -39,7 +39,7 @@ pack:
 
 
 doc:
-	cargo doc --package math --no-deps --target-dir ../doc
+	cargo doc --workspace --no-deps --target-dir ../doc
 	mv ../doc/doc/* ../doc/
 
 profile:

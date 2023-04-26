@@ -15,3 +15,6 @@ Obsahuje soubory:
         - data.txt -- data k profilingu
         - PKGBUILD -- Package build pro vygenerování archlinux balíčku. Toto by se mohlo dát na AUR.
         - assets/ -- Assety pro linuxové installery
+K vygenerování dokumentace:
+	- cd src && cargo doc -p calc --open
+	- Je až moc velká na to, abychom jí zabalili do zipu při odevzávání
