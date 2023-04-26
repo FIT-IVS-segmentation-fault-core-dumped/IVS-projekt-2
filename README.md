@@ -1,4 +1,5 @@
 # IVS projekt 2
+![Application screenshot](screenshot.png)
 
 ## Calc
 
