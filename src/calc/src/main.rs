@@ -52,79 +52,6 @@ fn build_root_widget() -> impl Widget<CalcState> {
     )
 }
 
-/// Handle the menu bar commands for opening windows
-struct Delegate;
-
-impl AppDelegate<CalcState> for Delegate {
-    fn window_removed(
-        &mut self,
-        id: druid::WindowId,
-        data: &mut CalcState,
-        _env: &Env,
-        _ctx: &mut DelegateCtx,
-    ) {
-        // close history before the window is removed
-        match data.get_history().get_win_id() {
-            Some(win_id) => {
-                if *win_id == id {
-                    data.get_mut_history().close_history();
-                }
-            }
-            None => (),
-        }
-    }
-
-    fn command(
-        &mut self,
-        ctx: &mut DelegateCtx,
-        _target: Target,
-        cmd: &Command,
-        data: &mut CalcState,
-        _env: &Env,
-    ) -> Handled {
-        // Display History window
-        if let Some(_) = cmd.get(SHOW_HISTORY) {
-            if !data.get_history().is_opened() {
-                let win_desc = WindowDesc::new(HistoryWin::build_ui())
-                    .with_config(WindowConfig::default())
-                    .resizable(false)
-                    .title(t!("window.history"))
-                    .window_size(HISTORY_WIN);
-
-                data.get_mut_history().open_history(win_desc.id.clone());
-                ctx.new_window(win_desc);
-            }
-
-            Handled::Yes
-
-        // Display Help window
-        } else if let Some(_) = cmd.get(SHOW_HELP) {
-            let win_desc = WindowDesc::new(HelpWin::build_ui())
-                .with_config(WindowConfig::default())
-                .resizable(false)
-                .title(t!("window.help"))
-                .window_size(HELP_WIN);
-
-            ctx.new_window(win_desc);
-
-            Handled::Yes
-
-        // Display About window
-        } else if let Some(_) = cmd.get(SHOW_ABOUT) {
-            let win_desc = WindowDesc::new(AboutWin::build_ui())
-                .with_config(WindowConfig::default())
-                .resizable(false)
-                .title(t!("window.about"))
-                .window_size(ABOUT_WIN);
-
-            ctx.new_window(win_desc);
-
-            Handled::Yes
-        } else {
-            Handled::No
-        }
-    }
-}
 
 fn main() {
     // Load stored calc state.
@@ -142,7 +69,6 @@ fn main() {
     // Launch the main app using calc_state to define behaviour.
     calc_state.set_main_win_id(main_window.id);
     if let Err(platform_err) = AppLauncher::with_window(main_window)
-        .delegate(Delegate {})
         .configure_env(|env, data| {
             if data.get_theme(true) == Theme::Dark {
                 set_dark_envs(env);
