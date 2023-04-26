@@ -29,9 +29,9 @@ pack:
 	&& echo "Getting documentation" \
 	&& mkdir doc \
 	&& cd .. \
-	&& cargo doc --package math --no-deps --target-dir $(TEAM)/doc \
+	&& cargo doc --workspace --no-deps --target-dir $(TEAM)/doc \
+	&& rm -rf $(TEAM)/doc/debug \
 	&& mv $(TEAM)/doc/doc/* $(TEAM)/doc/ \
-	&& mv $(TEAM)/repo/odevzdani.txt $(TEAM)/ \
 	&& echo "Zipping" \
 	&& zip -r $(ZIP_FILE) $(TEAM) \
 	&& echo "Clean up" \
