@@ -1,5 +1,5 @@
 # Maintainer: TheRetikGM <theretikgm@gmail.com>
-pkgname="FITCalc-git"
+pkgname="fitcalc-git"
 pkgver=0.1.1
 pkgrel=0
 pkgdesc="Calculator written in Rust"
