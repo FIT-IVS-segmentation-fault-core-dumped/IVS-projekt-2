@@ -1,9 +1,9 @@
 # IVS projekt 2
 ![Application screenshot](screenshot.png)
 
-## Calc
+## FIT Calc
 
-The Calc app is a powerful and easy-to-use tool for performing calculations.<br>
+The FIT Calc app is a powerful and easy-to-use tool for performing calculations.<br>
 This app was developed as a school project by a team of three students from VUT FIT university.<br>
 Made in Rust and Druid framework.
 
