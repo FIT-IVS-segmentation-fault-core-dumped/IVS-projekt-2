@@ -1,0 +1,8 @@
+Ve výsledku jsme se od našeho plánu tolik neodchýlili.
+Rozdíly:
+    - Speciální zobrazování kombinačních čísel, zlomků
+      a absolutní hodnoty.
+    - Není tlačítko shift. Jeho účel plní panely pro přepínání mezi operacema.
+    - Není okno pro nastavení. Vzhledem k malému rozsahu nastavení, jsme se rohodli,
+      že dané možnosti stačí dát do menu baru.
+    - Termíny hotových modulů.
