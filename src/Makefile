@@ -31,6 +31,7 @@ pack:
 	&& cd .. \
 	&& cargo doc --package math --no-deps --target-dir $(TEAM)/doc \
 	&& mv $(TEAM)/doc/doc/* $(TEAM)/doc/ \
+	&& mv $(TEAM)/repo/odevzdani.txt $(TEAM)/ \
 	&& echo "Zipping" \
 	&& zip -r $(ZIP_FILE) $(TEAM) \
 	&& echo "Clean up" \

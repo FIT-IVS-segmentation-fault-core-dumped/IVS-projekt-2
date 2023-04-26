@@ -1,0 +1,17 @@
+Datum a čas odevzdání: 26. 4. 2023 6:00
+Způsob odevzádní: Přes IS a IVS server
+Obsahuje soubory:
+    - dle zadání
+    - dokumentace.txt -- Uživatelská příručka
+    - cargo* - soubory pro kompilaci pomocí nástroje cargo
+    - src/
+        - math/ -- zroje k matematické knihovně
+            - tests/ -- integrační testy pro matematickou knihovnu
+                      - pozn. Jednotkové jsou ve zdrojovém kódu v komentářích.
+        - calc/ -- zdroje ke kalkulačce
+            - locales/ -- překlady pro lokalizace
+            - src/ -- Zdrojové rust soubory kalkulačky
+        - profiling/ -- zdroje k profilingu
+        - data.txt -- data k profilingu
+        - PKGBUILD -- Package build pro vygenerování archlinux balíčku. Toto by se mohlo dát na AUR.
+        - assets/ -- Assety pro linuxové installery
