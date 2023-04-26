@@ -254,7 +254,7 @@ impl CalcState {
             calc: Rc::new(RefCell::new(math::Calculator::new())),
             result: String::new(),
             result_is_err: false,
-            degrees: true,
+            degrees: false,
             display_focus: true,
             main_win_id: WindowId::next(),
             precision: 5,
