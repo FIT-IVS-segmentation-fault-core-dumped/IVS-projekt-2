@@ -18,3 +18,9 @@ doc:
 
 profile:
 	cargo build --release --package profiling
+
+install:
+	install -D target/release/calc $(DESTDIR)/usr/bin/calc
+	install -D assets/calc.desktop $(DESTDIR)/usr/share/applications/calc.desktop
+	install -D assets/calc_128x128.png $(DESTDIR)/usr/share/icons/calc_128x128.png
+

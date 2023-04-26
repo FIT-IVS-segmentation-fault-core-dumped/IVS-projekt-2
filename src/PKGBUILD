@@ -1,0 +1,27 @@
+# Maintainer: TheRetikGM <theretikgm@gmail.com>
+pkgname="FITCalc-git"
+pkgver=0.1.1
+pkgrel=0
+pkgdesc="Calculator written in Rust"
+arch=('x86_64')
+url="https://github.com/FIT-IVS-segmentation-fault-core-dumped/IVS-projekt-2"
+license=('GPL3')
+depends=('gtk3' 'gcc-libs' 'glib2' 'cairo')
+makedepends=('git' 'rustup' 'make' 'gtk3' 'gcc-libs' 'glib2' 'cairo')
+source=("$pkgname-$pkgver::git+https://github.com/FIT-IVS-segmentation-fault-core-dumped/IVS-projekt-2")
+md5sums=('SKIP')
+
+build() {
+	cd "$pkgname-$pkgver"/src
+	make build
+}
+
+check() {
+	cd "$pkgname-$pkgver"/src
+	test -f target/release/calc
+}
+
+package() {
+	cd "$pkgname-$pkgver"/src
+	make DESTDIR="$pkgdir/" install
+}

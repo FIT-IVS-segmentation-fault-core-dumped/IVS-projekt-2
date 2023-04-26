@@ -1,2 +1,12 @@
 [workspace]
 members = ["math", "calc", "profiling"]
+
+[workspace.package]
+edition = "2021"
+authors = ["Jakub Kloub", "Le Duy Nguyen", "Matúš Moravčík"]
+description = "Calculator made in rust using Druid"
+homepage = "https://github.com/FIT-IVS-segmentation-fault-core-dumped/IVS-projekt-2"
+repository = "https://github.com/FIT-IVS-segmentation-fault-core-dumped/IVS-projekt-2"
+license-file = "../LICENSE"
+readme = "../README.md"
+
