@@ -185,7 +185,7 @@ pub struct CalcState {
     degrees: bool,
     /// How many decimal places should the result have.
     precision: u8,
-    /// main window id
+    /// Root window id
     main_win_id: WindowId,
     /// If `has_focus` is true it means the app will send user keyboard input to display
     display_focus: bool,
@@ -290,14 +290,14 @@ impl CalcState {
                     }
                     Ok(num) => {
                         self.result_as_num = Some(num.clone());
-                        self.save_equation();
+                        self.save_equation(num.to_string(self.radix, self.precision));
                         (num.to_string(self.radix, self.precision), false)
-                    },
+                    }
                 };
 
                 if !self.result_is_err {
                     self.update_ans();
-                } 
+                }
             }
             PressedButton::Clear => {
                 self.expr_man.process_button(button);
@@ -445,11 +445,11 @@ impl CalcState {
     }
 
     /// Save the expression and result to history
-    pub fn save_equation(&mut self) {
+    pub fn save_equation(&mut self, result: String) {
         self.config
             .history
             .data
-            .push((self.expr_man.get_display_str(false), self.result.clone()));
+            .push((self.expr_man.get_display_str(false), result));
         self.store_config_data();
     }
 
@@ -486,6 +486,8 @@ impl CalcState {
     /// Update value of ans. Should be called after each calculation
     pub fn update_ans(&mut self) {
         self.calc.borrow_mut().remove_constant("ans");
-        self.calc.borrow_mut().add_constant("ans", math::evaluate(&self.result).unwrap());
+        self.calc
+            .borrow_mut()
+            .add_constant("ans", math::evaluate(&self.result).unwrap());
     }
 }
