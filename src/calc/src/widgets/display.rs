@@ -2,7 +2,7 @@
 
 use crate::CalcState;
 use druid::widget::{Align, Flex, ViewSwitcher, Container};
-use druid::{theme, TextLayout, Color, Env, UnitPoint, WidgetExt, FontDescriptor, FontFamily, Point };
+use druid::{theme, TextLayout, Color, Env, UnitPoint, WidgetExt, FontDescriptor, FontFamily };
 use druid::{widget::Label, Widget};
 use math::number::Radix;
 
