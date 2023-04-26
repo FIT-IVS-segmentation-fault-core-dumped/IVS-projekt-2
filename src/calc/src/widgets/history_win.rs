@@ -84,20 +84,33 @@ fn make_equation(expr: &str, res: &str) -> impl Widget<CalcState> {
 }
 
 fn make_clear_btn() -> impl Widget<CalcState> {
+    #[cfg(target_os = "linux")]
+    let label = Label::new(t!("clear"))
+        .with_text_color(CLEAR_BUTTON_TEXT_COLOR)
+        .with_text_alignment(druid::TextAlignment::Center)
+        .with_line_break_mode(druid::widget::LineBreaking::WordWrap)
+        .center()
+        .background(get_btn_painter())
+        .controller(ConfirmController::new())
+        .on_click(|_, _, _| {})
+        .fix_size(CLEAR_BUTTON_WIDTH, CLEAR_BUTTON_HEIGHT);
+
+    #[cfg(target_os = "windows")]
+    let label = Label::new(t!("clear"))
+        .with_text_color(CLEAR_BUTTON_TEXT_COLOR)
+        .with_text_alignment(druid::TextAlignment::Center)
+        .with_line_break_mode(druid::widget::LineBreaking::WordWrap)
+        .background(get_btn_painter())
+        .controller(ConfirmController::new())
+        .on_click(|_, _, _| {})
+        .fix_size(CLEAR_BUTTON_WIDTH, CLEAR_BUTTON_HEIGHT);
+
     EnvScope::new(
         |env, data: &CalcState| match data.get_history().confiming_deletition {
             true => env.set(CLEAR_BUTTON_TEXT_COLOR, Color::RED),
             false => env.set(CLEAR_BUTTON_TEXT_COLOR, env.get(druid::theme::TEXT_COLOR)),
         },
-        Label::new(t!("clear"))
-            .with_text_color(CLEAR_BUTTON_TEXT_COLOR)
-            .with_text_alignment(druid::TextAlignment::Center)
-            .with_line_break_mode(druid::widget::LineBreaking::WordWrap)
-            .background(get_btn_painter())
-            .center()
-            .controller(ConfirmController::new())
-            .on_click(|_, _, _| {})
-            .fix_size(CLEAR_BUTTON_WIDTH, CLEAR_BUTTON_HEIGHT),
+        label,
     )
 }
 
