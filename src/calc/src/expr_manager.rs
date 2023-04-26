@@ -216,7 +216,9 @@ impl ExprManager {
         for (i, btn) in self.btn_stack.iter().enumerate() {
             disp_str += &match btn.to_expr() {
                 Some(item) => {
-                    if i == self.cursor_pos.saturating_sub(1) && self.cursor_pos != 0 {
+                    if with_cursor 
+                        && i == self.cursor_pos.saturating_sub(1) 
+                        && self.cursor_pos != 0 {
                         item.disp + &CURSOR_CHAR.to_string()
                     } else {
                         item.disp
