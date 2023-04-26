@@ -290,7 +290,9 @@ impl CalcState {
                     }
                     Ok(num) => {
                         self.result_as_num = Some(num.clone());
-                        self.save_equation(num.to_string(self.radix, self.precision));
+                        if self.get_history().recording() {
+                            self.save_equation(num.to_string(self.radix, self.precision));
+                        }
                         (num.to_string(self.radix, self.precision), false)
                     }
                 };
