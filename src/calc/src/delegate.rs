@@ -18,7 +18,7 @@ const SHOW_HELP: Selector<String> = Selector::new("show_help");
 const SHOW_ABOUT: Selector<String> = Selector::new("show_about");
 
 const HISTORY_WIN: Size = Size::new(300.0, 300.0);
-const HELP_WIN: Size = Size::new(400.0, 400.0);
+const HELP_WIN: Size = Size::new(500.0, 400.0);
 const ABOUT_WIN: Size = Size::new(500.0, 400.0);
 
 /// Handle the menu bar commands for opening windows
