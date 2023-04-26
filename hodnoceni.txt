@@ -1,0 +1,3 @@
+xmorav48 100 (GUI, testy)
+xkloub03 100 (GUI, testy, instalátory)
+xnguye27 100 (mat. knihovna, testy, dokumentace, profiling)
