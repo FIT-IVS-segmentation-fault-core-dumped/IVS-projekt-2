@@ -1,1 +1,48 @@
 locale_name: Tiếng Việt
+
+window:
+    main: Máy tính
+    history: Lịch sử
+    help: Trợ giúp
+    about: Thông tin ứng dụng
+
+menu:
+    options: Tùy chọn
+    edit: Cài đặt
+    help: Hỗ trợ
+    about: Thông tin
+
+edit:
+    copy_expr: Sao chép biểu thức
+    copy_res: Sao chép kết quả
+
+options:
+    theme: Theme
+    language: Ngôn ngữ
+    angular_unit: Đơn vị góc
+    record_hist: Ghi chép lịch sử
+    show_hist: Hiển thị lịch sử
+
+angular_units:
+    radians: Radian
+    degrees: Độ
+
+themes:
+    dark: Tối
+    light: Sáng
+    system: Theo hệ thống
+
+context_menu:
+    remove: Xóa
+
+constants:
+    name: Tên
+    value: Giá trị
+
+clear: Xóa sạch
+
+errors:
+    string_to_int_error: Lỗi phân tích chuỗi sang giá trị số
+    invalid_constant_name: Tên hằng số không hợp lệ
+    constant_already_exists: Hằng số đã tồn tại
+    must_start_with_aplhabet: Tên hằng số phải bắt đầu bằng ký tự từ a đến z

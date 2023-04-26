@@ -1,13 +1,19 @@
 use std::time::Duration;
 
 use druid::{
-    widget::{Controller, EnvScope, Flex, Label, Padding, Painter, Scroll, ViewSwitcher},
+    theme,
+    widget::{
+        Container, Controller, EnvScope, Flex, Label, Padding, Painter, Scroll, ViewSwitcher,
+    },
     Color, Env, Event, EventCtx, Key, RenderContext, RoundedRectRadii, TimerToken, Widget,
     WidgetExt,
 };
 use rust_i18n::t;
 
-use crate::CalcState;
+use crate::{
+    environment::{set_dark_envs, set_light_envs},
+    CalcState,
+};
 
 const EXPRESSION_LIST_HEIGHT: f64 = 200.;
 const PADDING: f64 = 10.;
@@ -21,12 +27,21 @@ pub struct HistoryWin;
 
 impl HistoryWin {
     pub fn build_ui() -> impl Widget<CalcState> {
-        Padding::new(
-            PADDING,
-            Flex::column()
-                .with_child(build_history())
-                .with_spacer(PADDING)
-                .with_child(make_clear_btn()),
+        EnvScope::new(
+            |env, data: &CalcState| match data.get_theme(true) {
+                crate::Theme::Dark => set_dark_envs(env),
+                crate::Theme::Light => set_light_envs(env),
+                crate::Theme::System => unreachable!(),
+            },
+            Container::new(Padding::new(
+                PADDING,
+                Flex::column()
+                    .with_child(build_history())
+                    .with_spacer(PADDING)
+                    .with_child(make_clear_btn())
+                    .with_spacer(PADDING),
+            ))
+            .background(theme::WINDOW_BACKGROUND_COLOR),
         )
     }
 }
@@ -79,6 +94,7 @@ fn make_clear_btn() -> impl Widget<CalcState> {
             .with_text_alignment(druid::TextAlignment::Center)
             .with_line_break_mode(druid::widget::LineBreaking::WordWrap)
             .background(get_btn_painter())
+            .center()
             .controller(ConfirmController::new())
             .on_click(|_, _, _| {})
             .fix_size(CLEAR_BUTTON_WIDTH, CLEAR_BUTTON_HEIGHT),

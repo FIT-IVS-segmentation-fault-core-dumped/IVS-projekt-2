@@ -61,7 +61,7 @@ impl ToExpr for PressedButton {
             Self::BracketLeft =>  ExprItem::new("(", "(", 4, true, true),
             Self::BracketRight => ExprItem::new(")", ")", 4, true, true),
             Self::Comma =>        ExprItem::new(",", ".", 0, true, true),  // FIXME: Maybe we should localize this.
-            Self::Random =>       ExprItem::new("⚄", "random", 3, true, true),
+            Self::Random =>       ExprItem::new("⚄", "random", 0, true, true),
             Self::Const(name) =>  {
                 // Replace known constants with their characters.
                 match name.as_str() {
@@ -70,7 +70,7 @@ impl ToExpr for PressedButton {
                     _ => ExprItem::new(name, format!("{name}()"), 0, true, true)
                 }
             },
-            Self::Ans => todo!(),
+            Self::Ans => ExprItem::new("Ans", "ans()", 0, true, true),
             _ => return None,
         })
     }
@@ -355,22 +355,26 @@ impl ExprManager {
         for token in postfix {
             match token.btn {
                 // Non-operation tokens. Just push them onto the stack.
-                Btn::Num(_) | Btn::Comma | Btn::Const(_) | Btn::Random => {
+                Btn::Num(_) | Btn::Comma | Btn::Const(_) | Btn::Random | Btn::Ans => {
                     eval_stack.push((*token).clone())
                 }
                 // Operation tokens. This will pop the non-operation tokens (number depends on `token.arity`)
                 // and create a compound token on the top of the stack.
                 Btn::UnaryOpt(_) | Btn::BinOpt(_) => self.push_func(&mut eval_stack, token)?,
-                // TODO: Handle ans
-                Btn::Ans => todo!(),
                 // There should only be operation and non-operation tokens on the stack.
                 _ => panic!("Invalid token on the evaluate stack. {:?}", token),
             };
         }
 
+        // All the remaining tokens on the stack are implicitly multiplied together.
+        let mut final_eval_str = String::new();
+        while !eval_stack.is_empty() {
+            final_eval_str += &eval_stack.remove(0).item.eval;
+        }
+
         // Pop the resulting compound token and get its eval string.
         // We can safely unwrap it, because the `postfix` is never empty.
-        Ok(eval_stack.pop().unwrap().item.eval)
+        Ok(final_eval_str)
     }
 
     /// Convert tokens to postfix notation.
@@ -385,7 +389,7 @@ impl ExprManager {
 
         for token in tokens.iter_mut() {
             match token.btn {
-                Btn::Num(_) | Btn::Comma | Btn::Const(_) => postfix.push(token),
+                Btn::Num(_) | Btn::Comma | Btn::Const(_) | Btn::Ans => postfix.push(token),
                 Btn::Random => {
                     token.btn = Btn::Const("random".to_string());
                     token.arity = 0;
@@ -435,6 +439,12 @@ impl ExprManager {
             };
         }
 
+        // Check if there is a left parenthesis on the stack.
+        // That means, that it was not matched and thus is error.
+        if opt_stack.iter().any(|x| x.btn == Btn::BracketLeft) {
+            return Err("Missing right parenthesis".into());
+        }
+
         // Pop any remaining operators from operator stack onto the postfix queue.
         while opt_stack.last().is_some() {
             postfix.push(opt_stack.pop().unwrap());
@@ -470,7 +480,7 @@ impl ExprManager {
                 // Ignore right sided unary operations.
                 Btn::UnaryOpt(Opt::Fact | Opt::Pow2) => {}
                 // Case: "<num|const|right unary><left unary|const|'('>" --> "5!sqrt3" ~ "5!*sqrt3"
-                Btn::UnaryOpt(_) | Btn::Const(_) | Btn::BracketLeft => {
+                Btn::UnaryOpt(_) | Btn::Const(_) | Btn::BracketLeft | Btn::Ans | Btn::Random => {
                     if let Some(tok) = tokens.last() {
                         match tok.btn {
                             Btn::Num(_) | Btn::Const(_) | Btn::UnaryOpt(Opt::Fact | Opt::Pow2) => {
@@ -524,6 +534,7 @@ impl ExprManager {
                             // then this is binary, as it has bigger priority.
                             // Case: "sin 5!-3"
                             Btn::UnaryOpt(Opt::Fact | Opt::Pow2) => 2,
+                            Btn::UnaryOpt(_) => { 1 },
                             // Case: "2*(-3)"
                             Btn::BracketLeft => 1,
                             _ => 2,
@@ -562,7 +573,9 @@ impl Token {
         // during the tokenization process. When they are
         // unary, we give them the unary priority.
         if arity.is_some() && arity.unwrap() == 1 {
-            item.priority = 3;
+            if let Btn::BinOpt(Opt::Add | Opt::Sub) = btn {
+                item.priority = 4;
+            }
         }
         Self {
             btn: btn.to_owned(),
