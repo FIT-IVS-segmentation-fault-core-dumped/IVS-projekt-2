@@ -584,15 +584,31 @@ impl Number {
         }
 
         if self.inner.is_integer() {
-            let mut res = Self::from(2);
-            let to = Self::from(self.inner.numer().clone());
-            let mut cnt = Self::from(3u64);
-            while cnt <= to {
-                res = res.mul(&cnt)?;
-                cnt = cnt.add(1)?;
-            }
+            // let mut res = Self::from(2);
+            // let to = Self::from(self.inner.numer().clone());
+            // let mut cnt = Self::from(3u64);
+            // while cnt <= to {
+            //     res = res.mul(&cnt)?;
+            //     cnt = cnt.add(1)?;
+            // }
 
-            return Ok(res);
+            // return Ok(res);
+
+            use rayon::prelude::*;
+
+            let to = self
+                .inner
+                .to_u128()
+                .ok_or(Error::Message("The number is too large".into()))?;
+
+            let inner = (2..=to)
+                .into_par_iter()
+                .map(BigInt::from)
+                .reduce(|| BigInt::from(1), |v, x| v * x);
+
+            return Ok(Self {
+                inner: Arc::new(inner.into()),
+            });
         }
 
         self.add(1)?.gamma()
